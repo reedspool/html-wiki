@@ -6,12 +6,52 @@
     <title>Edit Page</title>
     <meta name="description" content="Edit content here" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type="text/css" media="screen">
+      :root {
+      }
+
+      html {
+        margin: 0;
+        padding: 0;
+
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 80vh;
+
+        display: flex;
+        flex-direction: column;
+
+        padding: 1em;
+      }
+
+      textarea {
+        width: 80ch;
+        flex-grow: 1;
+        margin-block: 1em;
+      }
+
+      form {
+        display: contents;
+      }
+
+      button {
+        max-width: max-content;
+      }
+    </style>
   </head>
 
   <body>
-    <h1>Edit</h1>
-    <textarea>
+    <form action="" method="POST">
+      <h1>Edit</h1>
+      <textarea name="content">
 <slot name="content">Something went wrong :-/ the content you are attempting to edit should have apeared here</slot></textarea
-    >
+      >
+
+      <button type="submit">Save</button>
+    </form>
   </body>
 </html>

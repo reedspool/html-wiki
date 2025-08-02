@@ -6,18 +6,14 @@
  */
 import express from "express";
 import EventEmitter from "node:events";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, URL } from "node:url";
 import { dirname } from "node:path";
-import { readFile } from "node:fs/promises";
-import { parse } from "node-html-parser";
-import { escapeHtml } from "./utilities.mts";
+import { readFile, writeFile } from "node:fs/promises";
+import { parse as parseHtml } from "node-html-parser";
+import { escapeHtml, urlFromReq } from "./utilities.mts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const editFile = await readFile(
-    __dirname + "/../entries/$/templates/edit.html",
-);
-const editFileContents = editFile.toString();
 
 export const createServer = ({ port }: { port?: number }) => {
     // Create an event emitter to handle cross-cutting communications
@@ -30,8 +26,10 @@ export const createServer = ({ port }: { port?: number }) => {
     const app = express();
     const baseURL = `localhost:${port}`;
 
+    app.use(express.urlencoded({ extended: true }));
+
     app.use("/", async (req, res, next) => {
-        if (typeof req.query.edit === "undefined") {
+        if (req.method !== "GET" || typeof req.query.edit === "undefined") {
             return next();
         }
         const entryFileName =
@@ -64,10 +62,12 @@ export const createServer = ({ port }: { port?: number }) => {
             );
             throw error;
         }
-        // node-html-parser's HTMLElement has a clone method, but it just
-        // parses anyways and returns a Node instead of an HTMLElement :facepalm:
-        const editRootClone = parse(editFileContents);
-        const slotElements = editRootClone.querySelectorAll("slot");
+        const editFile = await readFile(
+            __dirname + "/../entries/$/templates/edit.html",
+        );
+        const editFileContents = editFile.toString();
+        const editRoot = parseHtml(editFileContents);
+        const slotElements = editRoot.querySelectorAll("slot");
         for (const slotElement of slotElements) {
             switch (slotElement.attributes.name) {
                 case "content":
@@ -80,7 +80,56 @@ export const createServer = ({ port }: { port?: number }) => {
                     break;
             }
         }
-        res.send(editRootClone.toString());
+        res.send(editRoot.toString());
+    });
+    app.use("/", async (req, res, next) => {
+        if (req.method !== "POST") {
+            return next();
+        }
+
+        let entryFileName =
+            req.path === "/"
+                ? "/index"
+                : // Special case to allow someone to target index.html
+                  // TODO: Probably don't want this to be a special case, and should
+                  // automatically deal with the inclusion of a proper file extension
+                  req.path === "/index.html"
+                  ? "/index"
+                  : null;
+
+        if (entryFileName == null) {
+            const url = urlFromReq(req);
+            const urlParsed = URL.parse(url);
+            console.log({ url, urlParsed });
+            if (urlParsed !== null) {
+                entryFileName = decodeURIComponent(urlParsed.pathname);
+            }
+        }
+
+        if (entryFileName == null) {
+            res.status(500);
+            res.write(`Problem :-/`);
+            res.end();
+            return;
+        }
+
+        console.log(`Logging contents of ${entryFileName} before write:`);
+        console.log(
+            (
+                await readFile(
+                    __dirname + "/../entries" + entryFileName + ".html",
+                )
+            ).toString(),
+        );
+
+        writeFile(
+            __dirname + "/../entries" + entryFileName + ".html",
+            req.body.content
+                // Browser sends CRLF, replace with unix-style LF,
+                .replaceAll(/\r\n/g, "\n"),
+        );
+
+        res.redirect(entryFileName);
     });
 
     // You can always get the raw version of any content
