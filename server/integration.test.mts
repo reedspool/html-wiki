@@ -72,31 +72,28 @@ test("Server integration", { concurrency: true }, async (context) => {
             );
 
             // /index.html ges the same result as /
-            const responseSlashIndexHtml = await fetch(
+            const responseSlashIndexDotHtml = await fetch(
                 `http://localhost:${port}/index.html`,
             );
-            const responseTextSlashIndexHtml =
-                await responseSlashIndexHtml.text();
+            const responseTextSlashIndexDotHtml =
+                await responseSlashIndexDotHtml.text();
 
             assert.strictEqual(response.status, 200);
-            assert.strictEqual(responseText, responseTextSlashIndexHtml);
+            assert.strictEqual(responseText, responseTextSlashIndexDotHtml);
 
-            // /index.html ges the same result as /entries/index.html
-            const responseSlashEntriesSlashIndexHtml = await fetch(
-                `http://localhost:${port}/entries/index.html`,
+            // /index.html ges the same result as /
+            const responseSlashIndexNoExtension = await fetch(
+                `http://localhost:${port}/index`,
             );
-            const responseTextSlashEntriesSlashIndexHtml =
-                await responseSlashEntriesSlashIndexHtml.text();
+            const responseTextSlashIndexNoExtension =
+                await responseSlashIndexNoExtension.text();
 
             assert.strictEqual(response.status, 200);
-            assert.strictEqual(
-                responseText,
-                responseTextSlashEntriesSlashIndexHtml,
-            );
+            assert.strictEqual(responseText, responseTextSlashIndexNoExtension);
         });
 
         context.test(
-            "Can get special entry entries/$/templates/edit.html",
+            "Can get entry at weird path $/templates/edit.html",
             { concurrency: true },
             async (t) => {
                 const { process, port } = forkCli();
@@ -108,7 +105,7 @@ test("Server integration", { concurrency: true }, async (context) => {
                     assert.strictEqual(process.exitCode, 0);
                 });
                 const response = await fetch(
-                    `http://localhost:${port}/entries/$/templates/edit.html`,
+                    `http://localhost:${port}/$/templates/edit.html`,
                 );
                 const responseText = await response.text();
 
@@ -132,6 +129,42 @@ test("Server integration", { concurrency: true }, async (context) => {
                 printHtmlValidationReport(report, (message: string) =>
                     assert.fail(message),
                 );
+                // /index.html ges the same result as /
+                const responseWithoutDotHtml = await fetch(
+                    `http://localhost:${port}/$/templates/edit`,
+                );
+                const responseTextWithoutDotHtml =
+                    await responseWithoutDotHtml.text();
+
+                assert.strictEqual(response.status, 200);
+                assert.strictEqual(responseText, responseTextWithoutDotHtml);
+            },
+        );
+
+        context.test(
+            "Normal path for no entry 404s",
+            { concurrency: true },
+            async (t) => {
+                const { process, port } = forkCli();
+                assert.ok(process.connected);
+                await wait(delay);
+                t.after(async () => {
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                });
+                const response = await fetch(
+                    `http://localhost:${port}/This is a fake entry name`,
+                );
+                const responseText = await response.text();
+
+                assert.strictEqual(response.status, 404);
+                assert.match(responseText, /fake entry name/);
+
+                const report = await validateHtml(responseText);
+                printHtmlValidationReport(report, (message: string) =>
+                    assert.fail(message),
+                );
             },
         );
 
@@ -148,7 +181,7 @@ test("Server integration", { concurrency: true }, async (context) => {
                     assert.strictEqual(process.exitCode, 0);
                 });
                 const response = await fetch(
-                    `http://localhost:${port}/edit/This is a fake entry name`,
+                    `http://localhost:${port}/This is a fake entry name/edit`,
                 );
                 const responseText = await response.text();
 
@@ -179,7 +212,7 @@ test("Server integration", { concurrency: true }, async (context) => {
                     assert.strictEqual(process.exitCode, 0);
                 });
                 const response = await fetch(
-                    `http://localhost:${port}/edit/index`,
+                    `http://localhost:${port}/index/edit`,
                 );
                 const responseText = await response.text();
 

@@ -30,7 +30,9 @@ export const createServer = ({ port }: { port?: number }) => {
     const app = express();
     const baseURL = `localhost:${port}`;
 
-    app.get("/edit/:entryFileName", async (req, res) => {
+    // TODO: Can include slashes in the filename, but end with edit? Does
+    // this make any sense?
+    app.get("/:entryFileName/edit", async (req, res) => {
         const { entryFileName } = req.params;
         let fileToEditContents: string;
         try {
@@ -41,7 +43,9 @@ export const createServer = ({ port }: { port?: number }) => {
         } catch (error) {
             if (error.code === "ENOENT") {
                 res.status(404);
-                res.write(`Couldn't find a file named ${entryFileName}.html`);
+                res.write(
+                    `Couldn't find a file named ${escapeHtml(entryFileName)}`,
+                );
                 res.end();
                 return;
             }
@@ -70,19 +74,12 @@ export const createServer = ({ port }: { port?: number }) => {
         res.send(editRootClone.toString());
     });
 
-    // TODO: Just to get started. This should be generated, not getting the
-    // original content
+    // You can always get the raw version of any content
+    // Expect that this should achieve "/" mapping directly to `index.html`
     app.use(
         "/",
-        express.static(__dirname + "/../entries", { index: "index.html" }),
+        express.static(__dirname + "/../entries", { extensions: ["html"] }),
     );
-    app.use(
-        "/index.html",
-        express.static(__dirname + "/../entries", { index: "index.html" }),
-    );
-
-    // You can always get the raw version of any content
-    app.use("/entries", express.static(__dirname + "/../entries"));
 
     //
     // Final 404/5XX handlers
@@ -100,9 +97,15 @@ export const createServer = ({ port }: { port?: number }) => {
         res.send("500");
     });
 
-    app.use(function (_req, res) {
+    app.use(function (req, res) {
         res.status(404);
-        res.send("404");
+        res.write(
+            `Couldn't find a file named ${escapeHtml(
+                decodeURIComponent(req.path).slice(1), // Remove leading slash
+            )}`,
+        );
+        res.end();
+        return;
     });
 
     const listener = app.listen(port, () => {
