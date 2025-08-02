@@ -67,5 +67,25 @@
       the concept of templating languages, but instead using HTML's existing
       semantics (albeit in a novel place and time on the server).
     </p>
+
+    <h2>Some Design Notes</h2>
+    <p>
+      I made this section for disparate random thoughts I had while exploring.
+    </p>
+
+    <p>
+      At first I thought it would be cool if you could add "commands" onto the
+      end of the path, e.g. to use the edit command on
+      <code>/posts/my-first-post.html</code>, you'd append <code>/edit</code> to
+      make it <code>/posts/my-first-post.html/edit</code>. But I soon saw a
+      conflict if someone named a file the same as those commands. In that
+      example, what makes a file named
+      <code>/posts/my-first-post.html/edit</code> an invalid filepath, other
+      than the arbitrary rule I'd made up? So I moved those commands into query
+      parameters instead, which made the above example work like
+      <code>/posts/my-first-post.html?edit</code> instead. I was super glad I
+      had automated tests for all my expecations when I decided to make this
+      change.
+    </p>
   </body>
 </html>

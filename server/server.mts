@@ -30,10 +30,19 @@ export const createServer = ({ port }: { port?: number }) => {
     const app = express();
     const baseURL = `localhost:${port}`;
 
-    // TODO: Can include slashes in the filename, but end with edit? Does
-    // this make any sense?
-    app.get("/:entryFileName/edit", async (req, res) => {
-        const { entryFileName } = req.params;
+    app.use("/", async (req, res, next) => {
+        if (typeof req.query.edit === "undefined") {
+            return next();
+        }
+        const entryFileName =
+            req.path === "/"
+                ? "index"
+                : // Special case to allow someone to target index.html
+                  // TODO: Probably don't want this to be a special case, and should
+                  // automatically deal with the inclusion of a proper file extension
+                  req.path === "/index.html"
+                  ? "index"
+                  : decodeURIComponent(req.path).slice(1); // Remove leading slash
         let fileToEditContents: string;
         try {
             const fileToEdit = await readFile(

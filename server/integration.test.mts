@@ -181,7 +181,7 @@ test("Server integration", { concurrency: true }, async (context) => {
                     assert.strictEqual(process.exitCode, 0);
                 });
                 const response = await fetch(
-                    `http://localhost:${port}/This is a fake entry name/edit`,
+                    `http://localhost:${port}/This is a fake entry name?edit`,
                 );
                 const responseText = await response.text();
 
@@ -212,7 +212,7 @@ test("Server integration", { concurrency: true }, async (context) => {
                     assert.strictEqual(process.exitCode, 0);
                 });
                 const response = await fetch(
-                    `http://localhost:${port}/index/edit`,
+                    `http://localhost:${port}/index?edit`,
                 );
                 const responseText = await response.text();
 
@@ -220,6 +220,46 @@ test("Server integration", { concurrency: true }, async (context) => {
                 assert.match(responseText, /.*<h1>Edit[^<]*<\/h1>.*/);
 
                 const report = await validateHtml(responseText);
+                printHtmlValidationReport(report, (message: string) =>
+                    assert.fail(message),
+                );
+            },
+        );
+
+        context.test(
+            "Can get edit page for weird path $/templates/edit",
+            { concurrency: true },
+            async (t) => {
+                const { process, port } = forkCli();
+                assert.ok(process.connected);
+                await wait(delay);
+                t.after(async () => {
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                });
+                const response = await fetch(
+                    `http://localhost:${port}/$/templates/edit?edit`,
+                );
+                const responseText = await response.text();
+
+                assert.strictEqual(response.status, 200);
+                assert.match(responseText, /.*<h1>Edit[^<]*<\/h1>.*/);
+
+                // Should also include itself but escaped
+                assert.match(
+                    responseText,
+                    /.*&lt;h1&gt;Edit[^&]*&lt;\/h1&gt;.*/,
+                );
+
+                const report = await validateHtml(responseText, {
+                    // TODO: The <slot> element can't be within a
+                    // <textarea>, because no HTML can. Could choose to
+                    // solve this by escaping it, or maybe this shows
+                    // why the greater concept is flawed? Passing that
+                    // buck for now
+                    "element-permitted-content": "off",
+                });
                 printHtmlValidationReport(report, (message: string) =>
                     assert.fail(message),
                 );
