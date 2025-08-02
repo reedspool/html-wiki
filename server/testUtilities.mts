@@ -1,4 +1,4 @@
-import { HtmlValidate, type Report } from "html-validate";
+import { HtmlValidate, type RuleConfig, type Report } from "html-validate";
 // TODO: Maybe try using node-html-parser's valid method (already
 // installed for server) to get rid of one dependency
 const htmlvalidate = new HtmlValidate({
@@ -12,7 +12,13 @@ const htmlvalidate = new HtmlValidate({
     },
 });
 
-export const validateHtml = (text: string): Promise<Report> => {
+export const validateHtml = (
+    text: string,
+    rules?: RuleConfig,
+): Promise<Report> => {
+    if (rules) {
+        return htmlvalidate.validateString(text, { rules });
+    }
     return htmlvalidate.validateString(text);
 };
 

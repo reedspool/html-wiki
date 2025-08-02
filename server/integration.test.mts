@@ -17,36 +17,40 @@ const forkCli = (port = nextPort()) => {
     return { port, process };
 };
 
-test(
-    "Server integration tests in parallel",
-    { concurrency: true },
-    async (context) => {
-        context.test(
-            "Can run server and shut it down",
-            { concurrency: true },
-            async () => {
-                const { process } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                process.kill("SIGINT");
-                await wait(delay);
-                assert.strictEqual(process.exitCode, 0);
-            },
-        );
+test("Server integration", { concurrency: true }, async (context) => {
+    test(
+        "Parallel tests work as expected",
+        { concurrency: true },
+        async (context) => {
+            context.test(
+                "Can run server and shut it down",
+                { concurrency: true },
+                async () => {
+                    const { process } = forkCli();
+                    assert.ok(process.connected);
+                    await wait(delay);
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                },
+            );
 
-        context.test(
-            "Can run second server and shut it down",
-            { concurrency: true },
-            async () => {
-                const { process } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                process.kill("SIGINT");
-                await wait(delay);
-                assert.strictEqual(process.exitCode, 0);
-            },
-        );
+            context.test(
+                "Can run second server and shut it down",
+                { concurrency: true },
+                async () => {
+                    const { process } = forkCli();
+                    assert.ok(process.connected);
+                    await wait(delay);
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                },
+            );
+        },
+    );
 
+    test("Server basic operation", { concurrency: true }, async (context) => {
         context.test("Can get homepage", { concurrency: true }, async (t) => {
             const { process, port } = forkCli();
             assert.ok(process.connected);
@@ -77,10 +81,59 @@ test(
             assert.strictEqual(response.status, 200);
             assert.strictEqual(responseText, responseTextSlashIndexHtml);
 
-            process.kill("SIGINT");
-            await wait(delay);
-            assert.strictEqual(process.exitCode, 0);
+            // /index.html ges the same result as /entries/index.html
+            const responseSlashEntriesSlashIndexHtml = await fetch(
+                `http://localhost:${port}/entries/index.html`,
+            );
+            const responseTextSlashEntriesSlashIndexHtml =
+                await responseSlashEntriesSlashIndexHtml.text();
+
+            assert.strictEqual(response.status, 200);
+            assert.strictEqual(
+                responseText,
+                responseTextSlashEntriesSlashIndexHtml,
+            );
         });
+
+        context.test(
+            "Can get special entry entries/$/templates/edit.html",
+            { concurrency: true },
+            async (t) => {
+                const { process, port } = forkCli();
+                assert.ok(process.connected);
+                await wait(delay);
+                t.after(async () => {
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                });
+                const response = await fetch(
+                    `http://localhost:${port}/entries/$/templates/edit.html`,
+                );
+                const responseText = await response.text();
+
+                assert.strictEqual(response.status, 200);
+                assert.match(responseText, /.*<h1>Edit[^<]*<\/h1>.*/);
+
+                // The slot is still present, untransformed
+                assert.match(
+                    responseText,
+                    /.*<slot name="content">Something went wrong[^<]*<\/slot>.*/,
+                );
+
+                const report = await validateHtml(responseText, {
+                    // TODO: The <slot> element can't be within a
+                    // <textarea>, because no HTML can. Could choose to
+                    // solve this by escaping it, or maybe this shows
+                    // why the greater concept is flawed? Passing that
+                    // buck for now
+                    "element-permitted-content": "off",
+                });
+                printHtmlValidationReport(report, (message: string) =>
+                    assert.fail(message),
+                );
+            },
+        );
 
         context.test(
             "Edit page for no entry 404s",
@@ -139,5 +192,5 @@ test(
                 );
             },
         );
-    },
-);
+    });
+});
