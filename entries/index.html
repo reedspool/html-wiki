@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>HTML Wiki</title>
+    <meta name="description" content="Homepage for HTML Wiki" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+
+  <body>
+    <h1>HTML Wiki</h1>
+    <p>You're at the homepage of this wiki.</p>
+    <h2>Experimental</h2>
+    <p>
+      This project is an experiment to make a wiki or CMS (content management
+      system) where the wiki entries or content are stored in HTML files on
+      disk. But those HTML files are not the final desired presentation; those
+      original, raw content HTML files hold their content in their
+      <code>&lt;body&gt;</code> and metadata in their <code>&lt;head&gt;</code>.
+      To present the content, processes extract and transform that body content
+      into more complete HTML using the given metadata.
+    </p>
+    <h2>Why?</h2>
+    <p>
+      Contrast with most (so far as I understand) wikis, CMS's, and static site
+      generators which store the content of their entries in a database and
+      transmute them into HTML pages using templating languages. I've always
+      felt templating languages were awkward. So this concept is based on
+      subjective intuition more than any conceptual, theoretically strong basis.
+    </p>
+
+    <p>
+      But am I not going to end up with a templating language of my own, even if
+      I resist and try to make something up? The core thing which a templating
+      engine achieves is to replace content in a document with other content
+      from some other document (transclusion), right? And if I want to take
+      content from one HTML file and put it into another, isn't that just a
+      templating language?
+    </p>
+
+    <p>
+      There's also the other thousand things templating languages do which are
+      vital and not to be downplayed. I should probably do a proper survey of
+      features which I might end up needing to replicate, but here's a short
+      list off the top of my head of wheels I am signing up to reinvent:
+    </p>
+
+    <ul>
+      <li>HTML Escaping</li>
+      <li>
+        Content enumeration and mapping, e.g.
+        <code
+          >articles.map(({ href, title }) =&gt; `&lt;li&gt;&lt;a
+          href={href}&gt;{title}&lt;/a&gt;&lt;/li&gt;)</code
+        >
+      </li>
+      <li>Structured front-matter/metadata</li>
+    </ul>
+    <p>
+      I wonder if I can use HTML <code>&lt;template&gt;</code> and/or
+      <code>&lt;slot&gt;</code> elements to achieve an HTML-native templating
+      experience. Normally these elements are activated and replaced in-browser
+      either automatically or via JavaScript. Maybe this is like a "server-side
+      rendered" version of that? Maybe if I put <code>&lt;slot&gt;</code>'s into
+      my pages, then they become templates themselves. So I won't be avoiding
+      the concept of templating languages, but instead using HTML's existing
+      semantics (albeit in a novel place and time on the server).
+    </p>
+  </body>
+</html>

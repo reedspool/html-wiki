@@ -1,0 +1,31 @@
+{
+  "name": "html-wiki",
+  "type": "commonjs",
+  "version": "1.0.0",
+  "description": "A wiki with data stored as HTML",
+  "scripts": {
+    "build:client": "npm run build",
+    "start": "npm run start:server",
+    "start:server": "node server/cli.mts",
+    "test": "cd server && node --test",
+    "test:watch": "cd server && node --test --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@commander-js/extra-typings": "^14.0.0",
+    "@types/express": "^5.0.3",
+    "@types/express-ws": "^3.0.5",
+    "@types/node": "^24.0.7",
+    "commander": "^14.0.0",
+    "express": "^5.1.0",
+    "express-ws": "^5.0.2",
+    "node-html-parser": "^7.0.1"
+  },
+  "devDependencies": {
+    "html-validate": "^9.7.1",
+    "node-mocks-http": "^1.17.2",
+    "typescript": "^5.8.3"
+  }
+}
