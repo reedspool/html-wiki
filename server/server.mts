@@ -10,10 +10,13 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import { readFile } from "node:fs/promises";
 import { parse } from "node-html-parser";
+import { escapeHtml } from "./utilities.mts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const editFile = await readFile(__dirname + "/../templates/edit.html");
+const editFile = await readFile(
+    __dirname + "/../entries/$/templates/edit.html",
+);
 const editFileContents = editFile.toString();
 
 export const createServer = ({ port }: { port?: number }) => {
@@ -55,7 +58,7 @@ export const createServer = ({ port }: { port?: number }) => {
         for (const slotElement of slotElements) {
             switch (slotElement.attributes.name) {
                 case "content":
-                    slotElement.replaceWith(fileToEditContents);
+                    slotElement.replaceWith(escapeHtml(fileToEditContents));
                     break;
                 default:
                     console.error(

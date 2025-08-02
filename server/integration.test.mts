@@ -82,27 +82,62 @@ test(
             assert.strictEqual(process.exitCode, 0);
         });
 
-        context.test("Can get edit page", { concurrency: true }, async (t) => {
-            const { process, port } = forkCli();
-            assert.ok(process.connected);
-            await wait(delay);
-            t.after(async () => {
-                process.kill("SIGINT");
+        context.test(
+            "Edit page for no entry 404s",
+            { concurrency: true },
+            async (t) => {
+                const { process, port } = forkCli();
+                assert.ok(process.connected);
                 await wait(delay);
-                assert.strictEqual(process.exitCode, 0);
-            });
-            const response = await fetch(
-                `http://localhost:${port}/edit/This is my test page name`,
-            );
-            const responseText = await response.text();
+                t.after(async () => {
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                });
+                const response = await fetch(
+                    `http://localhost:${port}/edit/This is a fake entry name`,
+                );
+                const responseText = await response.text();
 
-            assert.strictEqual(response.status, 200);
-            assert.equal(responseText, "This is my test page name");
+                assert.strictEqual(response.status, 404);
+                assert.match(
+                    responseText,
+                    /fake entry name/,
+                    "response contains the name you gave",
+                );
 
-            const report = await validateHtml(responseText);
-            printHtmlValidationReport(report, (message: string) =>
-                assert.fail(message),
-            );
-        });
+                const report = await validateHtml(responseText);
+                printHtmlValidationReport(report, (message: string) =>
+                    assert.fail(message),
+                );
+            },
+        );
+
+        context.test(
+            "Can get edit page for index",
+            { concurrency: true },
+            async (t) => {
+                const { process, port } = forkCli();
+                assert.ok(process.connected);
+                await wait(delay);
+                t.after(async () => {
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                });
+                const response = await fetch(
+                    `http://localhost:${port}/edit/index`,
+                );
+                const responseText = await response.text();
+
+                assert.strictEqual(response.status, 200);
+                assert.match(responseText, /.*<h1>Edit[^<]*<\/h1>.*/);
+
+                const report = await validateHtml(responseText);
+                printHtmlValidationReport(report, (message: string) =>
+                    assert.fail(message),
+                );
+            },
+        );
     },
 );
