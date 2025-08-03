@@ -296,6 +296,66 @@ test("Server integration", { concurrency: true }, async (context) => {
                 printHtmlValidationReport(report, (message: string) =>
                     assert.fail(message),
                 );
+                // /<>.html ges the same result as /<>
+                const responseWithoutDotHtml = await fetch(
+                    `http://localhost:${port}/project/logbook`,
+                );
+                const responseTextWithoutDotHtml =
+                    await responseWithoutDotHtml.text();
+
+                assert.strictEqual(response.status, 200);
+                assert.strictEqual(responseText, responseTextWithoutDotHtml);
+            },
+        );
+
+        context.test(
+            "Can get markdown entry rendered as raw",
+            { concurrency: true },
+            async (t) => {
+                const { process, port } = forkCli();
+                assert.ok(process.connected);
+                await wait(delay);
+                t.after(async () => {
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                });
+                const response = await fetch(
+                    `http://localhost:${port}/project/logbook?raw`,
+                );
+                const responseText = await response.text();
+
+                assert.strictEqual(response.status, 200);
+
+                // The markdown has not been transformed!
+                assert.match(responseText, /# About/);
+                assert.match(responseText, /## Logbook/);
+                assert.match(responseText, /### Sun\s+Aug\s+3/);
+                assert.doesNotMatch(responseText, /<h1>About.*<\/h1>/);
+                assert.doesNotMatch(responseText, /<h2>Logbook.*<\/h2>/);
+                assert.doesNotMatch(responseText, /<h3>Sun\s+Aug\s+3.*<\/h3>/);
+                // One of the links has not been transformed
+                assert.match(responseText, /[Tiddlywiki][tiddlywiki]/);
+                assert.doesNotMatch(
+                    responseText,
+                    /<a href="http:\/\/tiddlywiki.com\/".*>TiddlyWiki<\/a>/,
+                );
+
+                const report = await validateHtml(responseText);
+
+                // Validation expected to fail because this markdown file is full of
+                // tags inside inline code, e.g. `<tag>`.
+                assert.equal(report.valid, false);
+
+                // /<>.html ges the same result as /<>
+                const responseWithoutDotHtml = await fetch(
+                    `http://localhost:${port}/project/logbook?raw`,
+                );
+                const responseTextWithoutDotHtml =
+                    await responseWithoutDotHtml.text();
+
+                assert.strictEqual(response.status, 200);
+                assert.strictEqual(responseText, responseTextWithoutDotHtml);
             },
         );
     });

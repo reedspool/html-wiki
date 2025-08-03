@@ -186,6 +186,11 @@ export const createServer = ({ port }: { port?: number }) => {
             throw error;
         }
 
+        if (typeof req.query.raw !== "undefined") {
+            res.send(fileToRenderContents);
+            return;
+        }
+
         // TODO: Instead of inspecting a file at read-time, try to inspect
         // this at less critical times and cache the result, e.g. when the
         // server starts, when notified the file changed on disk
