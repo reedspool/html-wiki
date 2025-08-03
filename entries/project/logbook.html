@@ -1,6 +1,6 @@
 <!doctype html>
-<html>
-  <head lang="en-US">
+<html lang="en-US">
+  <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>Logbook</title>
@@ -27,9 +27,13 @@ My second idea was that the Markdown would be within a `<code><pre>` combination
 
 So it seemed like I was either going to end up adding some extra CSS or some extra HTML to my "raw markdown in HTML" file. So be it. Maybe I could try both and see which I liked more?
 
+Future: I searched for a way to embed content in HTML which would escape any internal HTML without an external process. I couldn't think of one off the top of my head, but hopefully that was a blind spot which I could fill in, not a signal that the concept was misguided.
+
 I created a markdown file (in HTML) to test with (probably this one you're looking at!). I started to write it in a ["logbook" format][reeds-website-logbooks] I enjoy. I backdated some content in the logbook to explain the project's origins.
 
 I named the file with a file extension `.html`, because it was an HTML file. I realized that my text editor didn't love this. It attempted to format the page as HTML over and over and failed to do so, because I'd written so many HTML tags in Markdown code snippets. Sorry formatter :( Still, I overcame this pretty easily by telling my text editor that, despite the file extension, this was indeed a Markdown file. Then it didn't try to format anything at all. Whew.
+
+I tried the version with the `<code><pre>` first, and I found an interesting unintended side effect. When I tried to view the page "raw", The text was formatted okay, though there was no line wrap so long paragraphs created a horizontal scroll, which meant even with this method I'd be adding some CSS to make it pretty. Far weirder was that all the code blocks which I'd written which contained HTML tags, such as `<button>`, the browser did its best to try to make sense of as HTML. No process was escaping those as I had imagined. I don't know why I imagined that, I just didn't think that far ahead. This was a fun surprise! The page felt properly fun and weird with all the random HTML elements strewn all over and the formatting messed up. But it probably wasn't a very useful view.
 
 Next, I made my server recognize the `meta` tag and render the Markdown into HTML when displayed.
 

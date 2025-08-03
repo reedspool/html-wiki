@@ -10,7 +10,7 @@ import { fileURLToPath, URL } from "node:url";
 import { dirname } from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
 import { parse as parseHtml } from "node-html-parser";
-import { escapeHtml, urlFromReq } from "./utilities.mts";
+import { escapeHtml, renderMarkdown, urlFromReq } from "./utilities.mts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -144,10 +144,99 @@ export const createServer = ({ port }: { port?: number }) => {
 
     // You can always get the raw version of any content
     // Expect that this should achieve "/" mapping directly to `index.html`
-    app.use(
-        "/",
-        express.static(__dirname + "/../entries", { extensions: ["html"] }),
-    );
+    app.use("/", async (req, res, next) => {
+        if (req.method !== "GET") {
+            return next();
+        }
+        let entryFileName =
+            req.path === "/"
+                ? "index"
+                : // Special case to allow someone to target index.html
+                  // TODO: Probably don't want this to be a special case, and should
+                  // automatically deal with the inclusion of a proper file extension
+                  req.path === "/index.html"
+                  ? "index"
+                  : decodeURIComponent(req.path).slice(1); // Remove leading slash
+
+        if (!/.html$/.test(entryFileName)) {
+            // TODO: Instead of tacking on HTML to every file, maybe try
+            // actually loading the filename as given from disk and only if that
+            // doesn't exist try adding a file extension
+            entryFileName = entryFileName + ".html";
+        }
+        let fileToRenderContents: string;
+        try {
+            const fileToEdit = await readFile(
+                `${__dirname}/../entries/${entryFileName}`,
+            );
+            fileToRenderContents = fileToEdit.toString();
+        } catch (error) {
+            if (error.code === "ENOENT") {
+                res.status(404);
+                res.write(
+                    `Couldn't find a file named ${escapeHtml(entryFileName)}`,
+                );
+                res.end();
+                return;
+            }
+            console.error(
+                "unknown error caught while trying to read edit file:",
+                error,
+            );
+            throw error;
+        }
+
+        // TODO: Instead of inspecting a file at read-time, try to inspect
+        // this at less critical times and cache the result, e.g. when the
+        // server starts, when notified the file changed on disk
+        const fileRoot = parseHtml(fileToRenderContents);
+        const metaElements = fileRoot.querySelectorAll("meta");
+        for (const metaElement of metaElements) {
+            switch (metaElement.attributes.itemprop) {
+                case undefined:
+                    break;
+                case "content-type":
+                    switch (metaElement.attributes.content) {
+                        case "markdown":
+                            const body = fileRoot.querySelector("body");
+                            const markdownContent =
+                                body?.querySelector("code > pre");
+                            if (!body) {
+                                res.status(500);
+                                res.write(
+                                    `No <body> found in file ${escapeHtml(entryFileName)}`,
+                                );
+                                res.end();
+                                return;
+                            }
+                            if (!markdownContent) {
+                                res.status(500);
+                                res.write(
+                                    `No <code><pre> sequence found in file ${escapeHtml(entryFileName)}`,
+                                );
+                                res.end();
+                                return;
+                            }
+                            body.innerHTML = renderMarkdown(
+                                markdownContent.innerHTML,
+                            );
+                            break;
+                        default:
+                            console.error(
+                                `Failed to handle content-type '${metaElement.attributes.content}' `,
+                            );
+                            break;
+                    }
+                    break;
+                default:
+                    console.error(
+                        `Failed to handle meta itemprop '${metaElement.attributes.itemprop}' `,
+                    );
+                    break;
+            }
+        }
+        res.send(fileRoot.toString());
+    });
 
     //
     // Final 404/5XX handlers

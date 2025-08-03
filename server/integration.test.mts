@@ -262,5 +262,41 @@ test("Server integration", { concurrency: true }, async (context) => {
                 );
             },
         );
+
+        context.test(
+            "Can get markdown entry rendered as HTML",
+            { concurrency: true },
+            async (t) => {
+                const { process, port } = forkCli();
+                assert.ok(process.connected);
+                await wait(delay);
+                t.after(async () => {
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                });
+                const response = await fetch(
+                    `http://localhost:${port}/project/logbook.html`,
+                );
+                const responseText = await response.text();
+
+                assert.strictEqual(response.status, 200);
+
+                // The markdown has been transformed!
+                assert.match(responseText, /<h1>About.*<\/h1>/);
+                assert.match(responseText, /<h2>Logbook.*<\/h2>/);
+                assert.match(responseText, /<h3>Sun\s+Aug\s+3.*<\/h3>/);
+                // One of the links has been transformed properly
+                assert.match(
+                    responseText,
+                    /<a href="http:\/\/tiddlywiki.com\/".*>TiddlyWiki<\/a>/,
+                );
+
+                const report = await validateHtml(responseText);
+                printHtmlValidationReport(report, (message: string) =>
+                    assert.fail(message),
+                );
+            },
+        );
     });
 });
