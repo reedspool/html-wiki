@@ -73,6 +73,13 @@ export const createServer = ({ port }: { port?: number }) => {
                 case "content":
                     slotElement.replaceWith(escapeHtml(fileToEditContents));
                     break;
+                case "remove":
+                    slotElement.remove();
+                    break;
+                case "entry-link":
+                    slotElement.replaceWith(
+                        `<a href="/${entryFileName}">${entryFileName}</a>`,
+                    );
                 default:
                     console.error(
                         `Failed to handle slot named '${slotElement.attributes.name}' `,

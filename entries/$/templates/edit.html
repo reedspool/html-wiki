@@ -45,8 +45,13 @@
   </head>
 
   <body>
+    <h1>Editing <slot name="entry-link">nothing :-/</slot></h1>
+    <slot name="remove">
+      <p><a href="?edit">Edit this page</a></p>
+      <p>You are looking at the <em>template</em> of the global edit page. This template is what you see when you edit a page (hint: add <code>?edit</code> to the end of any page's URL to edit it, this is all the "Edit this page" link does). Note that if you remove or break the <code>&lt;slot name="content"&gt;</code> element within the <code>&lt;textarea&gt;</code> below, you'll break the editing feature of the site. Try not to do that.
+      </p>
+    </slot>
     <form action="" method="POST">
-      <h1>Edit</h1>
       <textarea name="content">
 <slot name="content">Something went wrong :-/ the content you are attempting to edit should have apeared here</slot></textarea
       >
