@@ -64,7 +64,7 @@ test("Server integration", { concurrency: true }, async (context) => {
             const responseText = await response.text();
 
             assert.strictEqual(response.status, 200);
-            assert.match(responseText, /.*<h1>HTML Wiki<\/h1>.*/);
+            assert.match(responseText, /<h1>HTML Wiki<\/h1>/);
 
             const report = await validateHtml(responseText);
             printHtmlValidationReport(report, (message: string) =>
@@ -110,12 +110,12 @@ test("Server integration", { concurrency: true }, async (context) => {
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 200);
-                assert.match(responseText, /.*<h1>Edit[^<]*<\/h1>.*/);
+                assert.match(responseText, /<h1>Edit.*<\/h1>/);
 
                 // The slot is still present, untransformed
                 assert.match(
                     responseText,
-                    /.*<slot name="content">Something went wrong[^<]*<\/slot>.*/,
+                    /<slot name="content">Something went wrong.*<\/slot>/,
                 );
 
                 const report = await validateHtml(responseText, {
@@ -217,7 +217,7 @@ test("Server integration", { concurrency: true }, async (context) => {
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 200);
-                assert.match(responseText, /.*<h1>Edit[^<]*<\/h1>.*/);
+                assert.match(responseText, /<h1>Edit.*<\/h1>/);
 
                 const report = await validateHtml(responseText);
                 printHtmlValidationReport(report, (message: string) =>
@@ -244,13 +244,10 @@ test("Server integration", { concurrency: true }, async (context) => {
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 200);
-                assert.match(responseText, /.*<h1>Edit[^<]*<\/h1>.*/);
+                assert.match(responseText, /<h1>Edit.*<\/h1>/);
 
                 // Should also include itself but escaped
-                assert.match(
-                    responseText,
-                    /.*&lt;h1&gt;Edit[^&]*&lt;\/h1&gt;.*/,
-                );
+                assert.match(responseText, /&lt;h1&gt;Edit.*&lt;\/h1&gt;/);
 
                 const report = await validateHtml(responseText, {
                     // TODO: The <slot> element can't be within a
