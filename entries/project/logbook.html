@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+  <head lang="en-US">
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Logbook</title>
+    <meta name="description" content="Logbook about the HTML Wiki Project" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta itemprop="content-type" content="markdown" />
+  </head>
+
+  <body>
+    <code>
+      <pre># About this project
+
+## Logbook
+
+### Sun Aug  3 10:51:08 AM PDT 2025
+
+Up to this point, I only had "raw" HTML pages, but I wanted to support Markdown. I thought I could identify what content the HTML page stored via a [`<meta>` tag][mdn-meta-tag] in the `<head>`. That led me to the [`itemprop` attribute][mdn-itemprop-attribute] which seemed perfect for the job. So I'd differentiate Markdown content from "just a normal HTML page" with a tag like `<meta itemprop="content-type" content="markdown">`.
+
+What did it mean for the Markdown content to exist within HTML? I thought of two clear possibilities. 
+
+My first idea was that the only contents of the `<body>` tag would be plain Markdown text. Unfortunately, I knew that if someone ever opened this HTML page in a browser with no additional CSS, the page would look bad as all the whitespace would be messed up. I could solve that with a small touch of CSS, though.
+
+My second idea was that the Markdown would be within a `<code><pre>` combination which was the standard for presenting plaintext in a webpage because browsers formatted such text how you would expect to see it in your text editor, with preserved whitespace and a monospace font, without any custom CSS. The downside of this approach was that there would still be "HTML content" in the file which in my head was ideally only "markdown content". 
+
+So it seemed like I was either going to end up adding some extra CSS or some extra HTML to my "raw markdown in HTML" file. So be it. Maybe I could try both and see which I liked more?
+
+I created a markdown file (in HTML) to test with (probably this one you're looking at!). I started to write it in a ["logbook" format][reeds-website-logbooks] I enjoy. I backdated some content in the logbook to explain the project's origins.
+
+I named the file with a file extension `.html`, because it was an HTML file. I realized that my text editor didn't love this. It attempted to format the page as HTML over and over and failed to do so, because I'd written so many HTML tags in Markdown code snippets. Sorry formatter :( Still, I overcame this pretty easily by telling my text editor that, despite the file extension, this was indeed a Markdown file. Then it didn't try to format anything at all. Whew.
+
+Next, I made my server recognize the `meta` tag and render the Markdown into HTML when displayed.
+
+I added a query parameter option via `?raw` to skip this rendering step and see the original HTML page.
+
+### Sat Aug  2 10:28:03 AM PDT 2025
+
+At [HTML Day 2025][html-day-2025] in [Portland][html-day-2025-pdx], I got the "edit" page to actually work and submit edits! It was really fun to edit the pages.
+
+I also made the edit page a normal entry, which is a trick I learned from [TiddlyWiki][tiddlywiki]. So the edit page itself existed at `/$/templates/edit`. And you could edit that page as easily as any other by adding `?edit` to edit itself! Trippy. 
+
+Someone at HTML Day pointed out that you could easily break the whole site by removing the `<slot>` and `button` from the edit page, thus disallowing any further edits to any page. Fun!
+
+### Fri Aug  1  7:00:14 PM PDT 2025
+
+This idea came to me as I used and enjoyed [TiddlyWiki][tiddlywiki] (TW) more and more. I always used TW the [Node Web Server mode of TW][tiddlywiki-node] mode because it simplified the persistence model for me; I wanted the files on my harddrive, to edit them in my text editor sometimes, to sync them across my devices with [Syncthing][syncthing], and I also wanted to back them up in GitHub (note using Syncthing and `git` together isn't recommended).
+
+As I used this combination, I yearned for a more "web-first" version. TW is web-first in the sense that its origins are as a single page application using only HTML, CSS, and JS's powers combined to create a wiki. But that origin story doesn't include external persistence. Instead, amazingly, TW's original model is to use no server whatsoever and still achieve persistence! It did so (and still does so!) via the browser's "download" functionality. Other [varied external persistence](tiddlywiki-saving) models have since been added on to widen TW's use cases.
+
+The "web-first" that I'm more interested in is one which is more inclusive of how the web works in total, not just how a webpage works once its inside the browser. I want to see what a wiki would look like with a strong foundation in hypermedia (see [Hypermedia as the Engine of Application State (HATEOAS)][hateoas]). 
+
+I searched around the internet and I couldn't find an existing strong example of what I was thinking of, which surprised me. Every wiki, CMS, static site generator, dynamic blog, etc, which I could find or think of used one of two models, a database or "raw" content files. In the former, content existed solely in a database until requested, at which point the server extracted it and transformed it into a presentable HTML page. The latter model was much the same, except that files existed on disk, identified by file extension (`.md`) and [front matter][jekyll-front-matter]. 
+
+I decided to just try building my idea. My first thought was, "what if every page in this wiki were an entire HTML file?" Everything else fell out from there. At the base level, I'd need a web server to transmit those files to the browser and receive updates. 
+
+I started by copying and pasting a previous NodeJS & Express web-server from a previous project. At first, it was just a simple web server which would present local files.
+
+Then I made an "edit" page which did the first interesting thing. When I presented the edit page, I would replace the `<slot name="content">` element with the content of the file of the page I wanted to edit. I put that `slot` inside a `<textarea>` and voila, I could edit the text! 
+
+At first I thought it would be cool if you could add "commands" onto the end of the path, e.g. to use the edit command on `/posts/my-first-post.html`, you'd append `/edit` to make it `/posts/my-first-post.html/edit`. But I soon saw a conflict if someone named a file the same as those commands, e.g. `about/commands/edit`. Should that take you to a page called "About the Edit Command,", or the edit page for "About Commands"? What's wrong with either convention other than the arbitrary rule I'd made up? So I moved those commands into query parameters instead, which made the first example work like `/posts/my-first-post.html?edit` instead. I was super glad I had automated tests for all my expecations when I decided to make this change.
+    
+Although I had an "edit page", it didn't yet have a button to actually submit your edits, so it didn't achieve its name yet.
+
+I was excited, and I wanted to work all night on it, but I made myself go to bed at a reasonable hour to have the energy for [HTML Day][html-day-2025] the next day.
+
+
+[tiddlywiki]: http://tiddlywiki.com/ "TiddlyWiki homepage"
+[tiddlywiki-node]: https://tiddlywiki.com/static/WebServer.html "TiddlyWiki's Node WebServer"
+[syncthing]: https://github.com/syncthing/syncthing "Syncthing"
+[tiddlywiki-saving]: https://tiddlywiki.com/#Saving "TiddlyWiki saving"
+[hateoas]: https://htmx.org/essays/hateoas/ "HATEOAS by Carson Gross, creator of htmx"
+[html-day-2025]: https://html.energy/html-day/2025/index.html "HTML Day 2025"
+[html-day-2025-pdx]: https://the-sudo.net/pages/events/html-day "HTML Day 2025 in Portland, OR"
+[jekyll-front-matter]: https://jekyllrb.com/docs/front-matter/ "Jekyll's Front Matter"
+[mdn-meta-tag]: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta "MDN, <meta> tag"
+[mdn-itemprop-attribute]: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/itemprop "MDN, itemprop attribute"
+[reeds-website-logbooks]: https://reeds.website/topic-project-logs "Reed's Website, Logbooks"
+      </pre>
+    </code>
+  </body>
+</html>
