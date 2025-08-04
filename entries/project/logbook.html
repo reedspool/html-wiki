@@ -39,6 +39,12 @@ Next, I made my server recognize the `meta` tag and render the Markdown into HTM
 
 I added a query parameter option via `?raw` to skip this rendering step and see the original HTML page.
 
+Then I made the `?edit` page also only put the Markdown textual content within the editable area. Of course, I also had to make the save functionality also only replace the markdown content.
+
+And finally the other side where `?edit&raw` brings you back to the normal, full HTML page edit experience even if you have a different content-type.
+
+Future: I finally added tests for save functionality. There were a lot of use-cases to cover, with the various `raw` and `content-type` combinations.
+
 ### Sat Aug  2 10:28:03 AM PDT 2025
 
 At [HTML Day 2025][html-day-2025] in [Portland][html-day-2025-pdx], I got the "edit" page to actually work and submit edits! It was really fun to edit the pages.

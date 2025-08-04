@@ -29,7 +29,7 @@ export const createServer = ({ port }: { port?: number }) => {
     app.use(express.urlencoded({ extended: true }));
 
     app.use("/", async (req, res, next) => {
-        if (req.method !== "GET" || typeof req.query.edit === "undefined") {
+        if (req.method !== "GET" || req.query.edit === undefined) {
             return next();
         }
         const entryFileName =
@@ -62,6 +62,58 @@ export const createServer = ({ port }: { port?: number }) => {
             );
             throw error;
         }
+
+        // If it's not raw, then filter/reshape the contents based on the meta
+        if (req.query.raw === undefined) {
+            // TODO: Instead of inspecting a file at read-time, try to inspect
+            // this at less critical times and cache the result, e.g. when the
+            // server starts, when notified the file changed on disk
+            const fileRoot = parseHtml(fileToEditContents);
+            const metaElements = fileRoot.querySelectorAll("meta");
+            for (const metaElement of metaElements) {
+                switch (metaElement.attributes.itemprop) {
+                    case undefined:
+                        break;
+                    case "content-type":
+                        switch (metaElement.attributes.content) {
+                            case "markdown":
+                                const body = fileRoot.querySelector("body");
+                                const markdownContent =
+                                    body?.querySelector("code > pre");
+                                if (!body) {
+                                    res.status(500);
+                                    res.write(
+                                        `No <body> found in file ${escapeHtml(entryFileName)}`,
+                                    );
+                                    res.end();
+                                    return;
+                                }
+                                if (!markdownContent) {
+                                    res.status(500);
+                                    res.write(
+                                        `No <code><pre> sequence found in file ${escapeHtml(entryFileName)}`,
+                                    );
+                                    res.end();
+                                    return;
+                                }
+                                fileToEditContents = markdownContent.innerHTML;
+                                break;
+                            default:
+                                console.error(
+                                    `Failed to handle content-type '${metaElement.attributes.content}' `,
+                                );
+                                break;
+                        }
+                        break;
+                    default:
+                        console.error(
+                            `Failed to handle meta itemprop '${metaElement.attributes.itemprop}' `,
+                        );
+                        break;
+                }
+            }
+        }
+
         const editFile = await readFile(
             __dirname + "/../entries/$/templates/edit.html",
         );
@@ -73,10 +125,39 @@ export const createServer = ({ port }: { port?: number }) => {
                 case "content":
                     slotElement.replaceWith(escapeHtml(fileToEditContents));
                     break;
+                case "keep":
                 case "remove":
-                    // Note: .remove() and event .replaceWith("") produce an
-                    // empty line with extra whitespace
-                    slotElement.innerHTML = "";
+                    {
+                        // The rules are exactly inverted between keep and remove
+                        let shouldRemove =
+                            slotElement.attributes.name === "remove";
+                        switch (slotElement.attributes.if) {
+                            case "raw":
+                                if (req.query.raw === undefined) {
+                                    shouldRemove = !shouldRemove;
+                                }
+                                break;
+                            case undefined:
+                                break;
+                            default:
+                                break;
+                        }
+                        if (shouldRemove) {
+                            // Note: .remove() and event .replaceWith("") produce an
+                            // empty line with extra whitespace
+                            slotElement.innerHTML = "";
+                            // slotElement.parentNode.removeChild(slotElement);
+                        } else {
+                            // TODO: Ideally we replace the slot with its contents, but I can't think of a good way to do that
+                            // that doesn't have the same issue of introducing extra whitespace
+                            // Note that some extra whitespace might be intentional! But my HTML validator currently doesn't like it
+                            // and I want to keep it that way
+                            slotElement.childNodes.forEach((node) => {
+                                slotElement.after(node);
+                            });
+                            slotElement.innerHTML = "";
+                        }
+                    }
                     break;
                 case "entry-link":
                     slotElement.replaceWith(
@@ -123,20 +204,105 @@ export const createServer = ({ port }: { port?: number }) => {
             return;
         }
 
+        let fileToEditContents: string;
+        try {
+            const fileToEdit = await readFile(
+                `${__dirname}/../entries/${entryFileName}.html`,
+            );
+            fileToEditContents = fileToEdit.toString();
+        } catch (error) {
+            if (error.code === "ENOENT") {
+                res.status(404);
+                res.write(
+                    `Couldn't find a file named ${escapeHtml(entryFileName)}`,
+                );
+                res.end();
+                return;
+            }
+            console.error(
+                "unknown error caught while trying to read edit file:",
+                error,
+            );
+            throw error;
+        }
+
         console.log(`Logging contents of ${entryFileName} before write:`);
-        console.log(
-            (
-                await readFile(
-                    __dirname + "/../entries" + entryFileName + ".html",
-                )
-            ).toString(),
-        );
+        console.log(fileToEditContents);
+
+        let contentToWrite = req.body.content;
+
+        // If it's not raw, then filter/reshape the contents based on the meta
+        if (req.query.raw === undefined) {
+            // TODO: Instead of inspecting a file at read-time, try to inspect
+            // this at less critical times and cache the result, e.g. when the
+            // server starts, when notified the file changed on disk
+            const fileRoot = parseHtml(fileToEditContents);
+            const metaElements = fileRoot.querySelectorAll("meta");
+            for (const metaElement of metaElements) {
+                switch (metaElement.attributes.itemprop) {
+                    case undefined:
+                        break;
+                    case "content-type":
+                        switch (metaElement.attributes.content) {
+                            case "markdown":
+                                const body = fileRoot.querySelector("body");
+                                const markdownContent =
+                                    body?.querySelector("code > pre");
+                                if (!body) {
+                                    res.status(500);
+                                    res.write(
+                                        `No <body> found in file ${escapeHtml(entryFileName)}`,
+                                    );
+                                    res.end();
+                                    return;
+                                }
+                                if (!markdownContent) {
+                                    res.status(500);
+                                    res.write(
+                                        `No <code><pre> sequence found in file ${escapeHtml(entryFileName)}`,
+                                    );
+                                    res.end();
+                                    return;
+                                }
+
+                                // Since the HTML content isn't supposed to be
+                                // valid HTML, we can't just put it straight
+                                // into the proper HTML structure So instead put
+                                // a marker in there and then swap the marker
+                                // for the content we want.
+                                // TODO: Could we do this in a more valid way by
+                                // making a TextNode, putting the content in there,
+                                // and replacing the <pre> content with the text
+                                // node?
+                                const marker = "!!!MARKER!!!";
+                                markdownContent.innerHTML = marker;
+                                contentToWrite = fileRoot
+                                    .toString()
+                                    .replace(marker, req.body.content);
+                                break;
+                            default:
+                                console.error(
+                                    `Failed to handle content-type '${metaElement.attributes.content}' `,
+                                );
+                                break;
+                        }
+                        break;
+                    default:
+                        console.error(
+                            `Failed to handle meta itemprop '${metaElement.attributes.itemprop}' `,
+                        );
+                        break;
+                }
+            }
+        }
 
         writeFile(
             __dirname + "/../entries" + entryFileName + ".html",
-            req.body.content
+            contentToWrite
                 // Browser sends CRLF, replace with unix-style LF,
-                .replaceAll(/\r\n/g, "\n"),
+                .replaceAll(/\r\n/g, "\n")
+                // Remove any extra trailing spaces (but not double newlines!)
+                .replaceAll(/[ \t\r]+\n/g, "\n"),
         );
 
         res.redirect(entryFileName);

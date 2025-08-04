@@ -58,12 +58,17 @@
         the site. Try not to do that.
       </p>
     </slot>
-    <form action="?" method="POST">
+    <form method="POST">
       <textarea name="content">
 <slot name="content">Something went wrong :-/ the content you are attempting to edit should have apeared here</slot></textarea
       >
 
-      <button type="submit">Save</button>
+      <slot name="keep" if="raw">
+        <button type="submit" formaction="?raw">Save</button>
+      </slot>
+      <slot name="remove" if="raw">
+        <button type="submit" formaction="?">Save</button>
+      </slot>
     </form>
   </body>
 </html>

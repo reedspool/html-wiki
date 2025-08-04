@@ -249,6 +249,12 @@ test("Server integration", { concurrency: true }, async (context) => {
                 // Should also include itself but escaped
                 assert.match(responseText, /&lt;h1&gt;Edit.*&lt;\/h1&gt;/);
 
+                // Save button should have a formaction without any special mode
+                assert.match(
+                    responseText,
+                    /<button\s+type="submit"\s+formaction="\?"/,
+                );
+
                 const report = await validateHtml(responseText, {
                     // TODO: The <slot> element can't be within a
                     // <textarea>, because no HTML can. Could choose to
@@ -356,6 +362,122 @@ test("Server integration", { concurrency: true }, async (context) => {
 
                 assert.strictEqual(response.status, 200);
                 assert.strictEqual(responseText, responseTextWithoutDotHtml);
+            },
+        );
+
+        context.test(
+            "Can get edit page for markdown file",
+            { concurrency: true },
+            async (t) => {
+                const { process, port } = forkCli();
+                assert.ok(process.connected);
+                await wait(delay);
+                t.after(async () => {
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                });
+                const response = await fetch(
+                    `http://localhost:${port}/project/logbook?edit`,
+                );
+                const responseText = await response.text();
+
+                assert.strictEqual(response.status, 200);
+                assert.match(responseText, /<h1>Edit(.|\n)*<\/h1>/);
+                // Markdown appears within the text area
+                assert.match(
+                    responseText,
+                    /<textarea(.|\n)*# About(.|\n)*<\/textarea>/m,
+                );
+                assert.match(
+                    responseText,
+                    /<textarea(.|\n)*## Logbook(.|\n)*<\/textarea>/m,
+                );
+                assert.match(
+                    responseText,
+                    /<textarea(.|\n)*### Sun\s+Aug\s+3(.|\n)*<\/textarea>/m,
+                );
+                // HTML doesn't appear within the text area
+                assert.doesNotMatch(
+                    responseText,
+                    /<textarea(.|\n)*<!doctype(.|\n)*<\/textarea>/m,
+                );
+                assert.doesNotMatch(
+                    responseText,
+                    /<textarea(.|\n)*<html>(.|\n)*<\/textarea>/m,
+                );
+
+                // HTML within the markdown content should come escaped
+                assert.match(responseText, /&lt;code&gt;&lt;pre&gt;/);
+
+                // Save button should have a formaction without any special mode
+                assert.match(
+                    responseText,
+                    /<button\s+type="submit"\s+formaction="\?"/,
+                );
+
+                const report = await validateHtml(responseText);
+                printHtmlValidationReport(report, (message: string) =>
+                    assert.fail(message),
+                );
+            },
+        );
+
+        context.test(
+            "Can get edit page in raw mode for markdown file",
+            { concurrency: true },
+            async (t) => {
+                const { process, port } = forkCli();
+                assert.ok(process.connected);
+                await wait(delay);
+                t.after(async () => {
+                    process.kill("SIGINT");
+                    await wait(delay);
+                    assert.strictEqual(process.exitCode, 0);
+                });
+                const response = await fetch(
+                    `http://localhost:${port}/project/logbook?edit&raw`,
+                );
+                const responseText = await response.text();
+
+                assert.strictEqual(response.status, 200);
+                assert.match(responseText, /<h1>Edit(.|\n)*<\/h1>/);
+                // Markdown still appears within the text area
+                assert.match(
+                    responseText,
+                    /<textarea(.|\n)*# About(.|\n)*<\/textarea>/m,
+                );
+                assert.match(
+                    responseText,
+                    /<textarea(.|\n)*## Logbook(.|\n)*<\/textarea>/m,
+                );
+                assert.match(
+                    responseText,
+                    /<textarea(.|\n)*### Sun\s+Aug\s+3(.|\n)*<\/textarea>/m,
+                );
+                // HTML does appear within the text area, but escaped
+                assert.match(
+                    responseText,
+                    /<textarea(.|\n)*&lt;!doctype(.|\n)*<\/textarea>/m,
+                );
+                assert.match(
+                    responseText,
+                    /<textarea(.|\n)*&lt;html lang=&quot;(.|\n)*<\/textarea>/m,
+                );
+
+                // Save button should have a formaction to raw mode
+                assert.match(
+                    responseText,
+                    /<button\s+type="submit"\s+formaction="\?raw"/,
+                );
+
+                // HTML within the markdown content should still come escaped
+                assert.match(responseText, /&lt;code&gt;&lt;pre&gt;/);
+
+                const report = await validateHtml(responseText);
+                printHtmlValidationReport(report, (message: string) =>
+                    assert.fail(message),
+                );
             },
         );
     });
