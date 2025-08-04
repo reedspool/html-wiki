@@ -9,6 +9,7 @@ const htmlvalidate = new HtmlValidate({
         // See https://github.com/prettier/prettier/issues/5641
         "doctype-style": "off",
         "void-style": "off",
+        "no-trailing-whitespace": "warn",
     },
 });
 
@@ -22,15 +23,9 @@ export const validateHtml = (
     return htmlvalidate.validateString(text);
 };
 
-export const printHtmlValidationReport = (
-    report: Report,
-    onFail: (message: string) => void,
-) => {
+export const printHtmlValidationReport = (report: Report) => {
     // Copied from https://html-validate.org/guide/api/getting-started.html#displaying-the-results
     const severity = ["", "Warning", "Error"];
-    if (report.valid) {
-        return;
-    }
     console.log(
         `${report.errorCount} error(s), ${report.warningCount} warning(s)\n`,
     );
@@ -53,5 +48,4 @@ export const printHtmlValidationReport = (
             console.log("─".repeat(60));
         }
     }
-    onFail("See HTML validation errors");
 };

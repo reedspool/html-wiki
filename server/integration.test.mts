@@ -60,16 +60,17 @@ test("Server integration", { concurrency: true }, async (context) => {
                 await wait(delay);
                 assert.strictEqual(process.exitCode, 0);
             });
-            const response = await fetch(`http://localhost:${port}`);
+            const url = `http://localhost:${port}`;
+            const response = await fetch(url);
             const responseText = await response.text();
 
             assert.strictEqual(response.status, 200);
             assert.match(responseText, /<h1>HTML Wiki<\/h1>/);
 
             const report = await validateHtml(responseText);
-            printHtmlValidationReport(report, (message: string) =>
-                assert.fail(message),
-            );
+            console.log(`Validation report for URL ${url}`);
+            printHtmlValidationReport(report);
+            assert.equal(report.valid, true);
 
             // /index.html ges the same result as /
             const responseSlashIndexDotHtml = await fetch(
@@ -83,7 +84,7 @@ test("Server integration", { concurrency: true }, async (context) => {
 
             // /index.html ges the same result as /
             const responseSlashIndexNoExtension = await fetch(
-                `http://localhost:${port}/index`,
+                url.replace(/\.html$/, ""),
             );
             const responseTextSlashIndexNoExtension =
                 await responseSlashIndexNoExtension.text();
@@ -104,9 +105,8 @@ test("Server integration", { concurrency: true }, async (context) => {
                     await wait(delay);
                     assert.strictEqual(process.exitCode, 0);
                 });
-                const response = await fetch(
-                    `http://localhost:${port}/$/templates/edit.html`,
-                );
+                const url = `http://localhost:${port}/$/templates/edit.html`;
+                const response = await fetch(url);
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 200);
@@ -126,12 +126,16 @@ test("Server integration", { concurrency: true }, async (context) => {
                     // buck for now
                     "element-permitted-content": "off",
                 });
-                printHtmlValidationReport(report, (message: string) =>
-                    assert.fail(message),
+                console.log(`Validation report for URL ${url}`);
+                printHtmlValidationReport(report);
+                assert.equal(
+                    report.valid,
+                    true,
+                    `See HTML validation errors above for URL ${url}`,
                 );
                 // /index.html ges the same result as /
                 const responseWithoutDotHtml = await fetch(
-                    `http://localhost:${port}/$/templates/edit`,
+                    url.replace(/\.html$/, ""),
                 );
                 const responseTextWithoutDotHtml =
                     await responseWithoutDotHtml.text();
@@ -153,17 +157,20 @@ test("Server integration", { concurrency: true }, async (context) => {
                     await wait(delay);
                     assert.strictEqual(process.exitCode, 0);
                 });
-                const response = await fetch(
-                    `http://localhost:${port}/This is a fake entry name`,
-                );
+                const url = `http://localhost:${port}/This is a fake entry name`;
+                const response = await fetch(url);
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 404);
                 assert.match(responseText, /fake entry name/);
 
                 const report = await validateHtml(responseText);
-                printHtmlValidationReport(report, (message: string) =>
-                    assert.fail(message),
+                printHtmlValidationReport(report);
+                console.log(`Validation report for URL ${url}`);
+                assert.equal(
+                    report.valid,
+                    true,
+                    `See HTML validation errors above for URL ${url}`,
                 );
             },
         );
@@ -180,9 +187,8 @@ test("Server integration", { concurrency: true }, async (context) => {
                     await wait(delay);
                     assert.strictEqual(process.exitCode, 0);
                 });
-                const response = await fetch(
-                    `http://localhost:${port}/This is a fake entry name?edit`,
-                );
+                const url = `http://localhost:${port}/This is a fake entry name?edit`;
+                const response = await fetch(url);
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 404);
@@ -193,8 +199,12 @@ test("Server integration", { concurrency: true }, async (context) => {
                 );
 
                 const report = await validateHtml(responseText);
-                printHtmlValidationReport(report, (message: string) =>
-                    assert.fail(message),
+                printHtmlValidationReport(report);
+                console.log(`Validation report for URL ${url}`);
+                assert.equal(
+                    report.valid,
+                    true,
+                    `See HTML validation errors above for URL ${url}`,
                 );
             },
         );
@@ -211,17 +221,20 @@ test("Server integration", { concurrency: true }, async (context) => {
                     await wait(delay);
                     assert.strictEqual(process.exitCode, 0);
                 });
-                const response = await fetch(
-                    `http://localhost:${port}/index?edit`,
-                );
+                const url = `http://localhost:${port}/index?edit`;
+                const response = await fetch(url);
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 200);
                 assert.match(responseText, /<h1>Edit.*<\/h1>/);
 
                 const report = await validateHtml(responseText);
-                printHtmlValidationReport(report, (message: string) =>
-                    assert.fail(message),
+                console.log(`Validation report for URL ${url}`);
+                printHtmlValidationReport(report);
+                assert.equal(
+                    report.valid,
+                    true,
+                    `See HTML validation errors above for URL ${url}`,
                 );
             },
         );
@@ -238,9 +251,8 @@ test("Server integration", { concurrency: true }, async (context) => {
                     await wait(delay);
                     assert.strictEqual(process.exitCode, 0);
                 });
-                const response = await fetch(
-                    `http://localhost:${port}/$/templates/edit?edit`,
-                );
+                const url = `http://localhost:${port}/$/templates/edit?edit`;
+                const response = await fetch(url);
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 200);
@@ -263,8 +275,12 @@ test("Server integration", { concurrency: true }, async (context) => {
                     // buck for now
                     "element-permitted-content": "off",
                 });
-                printHtmlValidationReport(report, (message: string) =>
-                    assert.fail(message),
+                console.log(`Validation report for URL ${url}`);
+                printHtmlValidationReport(report);
+                assert.equal(
+                    report.valid,
+                    true,
+                    `See HTML validation errors above for URL ${url}`,
                 );
             },
         );
@@ -281,9 +297,8 @@ test("Server integration", { concurrency: true }, async (context) => {
                     await wait(delay);
                     assert.strictEqual(process.exitCode, 0);
                 });
-                const response = await fetch(
-                    `http://localhost:${port}/project/logbook.html`,
-                );
+                const url = `http://localhost:${port}/project/logbook.html`;
+                const response = await fetch(url);
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 200);
@@ -299,8 +314,12 @@ test("Server integration", { concurrency: true }, async (context) => {
                 );
 
                 const report = await validateHtml(responseText);
-                printHtmlValidationReport(report, (message: string) =>
-                    assert.fail(message),
+                console.log(`Validation report for URL ${url}`);
+                printHtmlValidationReport(report);
+                assert.equal(
+                    report.valid,
+                    true,
+                    `See HTML validation errors above for URL ${url}`,
                 );
                 // /<>.html ges the same result as /<>
                 const responseWithoutDotHtml = await fetch(
@@ -326,9 +345,8 @@ test("Server integration", { concurrency: true }, async (context) => {
                     await wait(delay);
                     assert.strictEqual(process.exitCode, 0);
                 });
-                const response = await fetch(
-                    `http://localhost:${port}/project/logbook?raw`,
-                );
+                const url = `http://localhost:${port}/project/logbook.html?raw`;
+                const response = await fetch(url);
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 200);
@@ -355,7 +373,7 @@ test("Server integration", { concurrency: true }, async (context) => {
 
                 // /<>.html ges the same result as /<>
                 const responseWithoutDotHtml = await fetch(
-                    `http://localhost:${port}/project/logbook?raw`,
+                    url.replace(/\.html/, ""),
                 );
                 const responseTextWithoutDotHtml =
                     await responseWithoutDotHtml.text();
@@ -377,9 +395,8 @@ test("Server integration", { concurrency: true }, async (context) => {
                     await wait(delay);
                     assert.strictEqual(process.exitCode, 0);
                 });
-                const response = await fetch(
-                    `http://localhost:${port}/project/logbook?edit`,
-                );
+                const url = `http://localhost:${port}/project/logbook?edit`;
+                const response = await fetch(url);
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 200);
@@ -417,8 +434,12 @@ test("Server integration", { concurrency: true }, async (context) => {
                 );
 
                 const report = await validateHtml(responseText);
-                printHtmlValidationReport(report, (message: string) =>
-                    assert.fail(message),
+                console.log(`Validation report for URL ${url}`);
+                printHtmlValidationReport(report);
+                assert.equal(
+                    report.valid,
+                    true,
+                    `See HTML validation errors above for URL ${url}`,
                 );
             },
         );
@@ -435,9 +456,8 @@ test("Server integration", { concurrency: true }, async (context) => {
                     await wait(delay);
                     assert.strictEqual(process.exitCode, 0);
                 });
-                const response = await fetch(
-                    `http://localhost:${port}/project/logbook?edit&raw`,
-                );
+                const url = `http://localhost:${port}/project/logbook?edit&raw`;
+                const response = await fetch(url);
                 const responseText = await response.text();
 
                 assert.strictEqual(response.status, 200);
@@ -475,8 +495,12 @@ test("Server integration", { concurrency: true }, async (context) => {
                 assert.match(responseText, /&lt;code&gt;&lt;pre&gt;/);
 
                 const report = await validateHtml(responseText);
-                printHtmlValidationReport(report, (message: string) =>
-                    assert.fail(message),
+                console.log(`Validation report for URL ${url}`);
+                printHtmlValidationReport(report);
+                assert.equal(
+                    report.valid,
+                    true,
+                    `See HTML validation errors above for URL ${url}`,
                 );
             },
         );
