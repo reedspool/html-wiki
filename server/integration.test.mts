@@ -3,11 +3,6 @@ import assert from "node:assert";
 import { fork } from "node:child_process";
 import { printHtmlValidationReport, validateHtml } from "./testUtilities.mts";
 
-// Predicting that the server will take a moment to start up soon, when I do more
-// preparation
-const delay = 0; // ms
-const wait = (millis: number) => new Promise((r) => setTimeout(r, millis));
-
 let somePort = 3000;
 let nextPort: () => string = () => `${++somePort}`;
 
@@ -20,8 +15,13 @@ const forkCli = (port = nextPort()) => {
 
 const { process, port } = forkCli();
 assert.ok(process.connected);
+// Predicting that the server will take a moment to start up soon, when I do more
+// preparation
+// const delay = 0; // ms
+// const wait = (millis: number) => new Promise((r) => setTimeout(r, millis));
+// await wait(delay);
 
-test("Can get homepage", { concurrency: true }, async (t) => {
+test("Can get homepage", { concurrency: true }, async () => {
     const url = `http://localhost:${port}`;
     const response = await fetch(url);
     const responseText = await response.text();
@@ -58,7 +58,7 @@ test("Can get homepage", { concurrency: true }, async (t) => {
 test(
     "Can get entry at weird path $/templates/edit.html",
     { concurrency: true },
-    async (t) => {
+    async () => {
         const url = `http://localhost:${port}/$/templates/edit.html`;
         const response = await fetch(url);
         const responseText = await response.text();
@@ -96,7 +96,7 @@ test(
     },
 );
 
-test("Normal path for no entry 404s", { concurrency: true }, async (t) => {
+test("Normal path for no entry 404s", { concurrency: true }, async () => {
     const url = `http://localhost:${port}/This is a fake entry name`;
     const response = await fetch(url);
     const responseText = await response.text();
@@ -114,7 +114,7 @@ test("Normal path for no entry 404s", { concurrency: true }, async (t) => {
     );
 });
 
-test("Edit page for no entry 404s", { concurrency: true }, async (t) => {
+test("Edit page for no entry 404s", { concurrency: true }, async () => {
     const url = `http://localhost:${port}/This is a fake entry name?edit`;
     const response = await fetch(url);
     const responseText = await response.text();
@@ -136,7 +136,7 @@ test("Edit page for no entry 404s", { concurrency: true }, async (t) => {
     );
 });
 
-test("Can get edit page for index", { concurrency: true }, async (t) => {
+test("Can get edit page for index", { concurrency: true }, async () => {
     const url = `http://localhost:${port}/index?edit`;
     const response = await fetch(url);
     const responseText = await response.text();
@@ -157,7 +157,7 @@ test("Can get edit page for index", { concurrency: true }, async (t) => {
 test(
     "Can get edit page for weird path $/templates/edit",
     { concurrency: true },
-    async (t) => {
+    async () => {
         const url = `http://localhost:${port}/$/templates/edit?edit`;
         const response = await fetch(url);
         const responseText = await response.text();
@@ -192,7 +192,7 @@ test(
 test(
     "Can get markdown entry rendered as HTML",
     { concurrency: true },
-    async (t) => {
+    async () => {
         const url = `http://localhost:${port}/project/logbook.html`;
         const response = await fetch(url);
         const responseText = await response.text();
@@ -231,7 +231,7 @@ test(
 test(
     "Can get markdown entry rendered as raw",
     { concurrency: true },
-    async (t) => {
+    async () => {
         const url = `http://localhost:${port}/project/logbook.html?raw`;
         const response = await fetch(url);
         const responseText = await response.text();
@@ -267,60 +267,53 @@ test(
     },
 );
 
-test(
-    "Can get edit page for markdown file",
-    { concurrency: true },
-    async (t) => {
-        const url = `http://localhost:${port}/project/logbook?edit`;
-        const response = await fetch(url);
-        const responseText = await response.text();
+test("Can get edit page for markdown file", { concurrency: true }, async () => {
+    const url = `http://localhost:${port}/project/logbook?edit`;
+    const response = await fetch(url);
+    const responseText = await response.text();
 
-        assert.strictEqual(response.status, 200);
-        assert.match(responseText, /<h1>Edit(.|\n)*<\/h1>/);
-        // Markdown appears within the text area
-        assert.match(
-            responseText,
-            /<textarea(.|\n)*# About(.|\n)*<\/textarea>/m,
-        );
-        assert.match(
-            responseText,
-            /<textarea(.|\n)*## Logbook(.|\n)*<\/textarea>/m,
-        );
-        assert.match(
-            responseText,
-            /<textarea(.|\n)*### Sun\s+Aug\s+3(.|\n)*<\/textarea>/m,
-        );
-        // HTML doesn't appear within the text area
-        assert.doesNotMatch(
-            responseText,
-            /<textarea(.|\n)*<!doctype(.|\n)*<\/textarea>/m,
-        );
-        assert.doesNotMatch(
-            responseText,
-            /<textarea(.|\n)*<html>(.|\n)*<\/textarea>/m,
-        );
+    assert.strictEqual(response.status, 200);
+    assert.match(responseText, /<h1>Edit(.|\n)*<\/h1>/);
+    // Markdown appears within the text area
+    assert.match(responseText, /<textarea(.|\n)*# About(.|\n)*<\/textarea>/m);
+    assert.match(
+        responseText,
+        /<textarea(.|\n)*## Logbook(.|\n)*<\/textarea>/m,
+    );
+    assert.match(
+        responseText,
+        /<textarea(.|\n)*### Sun\s+Aug\s+3(.|\n)*<\/textarea>/m,
+    );
+    // HTML doesn't appear within the text area
+    assert.doesNotMatch(
+        responseText,
+        /<textarea(.|\n)*<!doctype(.|\n)*<\/textarea>/m,
+    );
+    assert.doesNotMatch(
+        responseText,
+        /<textarea(.|\n)*<html>(.|\n)*<\/textarea>/m,
+    );
 
-        // HTML within the markdown content should come escaped
-        assert.match(responseText, /&lt;code&gt;&lt;pre&gt;/);
+    // HTML within the markdown content should come escaped
+    assert.match(responseText, /&lt;code&gt;&lt;pre&gt;/);
 
-        // Save button should have a formaction without any special mode
-        assert.match(responseText, /<button\s+type="submit"\s+formaction="\?"/);
+    // Save button should have a formaction without any special mode
+    assert.match(responseText, /<button\s+type="submit"\s+formaction="\?"/);
 
-        const report = await validateHtml(responseText);
-        console.log(`Validation report for URL ${url}`);
-        printHtmlValidationReport(report);
-        assert.equal(
-            report.valid,
-            true,
-            `See HTML validation errors above for URL ${url}`,
-        );
-    },
-);
+    const report = await validateHtml(responseText);
+    console.log(`Validation report for URL ${url}`);
+    printHtmlValidationReport(report);
+    assert.equal(
+        report.valid,
+        true,
+        `See HTML validation errors above for URL ${url}`,
+    );
+});
 
 test(
     "Can get edit page in raw mode for markdown file",
     { concurrency: true },
-    async (t) => {
+    async () => {
         const url = `http://localhost:${port}/project/logbook?edit&raw`;
         const response = await fetch(url);
         const responseText = await response.text();
