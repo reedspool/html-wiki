@@ -51,15 +51,16 @@ test("Server integration", { concurrency: true }, async (context) => {
     );
 
     test("Server basic operation", { concurrency: true }, async (context) => {
-        context.test("Can get homepage", { concurrency: true }, async (t) => {
-            const { process, port } = forkCli();
-            assert.ok(process.connected);
+        const { process, port } = forkCli();
+        assert.ok(process.connected);
+        await wait(delay);
+        context.after(async () => {
+            process.kill("SIGINT");
             await wait(delay);
-            t.after(async () => {
-                process.kill("SIGINT");
-                await wait(delay);
-                assert.strictEqual(process.exitCode, 0);
-            });
+            assert.strictEqual(process.exitCode, 0);
+        });
+
+        context.test("Can get homepage", { concurrency: true }, async (t) => {
             const url = `http://localhost:${port}`;
             const response = await fetch(url);
             const responseText = await response.text();
@@ -97,14 +98,6 @@ test("Server integration", { concurrency: true }, async (context) => {
             "Can get entry at weird path $/templates/edit.html",
             { concurrency: true },
             async (t) => {
-                const { process, port } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                t.after(async () => {
-                    process.kill("SIGINT");
-                    await wait(delay);
-                    assert.strictEqual(process.exitCode, 0);
-                });
                 const url = `http://localhost:${port}/$/templates/edit.html`;
                 const response = await fetch(url);
                 const responseText = await response.text();
@@ -149,14 +142,6 @@ test("Server integration", { concurrency: true }, async (context) => {
             "Normal path for no entry 404s",
             { concurrency: true },
             async (t) => {
-                const { process, port } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                t.after(async () => {
-                    process.kill("SIGINT");
-                    await wait(delay);
-                    assert.strictEqual(process.exitCode, 0);
-                });
                 const url = `http://localhost:${port}/This is a fake entry name`;
                 const response = await fetch(url);
                 const responseText = await response.text();
@@ -179,14 +164,6 @@ test("Server integration", { concurrency: true }, async (context) => {
             "Edit page for no entry 404s",
             { concurrency: true },
             async (t) => {
-                const { process, port } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                t.after(async () => {
-                    process.kill("SIGINT");
-                    await wait(delay);
-                    assert.strictEqual(process.exitCode, 0);
-                });
                 const url = `http://localhost:${port}/This is a fake entry name?edit`;
                 const response = await fetch(url);
                 const responseText = await response.text();
@@ -213,14 +190,6 @@ test("Server integration", { concurrency: true }, async (context) => {
             "Can get edit page for index",
             { concurrency: true },
             async (t) => {
-                const { process, port } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                t.after(async () => {
-                    process.kill("SIGINT");
-                    await wait(delay);
-                    assert.strictEqual(process.exitCode, 0);
-                });
                 const url = `http://localhost:${port}/index?edit`;
                 const response = await fetch(url);
                 const responseText = await response.text();
@@ -243,14 +212,6 @@ test("Server integration", { concurrency: true }, async (context) => {
             "Can get edit page for weird path $/templates/edit",
             { concurrency: true },
             async (t) => {
-                const { process, port } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                t.after(async () => {
-                    process.kill("SIGINT");
-                    await wait(delay);
-                    assert.strictEqual(process.exitCode, 0);
-                });
                 const url = `http://localhost:${port}/$/templates/edit?edit`;
                 const response = await fetch(url);
                 const responseText = await response.text();
@@ -289,14 +250,6 @@ test("Server integration", { concurrency: true }, async (context) => {
             "Can get markdown entry rendered as HTML",
             { concurrency: true },
             async (t) => {
-                const { process, port } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                t.after(async () => {
-                    process.kill("SIGINT");
-                    await wait(delay);
-                    assert.strictEqual(process.exitCode, 0);
-                });
                 const url = `http://localhost:${port}/project/logbook.html`;
                 const response = await fetch(url);
                 const responseText = await response.text();
@@ -337,14 +290,6 @@ test("Server integration", { concurrency: true }, async (context) => {
             "Can get markdown entry rendered as raw",
             { concurrency: true },
             async (t) => {
-                const { process, port } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                t.after(async () => {
-                    process.kill("SIGINT");
-                    await wait(delay);
-                    assert.strictEqual(process.exitCode, 0);
-                });
                 const url = `http://localhost:${port}/project/logbook.html?raw`;
                 const response = await fetch(url);
                 const responseText = await response.text();
@@ -387,14 +332,6 @@ test("Server integration", { concurrency: true }, async (context) => {
             "Can get edit page for markdown file",
             { concurrency: true },
             async (t) => {
-                const { process, port } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                t.after(async () => {
-                    process.kill("SIGINT");
-                    await wait(delay);
-                    assert.strictEqual(process.exitCode, 0);
-                });
                 const url = `http://localhost:${port}/project/logbook?edit`;
                 const response = await fetch(url);
                 const responseText = await response.text();
@@ -448,14 +385,6 @@ test("Server integration", { concurrency: true }, async (context) => {
             "Can get edit page in raw mode for markdown file",
             { concurrency: true },
             async (t) => {
-                const { process, port } = forkCli();
-                assert.ok(process.connected);
-                await wait(delay);
-                t.after(async () => {
-                    process.kill("SIGINT");
-                    await wait(delay);
-                    assert.strictEqual(process.exitCode, 0);
-                });
                 const url = `http://localhost:${port}/project/logbook?edit&raw`;
                 const response = await fetch(url);
                 const responseText = await response.text();
