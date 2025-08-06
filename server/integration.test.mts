@@ -1,11 +1,8 @@
 import test from "node:test";
 import assert from "node:assert";
 import { fork } from "node:child_process";
-import {
-    printHtmlValidationReport,
-    validateAssertAndReport,
-    validateHtml,
-} from "./testUtilities.mts";
+import { validateAssertAndReport, validateHtml } from "./testUtilities.mts";
+import { parse as parseHtml } from "node-html-parser";
 
 let somePort = 3000;
 let nextPort: () => string = () => `${++somePort}`;
@@ -25,10 +22,20 @@ assert.ok(process.connected);
 // const wait = (millis: number) => new Promise((r) => setTimeout(r, millis));
 // await wait(delay);
 
-test("Can get homepage", { concurrency: true }, async () => {
-    const url = `http://localhost:${port}`;
+// It's not really a path cuz I want to write param string there too?
+async function getPath(path: string, status: number = 200) {
+    const url = `http://localhost:${port}/${path}`;
     const response = await fetch(url);
     const responseText = await response.text();
+    const fileRoot = parseHtml(responseText);
+
+    assert.strictEqual(response.status, status);
+
+    return { url, response, responseText, fileRoot };
+}
+
+test("Can get homepage", { concurrency: true }, async () => {
+    const { url, response, responseText } = await getPath("");
 
     assert.strictEqual(response.status, 200);
     assert.match(responseText, /<h1>HTML Wiki<\/h1>/);
@@ -60,9 +67,9 @@ test(
     "Can get entry at weird path $/templates/edit.html",
     { concurrency: true },
     async () => {
-        const url = `http://localhost:${port}/$/templates/edit.html`;
-        const response = await fetch(url);
-        const responseText = await response.text();
+        const { url, response, responseText } = await getPath(
+            `$/templates/edit.html`,
+        );
 
         assert.strictEqual(response.status, 200);
         assert.match(responseText, /<h1>Edit.*<\/h1>/);
@@ -92,22 +99,22 @@ test(
 );
 
 test("Normal path for no entry 404s", { concurrency: true }, async () => {
-    const url = `http://localhost:${port}/This is a fake entry name`;
-    const response = await fetch(url);
-    const responseText = await response.text();
+    const { url, responseText } = await getPath(
+        `This is a fake entry name`,
+        404,
+    );
 
-    assert.strictEqual(response.status, 404);
     assert.match(responseText, /fake entry name/);
 
     await validateAssertAndReport(responseText, url);
 });
 
 test("Edit page for no entry 404s", { concurrency: true }, async () => {
-    const url = `http://localhost:${port}/This is a fake entry name?edit`;
-    const response = await fetch(url);
-    const responseText = await response.text();
+    const { url, responseText } = await getPath(
+        `This is a fake entry name?edit`,
+        404,
+    );
 
-    assert.strictEqual(response.status, 404);
     assert.match(
         responseText,
         /fake entry name/,
@@ -118,9 +125,7 @@ test("Edit page for no entry 404s", { concurrency: true }, async () => {
 });
 
 test("Can get edit page for index", { concurrency: true }, async () => {
-    const url = `http://localhost:${port}/index?edit`;
-    const response = await fetch(url);
-    const responseText = await response.text();
+    const { url, response, responseText } = await getPath(`index?edit`);
 
     assert.strictEqual(response.status, 200);
     assert.match(responseText, /<h1>Edit.*<\/h1>/);
@@ -132,9 +137,9 @@ test(
     "Can get edit page for weird path $/templates/edit",
     { concurrency: true },
     async () => {
-        const url = `http://localhost:${port}/$/templates/edit?edit`;
-        const response = await fetch(url);
-        const responseText = await response.text();
+        const { url, response, responseText } = await getPath(
+            `$/templates/edit?edit`,
+        );
 
         assert.strictEqual(response.status, 200);
         assert.match(responseText, /<h1>Edit.*<\/h1>/);
@@ -160,9 +165,8 @@ test(
     "Can get markdown entry rendered as HTML",
     { concurrency: true },
     async () => {
-        const url = `http://localhost:${port}/project/logbook.html`;
-        const response = await fetch(url);
-        const responseText = await response.text();
+        const { url, response, responseText } =
+            await getPath(`project/logbook.html`);
 
         assert.strictEqual(response.status, 200);
 
@@ -193,9 +197,9 @@ test(
     "Can get markdown entry rendered as raw",
     { concurrency: true },
     async () => {
-        const url = `http://localhost:${port}/project/logbook.html?raw`;
-        const response = await fetch(url);
-        const responseText = await response.text();
+        const { url, response, responseText } = await getPath(
+            `project/logbook.html?raw`,
+        );
 
         assert.strictEqual(response.status, 200);
 
@@ -229,9 +233,8 @@ test(
 );
 
 test("Can get edit page for markdown file", { concurrency: true }, async () => {
-    const url = `http://localhost:${port}/project/logbook?edit`;
-    const response = await fetch(url);
-    const responseText = await response.text();
+    const { url, response, responseText } =
+        await getPath(`project/logbook?edit`);
 
     assert.strictEqual(response.status, 200);
     assert.match(responseText, /<h1>Edit(.|\n)*<\/h1>/);
@@ -268,9 +271,9 @@ test(
     "Can get edit page in raw mode for markdown file",
     { concurrency: true },
     async () => {
-        const url = `http://localhost:${port}/project/logbook?edit&raw`;
-        const response = await fetch(url);
-        const responseText = await response.text();
+        const { url, response, responseText } = await getPath(
+            `project/logbook?edit&raw`,
+        );
 
         assert.strictEqual(response.status, 200);
         assert.match(responseText, /<h1>Edit(.|\n)*<\/h1>/);
@@ -309,3 +312,4 @@ test(
         await validateAssertAndReport(responseText, url);
     },
 );
+
