@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert";
 import { fork } from "node:child_process";
-import { printHtmlValidationReport, validateHtml } from "./testUtilities.mts";
+import {
+    printHtmlValidationReport,
+    validateAssertAndReport,
+    validateHtml,
+} from "./testUtilities.mts";
 
 let somePort = 3000;
 let nextPort: () => string = () => `${++somePort}`;
@@ -29,10 +33,7 @@ test("Can get homepage", { concurrency: true }, async () => {
     assert.strictEqual(response.status, 200);
     assert.match(responseText, /<h1>HTML Wiki<\/h1>/);
 
-    const report = await validateHtml(responseText);
-    console.log(`Validation report for URL ${url}`);
-    printHtmlValidationReport(report);
-    assert.equal(report.valid, true);
+    await validateAssertAndReport(responseText, url);
 
     // /index.html ges the same result as /
     const responseSlashIndexDotHtml = await fetch(
@@ -72,7 +73,7 @@ test(
             /<slot name="content">Something went wrong.*<\/slot>/,
         );
 
-        const report = await validateHtml(responseText, {
+        await validateAssertAndReport(responseText, url, {
             // TODO: The <slot> element can't be within a
             // <textarea>, because no HTML can. Could choose to
             // solve this by escaping it, or maybe this shows
@@ -80,13 +81,7 @@ test(
             // buck for now
             "element-permitted-content": "off",
         });
-        console.log(`Validation report for URL ${url}`);
-        printHtmlValidationReport(report);
-        assert.equal(
-            report.valid,
-            true,
-            `See HTML validation errors above for URL ${url}`,
-        );
+
         // /index.html ges the same result as /
         const responseWithoutDotHtml = await fetch(url.replace(/\.html$/, ""));
         const responseTextWithoutDotHtml = await responseWithoutDotHtml.text();
@@ -104,14 +99,7 @@ test("Normal path for no entry 404s", { concurrency: true }, async () => {
     assert.strictEqual(response.status, 404);
     assert.match(responseText, /fake entry name/);
 
-    const report = await validateHtml(responseText);
-    printHtmlValidationReport(report);
-    console.log(`Validation report for URL ${url}`);
-    assert.equal(
-        report.valid,
-        true,
-        `See HTML validation errors above for URL ${url}`,
-    );
+    await validateAssertAndReport(responseText, url);
 });
 
 test("Edit page for no entry 404s", { concurrency: true }, async () => {
@@ -126,14 +114,7 @@ test("Edit page for no entry 404s", { concurrency: true }, async () => {
         "response contains the name you gave",
     );
 
-    const report = await validateHtml(responseText);
-    printHtmlValidationReport(report);
-    console.log(`Validation report for URL ${url}`);
-    assert.equal(
-        report.valid,
-        true,
-        `See HTML validation errors above for URL ${url}`,
-    );
+    await validateAssertAndReport(responseText, url);
 });
 
 test("Can get edit page for index", { concurrency: true }, async () => {
@@ -144,14 +125,7 @@ test("Can get edit page for index", { concurrency: true }, async () => {
     assert.strictEqual(response.status, 200);
     assert.match(responseText, /<h1>Edit.*<\/h1>/);
 
-    const report = await validateHtml(responseText);
-    console.log(`Validation report for URL ${url}`);
-    printHtmlValidationReport(report);
-    assert.equal(
-        report.valid,
-        true,
-        `See HTML validation errors above for URL ${url}`,
-    );
+    await validateAssertAndReport(responseText, url);
 });
 
 test(
@@ -171,7 +145,7 @@ test(
         // Save button should have a formaction without any special mode
         assert.match(responseText, /<button\s+type="submit"\s+formaction="\?"/);
 
-        const report = await validateHtml(responseText, {
+        await validateAssertAndReport(responseText, url, {
             // TODO: The <slot> element can't be within a
             // <textarea>, because no HTML can. Could choose to
             // solve this by escaping it, or maybe this shows
@@ -179,13 +153,6 @@ test(
             // buck for now
             "element-permitted-content": "off",
         });
-        console.log(`Validation report for URL ${url}`);
-        printHtmlValidationReport(report);
-        assert.equal(
-            report.valid,
-            true,
-            `See HTML validation errors above for URL ${url}`,
-        );
     },
 );
 
@@ -209,14 +176,8 @@ test(
             /<a href="http:\/\/tiddlywiki.com\/".*>TiddlyWiki<\/a>/,
         );
 
-        const report = await validateHtml(responseText);
-        console.log(`Validation report for URL ${url}`);
-        printHtmlValidationReport(report);
-        assert.equal(
-            report.valid,
-            true,
-            `See HTML validation errors above for URL ${url}`,
-        );
+        await validateAssertAndReport(responseText, url);
+
         // /<>.html ges the same result as /<>
         const responseWithoutDotHtml = await fetch(
             `http://localhost:${port}/project/logbook`,
@@ -300,14 +261,7 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
     // Save button should have a formaction without any special mode
     assert.match(responseText, /<button\s+type="submit"\s+formaction="\?"/);
 
-    const report = await validateHtml(responseText);
-    console.log(`Validation report for URL ${url}`);
-    printHtmlValidationReport(report);
-    assert.equal(
-        report.valid,
-        true,
-        `See HTML validation errors above for URL ${url}`,
-    );
+    await validateAssertAndReport(responseText, url);
 });
 
 test(
@@ -352,13 +306,6 @@ test(
         // HTML within the markdown content should still come escaped
         assert.match(responseText, /&lt;code&gt;&lt;pre&gt;/);
 
-        const report = await validateHtml(responseText);
-        console.log(`Validation report for URL ${url}`);
-        printHtmlValidationReport(report);
-        assert.equal(
-            report.valid,
-            true,
-            `See HTML validation errors above for URL ${url}`,
-        );
+        await validateAssertAndReport(responseText, url);
     },
 );

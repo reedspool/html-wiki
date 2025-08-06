@@ -1,4 +1,5 @@
 import { HtmlValidate, type RuleConfig, type Report } from "html-validate";
+import assert from "node:assert";
 // TODO: Maybe try using node-html-parser's valid method (already
 // installed for server) to get rid of one dependency
 const htmlvalidate = new HtmlValidate({
@@ -12,6 +13,21 @@ const htmlvalidate = new HtmlValidate({
         "no-trailing-whitespace": "warn",
     },
 });
+
+export async function validateAssertAndReport(
+    responseText: string,
+    url: string,
+    rules?: RuleConfig,
+) {
+    const report = await validateHtml(responseText, rules);
+    console.log(`Validation report for URL ${url}`);
+    printHtmlValidationReport(report);
+    assert.equal(
+        report.valid,
+        true,
+        `See HTML validation errors above for URL ${url}`,
+    );
+}
 
 export const validateHtml = (
     text: string,
