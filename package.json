@@ -22,7 +22,8 @@
     "commonmark": "^0.31.2",
     "express": "^5.1.0",
     "express-ws": "^5.0.2",
-    "node-html-parser": "^7.0.1"
+    "node-html-parser": "^7.0.1",
+    "temporal-polyfill": "^0.3.0"
   },
   "devDependencies": {
     "html-validate": "^9.7.1",
