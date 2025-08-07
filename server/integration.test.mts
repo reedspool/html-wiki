@@ -3,6 +3,11 @@ import assert from "node:assert";
 import { fork } from "node:child_process";
 import { validateAssertAndReport, validateHtml } from "./testUtilities.mts";
 import { parse as parseHtml } from "node-html-parser";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 let somePort = 3000;
 let nextPort: () => string = () => `${++somePort}`;
@@ -26,6 +31,23 @@ assert.ok(process.connected);
 async function getPath(path: string, status: number = 200) {
     const url = `http://localhost:${port}/${path}`;
     const response = await fetch(url);
+    const responseText = await response.text();
+    const fileRoot = parseHtml(responseText);
+
+    assert.strictEqual(response.status, status);
+
+    return { url, response, responseText, fileRoot };
+}
+async function postPath(
+    path: string,
+    body: Record<string, string> = {},
+    status: number = 200,
+) {
+    const url = `http://localhost:${port}/${path}`;
+    const response = await fetch(url, {
+        method: "POST",
+        body: new URLSearchParams(body),
+    });
     const responseText = await response.text();
     const fileRoot = parseHtml(responseText);
 
@@ -362,4 +384,122 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
     );
 
     await validateAssertAndReport(responseText, url);
+});
+
+let tmpNum = 0;
+const tmpFileName = (extension: string = ".html") =>
+    `test/tmp/file${tmpNum++}${extension}`;
+// For IDE formatting. See https://prettier.io/blog/2020/08/24/2.1.0.html
+export const html: typeof String.raw = (templates, ...args) =>
+    String.raw(templates, ...args);
+
+//TODO: Instead of doing all these things at once, could use node filesystem commands to set up and clean up. With separate tests, it would be easier to tell if one thing was failing or everything was failing, and I'd have setups for more indepth testing of certain cases.
+test("Can create, edit, and delete a page", { concurrency: true }, async () => {
+    const filename = tmpFileName();
+    const content = html`<html>
+        <body>
+            <h1>My First Testing Temp Page</h1>
+            <p>
+                This is a page automatically created as part of integration
+                tests. It was supposed to be deleted, but I guess that didn't
+                work if you're looking at it?
+            </p>
+        </body>
+    </html>`;
+    const createResponse = await postPath(`?create`, {
+        filename,
+        content,
+    });
+
+    await validateAssertAndReport(
+        createResponse.responseText,
+        createResponse.url,
+    );
+
+    // Create redirects to the page's contents
+    // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
+    // TODO: Add a replacing mechanism here and test that it worked
+    assert.match(
+        createResponse.fileRoot.querySelector("h1")!.innerHTML,
+        /My First Testing Temp Page/,
+    );
+    assert.match(
+        createResponse.fileRoot.querySelector("p")!.innerHTML,
+        /automatically created/,
+    );
+
+    const fileContents = await readFile(`${__dirname}/../entries/${filename}`);
+    assert.equal(fileContents, createResponse.responseText);
+
+    // Can't create the same thing again
+    const createAgainResponse = await postPath(
+        `?create`,
+        {
+            filename,
+            content,
+        },
+        422,
+    );
+
+    assert.match(createAgainResponse.responseText, new RegExp(`${filename}`));
+    assert.match(createAgainResponse.responseText, /exists/);
+
+    const getResponse = await getPath(filename);
+
+    assert.equal(getResponse.responseText, createResponse.responseText);
+
+    // Now edit the page
+    const editedTitle = "My Edited First Testing Temp Page";
+    getResponse.fileRoot.querySelector("h1")!.innerHTML = editedTitle;
+    const editedContent = getResponse.fileRoot.toString();
+
+    const editResponse = await postPath(filename, {
+        content: editedContent,
+    });
+
+    // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
+    // TODO: Add a replacing mechanism here and test that it worked
+    assert.match(
+        editResponse.fileRoot.querySelector("h1")!.innerHTML,
+        /My Edited First Testing Temp Page/,
+    );
+    assert.match(
+        editResponse.fileRoot.querySelector("p")!.innerHTML,
+        /automatically created/,
+    );
+
+    const getAfterEditResponse = await getPath(filename);
+
+    assert.equal(editResponse.responseText, getAfterEditResponse.responseText);
+
+    const deleteResponse = await postPath(filename + "?delete", {}, 403);
+
+    assert.match(deleteResponse.responseText, new RegExp(filename));
+    assert.match(deleteResponse.responseText, /are you sure/);
+    assert.match(deleteResponse.responseText, /cannot be undone/);
+    assert.match(
+        deleteResponse.fileRoot.querySelector(
+            `form[action="${filename}?delete&delete-confirm"][method="POST"] button[type="submit"]`,
+        )!.innerHTML,
+        /confirm and delete/,
+    );
+    assert.match(
+        deleteResponse.fileRoot.querySelector(`a[href=${filename}]`)!.innerHTML,
+        /cancel/,
+    );
+    assert.match(
+        deleteResponse.fileRoot.querySelector(`a[href=${filename}]`)!.innerHTML,
+        /go back/,
+    );
+
+    const deleteConfirmResponse = await postPath(
+        `${filename}?delete&delete-confirm`,
+    );
+
+    assert.match(
+        deleteConfirmResponse.responseText,
+        new RegExp(`${filename} successfully deleted`),
+    );
+
+    await getPath(filename, 404);
 });
