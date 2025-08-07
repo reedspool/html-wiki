@@ -15,6 +15,35 @@
 
 ## Logbook
 
+### Wed Aug  6 04:57:31 PM PDT 2025
+
+Implementing the create page made a funny bug. At first I just copied and pasted the edit page, with the same form. And it seemed to work! Except... it edited the current page, just like the edit form. Which meant it wasn't creating a new page, it was overwriting the Create page. Almost lost all my work on creating that page. Facepalm. Luckily my text editor's undo worked on the changes made elsewhere. Whew.
+
+### Mon Aug  4 06:44:02 PM PDT 2025
+
+I began work on the `create` template and functionality. An idea I cribbed from TiddlyWiki was to name a new file with a timestamp. That led me to want a syntax for inserting a value into an `input` tag's `value` attribute. My only templating concept so far was to use `slot` tags. Was there another HTML-first or otherwise-web-first method for targeting a certain attribute? I thought about making a surrounding `slot` tag with attributes pointing to the element, attribute, and value which should be set within it. I also thought of some special global attributes, like `x-set`. I wanted to avoid non-standard syntax for the attribute values themselves, like how many templating languages use curly braces to signify calculated attributes, e.g. `<input value={inputValue} />`. That syntax makes sense if you already take it as a given that you're not writing HTML, but something which resolves to HTML. I wanted to write HTML.
+
+I realized there was a whole part of the spec I hadn't used yet, custom elements. What if I made a templating DSL which used specific custom elements? The names and attributes together would be more than enough expressiveness, I thought. For example, how about if I declared what element to replace the custom element with, and how? E.g.
+
+```html
+<replace-with input value="{value}" />
+```
+
+And the way I had used `slot` elements up to this point could also be replaced with semantically named custom elements, like:
+
+```html
+<remove-if true="{value}">...</remove-if>
+<keep-if true="{value}">...</keep-if>
+```
+
+Those values could also be queries.
+
+[TiddlyWiki][tiddlywiki]'s expressive filter language enabled many emergent usecases, but ever since I began using TW, I always resisted learning it. I read the [history of the syntax][tiddlywiki-filter-syntax-history] page (which coincidentally had only been added a few days prior?) which confirmed a suspicion: the features had acreted over time after its inception as a clever riff on the classic wiki link syntax. I wanted to reflect on the total goals of the query language, the successes and failures of other languages including TW's, and ensure queries were a first class citizen with a thoughtful structure.
+
+I wanted my query language to sensibly fit into a URL path as well as it fit into attributes in the templating language. That felt like a powerful hypermedia-focused constraint. That would empower users to use the same language whether they were adding client-side features or server-side.
+
+I considered whether this should effect my prior decision to use the top-level of the path to direct to pages/entries. Maybe pages should have their own top-level path, e.g. `https://my.wiki/p/About.html`, and queries could have their own too, e.g. `https://my.wiki/q/pages titled like About`. In fact, maybe `p/About` was its own query? It's querying for a page! In that case, the top level path would be a query.
+
 ### Sun Aug  3 10:51:08 AM PDT 2025
 
 Up to this point, I only had "raw" HTML pages, but I wanted to support Markdown. I thought I could identify what content the HTML page stored via a [`<meta>` tag][mdn-meta-tag] in the `<head>`. That led me to the [`itemprop` attribute][mdn-itemprop-attribute] which seemed perfect for the job. So I'd differentiate Markdown content from "just a normal HTML page" with a tag like `<meta itemprop="content-type" content="markdown">`.
@@ -86,7 +115,7 @@ I was excited, and I wanted to work all night on it, but I made myself go to bed
 [mdn-meta-tag]: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta "MDN, <meta> tag"
 [mdn-itemprop-attribute]: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/itemprop "MDN, itemprop attribute"
 [reeds-website-logbooks]: https://reeds.website/topic-project-logs "Reed's Website, Logbooks"
-      </pre>
+[tiddlywiki-filter-syntax-history]: https://tiddlywiki.com/#Filter%20Syntax%20History "TiddlyWiki Filter Syntax History"</pre>
     </code>
   </body>
 </html>

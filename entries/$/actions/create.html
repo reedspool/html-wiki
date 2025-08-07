@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Create Page</title>
+    <meta name="description" content="Create content here" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type="text/css" media="screen">
+      :root {
+      }
+
+      html {
+        margin: 0;
+        padding: 0;
+
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 80vh;
+
+        display: flex;
+        flex-direction: column;
+
+        padding: 1em;
+      }
+
+      textarea {
+        width: 80ch;
+        flex-grow: 1;
+        margin-block: 1em;
+      }
+
+      form {
+        display: contents;
+      }
+
+      button {
+        max-width: max-content;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Create a New Page</h1>
+    <slot name="remove">
+      <p><a href="?edit">Edit this page</a></p>
+      <p>
+        You are looking at the <em>template</em> of the create page. This
+        template is what you see when you create a new page (hint: add
+        <code>?edit</code> to the end of any page's URL to edit it, this is all
+        the "Edit this page" link does). Note that if you remove or break the
+        <code>&lt;slot name="content"&gt;</code> element within the
+        <code>&lt;textarea&gt;</code> below, you'll break the editing feature of
+        the site. Try not to do that.
+      </p>
+    </slot>
+    <form method="POST">
+      <drop-if truthy="q/query/filename">
+        <replace-with
+          input
+          type="text"
+          name="filename"
+          x-value="q/Now.plainDateTimeISO()"
+          placeholder="posts/New Page"
+        ></replace-with>
+      </drop-if>
+      <keep-if truthy="q/query/filename">
+        <replace-with
+          input
+          type="text"
+          name="filename"
+          x-value="q/query/filename"
+          placeholder="posts/New Page"
+        ></replace-with>
+      </keep-if>
+      <textarea name="content"> </textarea>
+
+      <button type="submit" formaction="?">Save</button>
+    </form>
+  </body>
+</html>

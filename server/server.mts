@@ -9,8 +9,9 @@ import EventEmitter from "node:events";
 import { fileURLToPath, URL } from "node:url";
 import { dirname } from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
-import { parse as parseHtml } from "node-html-parser";
+import { parse as parseHtml, HTMLElement } from "node-html-parser";
 import { escapeHtml, renderMarkdown, urlFromReq } from "./utilities.mts";
+import { Temporal } from "temporal-polyfill";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -175,6 +176,7 @@ export const createServer = ({ port }: { port?: number }) => {
     });
     app.use("/", async (req, res, next) => {
         if (req.method !== "POST") {
+            // Edit should be PUT, but forms don't support that
             return next();
         }
 
@@ -406,6 +408,97 @@ export const createServer = ({ port }: { port?: number }) => {
                     break;
             }
         }
+        const replaceWithElements = fileRoot.querySelectorAll("replace-with");
+        for (const replaceWithElement of replaceWithElements) {
+            const attributeEntries = Object.entries(
+                replaceWithElement.attributes,
+            );
+            const tagName = attributeEntries[0][0];
+            if (attributeEntries[0][1]) {
+                res.status(500);
+                res.write(
+                    `replace-with first attribute must be a tagName with no value, got value ${attributeEntries[0][1]}`,
+                );
+                res.end();
+                return;
+            }
+            const element = new HTMLElement(tagName, {});
+
+            for (let i = 1; i < attributeEntries.length; i++) {
+                const [key, value] = attributeEntries[i];
+                const match = key.match(/^x-(.*)$/);
+                if (match) {
+                    const realKey = match[1];
+                    switch (value) {
+                        case "q/query/filename":
+                            element.setAttribute(
+                                realKey,
+                                req.query.filename
+                                    ? req.query.filename.toString()
+                                    : "<req.query.filename>",
+                            );
+                            break;
+                        case "q/Now.plainDateTimeISO()":
+                            element.setAttribute(
+                                realKey,
+                                Temporal.Now.plainDateTimeISO().toString(),
+                            );
+                            break;
+                        default:
+                            res.status(500);
+                            res.write(`No value matcher for '${value}'`);
+                            res.end();
+                            return;
+                    }
+                } else {
+                    element.setAttribute(key, value);
+                }
+            }
+            replaceWithElement.replaceWith(element);
+        }
+        const dropIfElements = fileRoot
+            .querySelectorAll("drop-if")
+            .map((element) => [true, element] as const);
+        const keepIfElements = fileRoot
+            .querySelectorAll("keep-if")
+            .map((element) => [false, element] as const);
+        for (let [shouldDrop, element] of [
+            ...dropIfElements,
+            ...keepIfElements,
+        ]) {
+            const attributeEntries = Object.entries(element.attributes);
+            if (attributeEntries.length > 1) {
+                throw new Error("drop-/keep-if require exactly one attribute");
+            }
+            const conditionalKey = attributeEntries[0][0];
+            const value = attributeEntries[0][1];
+
+            let conditional = false;
+            switch (conditionalKey) {
+                case "truthy":
+                    switch (value) {
+                        case "q/query/filename":
+                            {
+                                conditional = req.query.filename !== undefined;
+                            }
+                            break;
+                        default: {
+                            throw new Error(
+                                `Couldn't provide conditional value for ${value}`,
+                            );
+                        }
+                    }
+                    break;
+                default:
+                    throw new Error(
+                        `Couldn't comprehend conditional attribute ${conditionalKey}`,
+                    );
+            }
+
+            if (!conditional) shouldDrop = !shouldDrop;
+            if (shouldDrop) element.innerHTML = "";
+        }
+
         res.send(fileRoot.toString());
     });
 

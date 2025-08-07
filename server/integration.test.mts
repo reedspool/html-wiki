@@ -313,3 +313,53 @@ test(
     },
 );
 
+test("Can get create page", { concurrency: true }, async () => {
+    const { url, responseText, fileRoot } = await getPath(`$/actions/create`);
+
+    assert.match(fileRoot.querySelector("h1")!.innerHTML, /Create/);
+
+    // Filename has a timestamp
+    assert.match(
+        fileRoot.querySelector("input[name=filename]")!.getAttribute("value")!,
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/,
+    );
+    // Text area is blank
+    assert.match(fileRoot.querySelector("textarea")?.innerHTML!, /^\s*$/);
+
+    // Save button should have a basic formaction
+    assert.equal(
+        fileRoot
+            .querySelector("button[type=submit]")
+            ?.getAttribute("formaction"),
+        "?",
+    );
+
+    await validateAssertAndReport(responseText, url);
+});
+
+test("Can get create page with parameters", { concurrency: true }, async () => {
+    const { url, response, responseText, fileRoot } = await getPath(
+        `$/actions/create?filename=posts/My new page&rand=3`,
+    );
+
+    assert.strictEqual(response.status, 200);
+    assert.match(responseText, /<h1>Create(.|\n)*<\/h1>/);
+
+    // Filename has a timestamp
+    assert.equal(
+        fileRoot.querySelector("input[name=filename]")?.getAttribute("value")!,
+        "posts/My new page",
+    );
+    // Text area is blank
+    assert.match(fileRoot.querySelector("textarea")?.innerHTML!, /^\s*$/);
+
+    // Save button should have a basic formaction
+    assert.equal(
+        fileRoot
+            .querySelector("button[type=submit]")
+            ?.getAttribute("formaction"),
+        "?",
+    );
+
+    await validateAssertAndReport(responseText, url);
+});
