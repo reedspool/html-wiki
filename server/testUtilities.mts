@@ -20,6 +20,7 @@ export async function validateAssertAndReport(
     rules?: RuleConfig,
 ) {
     const report = await validateHtml(responseText, rules);
+    if (report.errorCount == 0 && report.warningCount == 0) return;
     console.log(`Validation report for URL ${url}`);
     printHtmlValidationReport(report);
     assert.equal(

@@ -24,3 +24,7 @@ export const renderMarkdown = (content: string) => {
     let parsed = reader.parse(content);
     return writer.render(parsed);
 };
+
+// For IDE formatting. See https://prettier.io/blog/2020/08/24/2.1.0.html
+export const html: typeof String.raw = (templates, ...args) =>
+    String.raw(templates, ...args);

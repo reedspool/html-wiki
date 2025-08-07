@@ -8,10 +8,11 @@ import express from "express";
 import EventEmitter from "node:events";
 import { fileURLToPath, URL } from "node:url";
 import { dirname } from "node:path";
-import { readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, open, readFile, rm, writeFile } from "node:fs/promises";
 import { parse as parseHtml, HTMLElement } from "node-html-parser";
-import { escapeHtml, renderMarkdown, urlFromReq } from "./utilities.mts";
+import { escapeHtml, html, renderMarkdown, urlFromReq } from "./utilities.mts";
 import { Temporal } from "temporal-polyfill";
+import { constants } from "node:fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -180,6 +181,53 @@ export const createServer = ({ port }: { port?: number }) => {
             return next();
         }
 
+        if (req.query.create !== undefined) {
+            const { filename, content } = req.body;
+            if (typeof content !== "string" || typeof filename !== "string") {
+                res.status(400);
+                res.write(
+                    `POST ?create requires body containing content and filename`,
+                );
+                res.end();
+                return;
+            }
+
+            const entryFileName = /\.[a-zA-Z0-9]+$/.test(filename)
+                ? filename
+                : `${filename}.html`;
+            try {
+                await mkdir(
+                    __dirname + "/../entries/" + dirname(entryFileName),
+                    {
+                        recursive: true,
+                    },
+                );
+                const fd = await open(
+                    __dirname + "/../entries/" + entryFileName,
+                    "wx",
+                );
+                await writeFile(
+                    fd,
+                    content
+                        // Browser sends CRLF, replace with unix-style LF,
+                        .replaceAll(/\r\n/g, "\n")
+                        // Remove any extra trailing spaces (but not double newlines!)
+                        .replaceAll(/[ \t\r]+\n/g, "\n"),
+                );
+                res.redirect(entryFileName);
+            } catch (error) {
+                if (error.code === "EEXIST") {
+                    res.status(422);
+                    res.write(
+                        `File ${escapeHtml(entryFileName)} already exists`,
+                    );
+                    res.end();
+                    return;
+                }
+            }
+            return;
+        }
+
         let entryFileName =
             req.path === "/"
                 ? "/index"
@@ -193,7 +241,6 @@ export const createServer = ({ port }: { port?: number }) => {
         if (entryFileName == null) {
             const url = urlFromReq(req);
             const urlParsed = URL.parse(url);
-            console.log({ url, urlParsed });
             if (urlParsed !== null) {
                 entryFileName = decodeURIComponent(urlParsed.pathname);
             }
@@ -206,10 +253,68 @@ export const createServer = ({ port }: { port?: number }) => {
             return;
         }
 
+        if (req.query.delete !== undefined) {
+            if (req.query["delete-confirm"] === undefined) {
+                res.status(400);
+                // TODO: Make a template file and send this to the template instead
+                res.write(
+                    html`<!doctype html>
+                        <html lang="en-US">
+                            <head>
+                                <title>Test page</title>
+                            </head>
+                            <body>
+                                <h1>
+                                    Really delete ${escapeHtml(entryFileName)}?
+                                </h1>
+                                <form
+                                    action="${escapeHtml(
+                                        entryFileName,
+                                    )}?delete&delete-confirm"
+                                    method="POST"
+                                >
+                                    <p>
+                                        Are you sure you want to delete
+                                        ${escapeHtml(entryFileName)}? This
+                                        action cannot be undone.
+                                    </p>
+                                    <button type="submit">
+                                        Confirm and delete
+                                    </button>
+                                    <a href="${escapeHtml(entryFileName)}"
+                                        >cancel deletion and go back</a
+                                    >
+                                </form>
+                            </body>
+                        </html> `,
+                );
+                res.end();
+                return;
+            }
+            try {
+                const fd = await open(
+                    __dirname + "/../entries/" + entryFileName,
+                    "wx",
+                );
+                res.status(404);
+                res.write(`File ${escapeHtml(entryFileName)} doesn't exist`);
+                res.end();
+            } catch (error) {
+                if (error.code === "EEXIST") {
+                    rm(__dirname + "/../entries/" + entryFileName);
+                    res.send(
+                        `Successfully deleted ${escapeHtml(entryFileName)}`,
+                    );
+                    return;
+                }
+            }
+            return;
+        }
+
         let fileToEditContents: string;
         try {
             const fileToEdit = await readFile(
-                `${__dirname}/../entries/${entryFileName}.html`,
+                `${__dirname}/../entries/${entryFileName}`,
             );
             fileToEditContents = fileToEdit.toString();
         } catch (error) {
@@ -298,8 +403,8 @@ export const createServer = ({ port }: { port?: number }) => {
             }
         }
 
-        writeFile(
-            __dirname + "/../entries" + entryFileName + ".html",
+        await writeFile(
+            __dirname + "/../entries" + entryFileName,
             contentToWrite
                 // Browser sends CRLF, replace with unix-style LF,
                 .replaceAll(/\r\n/g, "\n")

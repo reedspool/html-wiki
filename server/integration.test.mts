@@ -6,24 +6,26 @@ import { parse as parseHtml } from "node-html-parser";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
+import { Temporal } from "temporal-polyfill";
+import { html } from "./utilities.mts";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-let somePort = 3000;
-let nextPort: () => string = () => `${++somePort}`;
+let port = 3001;
+// TODO: All this forking stuff seems to work (with the delay), but it doesn't
+// print out the failed test results?
+// let nextPort: () => string = () => `${++port}`;
 
-const forkCli = (port = nextPort()) => {
-    const process = fork("./cli.mts", ["--port", port], {
-        env: {},
-    });
-    return { port, process };
-};
+// const forkCli = (port = nextPort()) => {
+//     const process = fork("./cli.mts", ["--port", port], {
+//         env: {},
+//     });
+//     return { port, process };
+// };
 
-const { process, port } = forkCli();
-assert.ok(process.connected);
-// Predicting that the server will take a moment to start up soon, when I do more
-// preparation
-// const delay = 0; // ms
+// const { process, port } = forkCli();
+// assert.ok(process.connected);
+// const delay = 500; // ms
 // const wait = (millis: number) => new Promise((r) => setTimeout(r, millis));
 // await wait(delay);
 
@@ -45,7 +47,7 @@ async function postPath(
 ) {
     const url = `http://localhost:${port}/${path}`;
     const response = await fetch(url, {
-        method: "POST",
+        method: "post",
         body: new URLSearchParams(body),
     });
     const responseText = await response.text();
@@ -353,7 +355,7 @@ test("Can get create page", { concurrency: true }, async () => {
         fileRoot
             .querySelector("button[type=submit]")
             ?.getAttribute("formaction"),
-        "?",
+        "/?create",
     );
 
     await validateAssertAndReport(responseText, url);
@@ -380,32 +382,32 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
         fileRoot
             .querySelector("button[type=submit]")
             ?.getAttribute("formaction"),
-        "?",
+        "/?create",
     );
 
     await validateAssertAndReport(responseText, url);
 });
 
-let tmpNum = 0;
 const tmpFileName = (extension: string = ".html") =>
-    `test/tmp/file${tmpNum++}${extension}`;
-// For IDE formatting. See https://prettier.io/blog/2020/08/24/2.1.0.html
-export const html: typeof String.raw = (templates, ...args) =>
-    String.raw(templates, ...args);
+    `test/tmp/file${Temporal.Now.plainDateTimeISO()}${extension}`;
 
 //TODO: Instead of doing all these things at once, could use node filesystem commands to set up and clean up. With separate tests, it would be easier to tell if one thing was failing or everything was failing, and I'd have setups for more indepth testing of certain cases.
 test("Can create, edit, and delete a page", { concurrency: true }, async () => {
     const filename = tmpFileName();
-    const content = html`<html>
-        <body>
-            <h1>My First Testing Temp Page</h1>
-            <p>
-                This is a page automatically created as part of integration
-                tests. It was supposed to be deleted, but I guess that didn't
-                work if you're looking at it?
-            </p>
-        </body>
-    </html>`;
+    const content = html`<!doctype html>
+        <html lang="en-US">
+            <head>
+                <title>Test page</title>
+            </head>
+            <body>
+                <h1>My First Testing Temp Page</h1>
+                <p>
+                    This is a page automatically created as part of integration
+                    tests. It was supposed to be deleted, but I guess that
+                    didn't work if you're looking at it?
+                </p>
+            </body>
+        </html>`;
     const createResponse = await postPath(`?create`, {
         filename,
         content,
@@ -472,23 +474,29 @@ test("Can create, edit, and delete a page", { concurrency: true }, async () => {
 
     assert.equal(editResponse.responseText, getAfterEditResponse.responseText);
 
-    const deleteResponse = await postPath(filename + "?delete", {}, 403);
+    const deleteResponse = await postPath(filename + "?delete", {}, 400);
 
     assert.match(deleteResponse.responseText, new RegExp(filename));
-    assert.match(deleteResponse.responseText, /are you sure/);
-    assert.match(deleteResponse.responseText, /cannot be undone/);
+    assert.match(deleteResponse.responseText, /are you sure/i);
+    assert.match(deleteResponse.responseText, /cannot be undone/i);
     assert.match(
+        deleteResponse.fileRoot.querySelector(`button[type="submit"]`)!
+            .innerHTML,
+        /confirm and delete/i,
+    );
+    assert.ok(
         deleteResponse.fileRoot.querySelector(
-            `form[action="${filename}?delete&delete-confirm"][method="POST"] button[type="submit"]`,
-        )!.innerHTML,
-        /confirm and delete/,
+            `form[action="/${filename}?delete&delete-confirm"][method="POST"]`,
+        ),
     );
     assert.match(
-        deleteResponse.fileRoot.querySelector(`a[href=${filename}]`)!.innerHTML,
+        deleteResponse.fileRoot.querySelector(`a[href=/${filename}]`)!
+            .innerHTML,
         /cancel/,
     );
     assert.match(
-        deleteResponse.fileRoot.querySelector(`a[href=${filename}]`)!.innerHTML,
+        deleteResponse.fileRoot.querySelector(`a[href=/${filename}]`)!
+            .innerHTML,
         /go back/,
     );
 
@@ -496,10 +504,8 @@ test("Can create, edit, and delete a page", { concurrency: true }, async () => {
         `${filename}?delete&delete-confirm`,
     );
 
-    assert.match(
-        deleteConfirmResponse.responseText,
-        new RegExp(`${filename} successfully deleted`),
-    );
+    assert.match(deleteConfirmResponse.responseText, new RegExp(filename));
+    assert.match(deleteConfirmResponse.responseText, /successfully deleted/i);
 
     await getPath(filename, 404);
 });
