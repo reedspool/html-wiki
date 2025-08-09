@@ -1,13 +1,16 @@
 import { type Node, NodeType, HTMLElement, TextNode } from "node-html-parser";
+import { parse as parseHtml } from "node-html-parser";
 import { escapeHtml, renderMarkdown } from "./utilities.mts";
 export type Operations = {
     serverError: (message: string) => void;
     getEntryFileName: () => string;
     getQueryValue: (query: string) => Promise<string>;
-    setContentType: (type: string) => void;
+    setContentType: (type: string, fileRoot: HTMLElement) => void;
+    select?: string;
 };
 
-export const applyTemplating = async (root: Node, ops: Operations) => {
+export const applyTemplating = async (contents: string, ops: Operations) => {
+    const root = parseHtml(contents);
     const treeWalker = new TreeWalker(root, NodeFilter.SHOW_ELEMENT);
 
     do {
@@ -205,6 +208,12 @@ export const applyTemplating = async (root: Node, ops: Operations) => {
                 break;
         }
     } while (treeWalker.nextNode());
+
+    if (ops.select) {
+        return root.querySelector(ops.select).innerHTML.toString();
+    }
+
+    return root.toString();
 };
 
 export type Filter = (

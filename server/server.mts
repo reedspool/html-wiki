@@ -13,6 +13,7 @@ import { escapeHtml, html } from "./utilities.mts";
 import {
     caughtToQueryError,
     fullyQualifiedEntryName,
+    getEntryContents,
     pathToEntryFilename,
     queryEngine,
 } from "./query.mts";
@@ -38,27 +39,7 @@ export const createServer = ({ port }: { port?: number }) => {
         }
 
         let entryFileName = pathToEntryFilename(req.path);
-        let fileToEditContents: string;
-        try {
-            const fileToEdit = await readFile(
-                fullyQualifiedEntryName(entryFileName),
-            );
-            fileToEditContents = fileToEdit.toString();
-        } catch (error) {
-            if (error.code === "ENOENT") {
-                res.status(404);
-                res.write(
-                    `Couldn't find a file named ${escapeHtml(entryFileName)}`,
-                );
-                res.end();
-                return;
-            }
-            console.error(
-                "unknown error caught while trying to read edit file:",
-                error,
-            );
-            throw error;
-        }
+        let fileToEditContents: string = await getEntryContents(entryFileName);
 
         let contentType = `html`;
         // If it's not raw, then apply any templates
@@ -66,8 +47,7 @@ export const createServer = ({ port }: { port?: number }) => {
             // TODO: Instead of inspecting a file at read-time, try to inspect
             // this at less critical times and cache the result, e.g. when the
             // server starts, when notified the file changed on disk
-            const fileRoot = parseHtml(fileToEditContents);
-            await applyTemplating(fileRoot, {
+            await applyTemplating(fileToEditContents, {
                 // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
                 serverError: () => {},
                 getEntryFileName: () => entryFileName,
@@ -77,23 +57,22 @@ export const createServer = ({ port }: { port?: number }) => {
                     host: req.get("host"),
                     protocol: req.protocol,
                 }),
-                setContentType: (type) => {
+                setContentType: (type, fileRoot) => {
                     contentType = type;
+                    if (contentType === "markdown") {
+                        fileToEditContents =
+                            fileRoot.querySelector(
+                                "body > code > pre",
+                            ).innerHTML;
+                    }
                 },
             });
-
-            if (contentType === "markdown") {
-                fileToEditContents =
-                    fileRoot.querySelector("body > code > pre").innerHTML;
-            }
         }
 
-        const editFile = await readFile(
-            fullyQualifiedEntryName("$/templates/edit.html"),
+        const editFileContents = await getEntryContents(
+            "$/templates/edit.html",
         );
-        const editFileContents = editFile.toString();
-        const editRoot = parseHtml(editFileContents);
-        await applyTemplating(editRoot, {
+        const result = await applyTemplating(editFileContents, {
             // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
             serverError: () => {},
             getEntryFileName: () => entryFileName,
@@ -111,7 +90,7 @@ export const createServer = ({ port }: { port?: number }) => {
                 }
             },
         });
-        res.send(editRoot.toString());
+        res.send(result);
     });
     app.use("/", async (req, res, next) => {
         if (req.method !== "POST") {
@@ -382,8 +361,7 @@ export const createServer = ({ port }: { port?: number }) => {
         // TODO: Instead of inspecting a file at read-time, try to inspect
         // this at less critical times and cache the result, e.g. when the
         // server starts, when notified the file changed on disk
-        const fileRoot = parseHtml(fileToRenderContents);
-        await applyTemplating(fileRoot, {
+        const result = await applyTemplating(fileToRenderContents, {
             // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
             serverError: () => {},
             getEntryFileName: () => entryFileName,
@@ -398,7 +376,7 @@ export const createServer = ({ port }: { port?: number }) => {
             },
         });
 
-        res.send(fileRoot.toString());
+        res.send(result);
     });
 
     //

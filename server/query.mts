@@ -82,32 +82,9 @@ export const queryEngine =
           throw new Error(`Unable to parse url ${url}`);
         }
         const contentEntryFileName = pathToEntryFilename(urlParsed.pathname);
-        let contentFileContents: string;
-        try {
-          const contentFile = await readFile(
-            fullyQualifiedEntryName(contentEntryFileName),
-          );
-          contentFileContents = contentFile.toString();
-        } catch (error) {
-          throw caughtToQueryError(error, {
-            readingFileName: contentEntryFileName,
-          });
-          if (error.code === "ENOENT") {
-            throw new QueryError(
-              404,
-              `Couldn't find a file named ${escapeHtml(contentEntryFileName)}`,
-              error,
-            );
-          }
-          console.error(
-            "unknown error caught while trying to read edit file:",
-            error,
-          );
-          throw error;
-        }
-
-        const fileRoot = parseHtml(contentFileContents);
-        await applyTemplating(fileRoot, {
+        const contentFileContents =
+          await getEntryContents(contentEntryFileName);
+        return applyTemplating(contentFileContents, {
           // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
           serverError: () => {},
           getEntryFileName: () => contentEntryFileName,
@@ -120,14 +97,8 @@ export const queryEngine =
           setContentType(type) {
             throw new Error("not implemented setcontenttype");
           },
+          select: query.select.toString(),
         });
-        if (query.select) {
-          return fileRoot
-            .querySelector(query.select.toString())
-            .innerHTML.toString();
-        }
-        return fileRoot.toString();
-        break;
       default:
         // TODO: This shouldn't just be a random server crashing error
         throw new Error(`No value matcher for '${input}'`);
@@ -150,4 +121,15 @@ export const caughtToQueryError = (
   }
 
   throw new QueryError(500, "Unknown error", error);
+};
+
+export const getEntryContents = async (filename: string) => {
+  try {
+    const contentFile = await readFile(fullyQualifiedEntryName(filename));
+    return contentFile.toString();
+  } catch (error) {
+    throw caughtToQueryError(error, {
+      readingFileName: filename,
+    });
+  }
 };
