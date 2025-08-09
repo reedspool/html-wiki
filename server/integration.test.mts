@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert";
-import { fork } from "node:child_process";
+// import { fork } from "node:child_process";
 import { validateAssertAndReport, validateHtml } from "./testUtilities.mts";
 import { parse as parseHtml } from "node-html-parser";
 import { readFile } from "node:fs/promises";
@@ -34,11 +34,17 @@ async function getPath(path: string, status: number = 200) {
     const url = `http://localhost:${port}/${path}`;
     const response = await fetch(url);
     const responseText = await response.text();
-    const fileRoot = parseHtml(responseText);
+    const dom = parseHtml(responseText);
 
     assert.strictEqual(response.status, status);
 
-    return { url, response, responseText, fileRoot };
+    return {
+        url,
+        response,
+        responseText,
+        dom,
+        $: (selector: string) => dom.querySelector(selector),
+    };
 }
 async function postPath(
     path: string,
@@ -51,11 +57,17 @@ async function postPath(
         body: new URLSearchParams(body),
     });
     const responseText = await response.text();
-    const fileRoot = parseHtml(responseText);
+    const dom = parseHtml(responseText);
 
     assert.strictEqual(response.status, status);
 
-    return { url, response, responseText, fileRoot };
+    return {
+        url,
+        response,
+        responseText,
+        dom,
+        $: (selector: string) => dom.querySelector(selector),
+    };
 }
 
 test("Can get homepage", { concurrency: true }, async () => {
@@ -338,23 +350,21 @@ test(
 );
 
 test("Can get create page", { concurrency: true }, async () => {
-    const { url, responseText, fileRoot } = await getPath(`$/actions/create`);
+    const { url, responseText, $ } = await getPath(`$/actions/create`);
 
-    assert.match(fileRoot.querySelector("h1")!.innerHTML, /Create/);
+    assert.match($("h1").innerHTML, /Create/);
 
     // Filename has a timestamp
     assert.match(
-        fileRoot.querySelector("input[name=filename]")!.getAttribute("value")!,
+        $("input[name=filename]").getAttribute("value")!,
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/,
     );
     // Text area is blank
-    assert.match(fileRoot.querySelector("textarea")?.innerHTML!, /^\s*$/);
+    assert.match($("textarea").innerHTML!, /^\s*$/);
 
     // Save button should have a basic formaction
     assert.equal(
-        fileRoot
-            .querySelector("button[type=submit]")
-            ?.getAttribute("formaction"),
+        $("button[type=submit]").getAttribute("formaction"),
         "/?create",
     );
 
@@ -362,7 +372,7 @@ test("Can get create page", { concurrency: true }, async () => {
 });
 
 test("Can get create page with parameters", { concurrency: true }, async () => {
-    const { url, response, responseText, fileRoot } = await getPath(
+    const { url, response, responseText, $ } = await getPath(
         `$/actions/create?filename=posts/My new page&rand=3`,
     );
 
@@ -371,17 +381,15 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
 
     // Filename has a timestamp
     assert.equal(
-        fileRoot.querySelector("input[name=filename]")?.getAttribute("value")!,
+        $("input[name=filename]").getAttribute("value")!,
         "posts/My new page",
     );
     // Text area is blank
-    assert.match(fileRoot.querySelector("textarea")?.innerHTML!, /^\s*$/);
+    assert.match($("textarea").innerHTML!, /^\s*$/);
 
     // Save button should have a basic formaction
     assert.equal(
-        fileRoot
-            .querySelector("button[type=submit]")
-            ?.getAttribute("formaction"),
+        $("button[type=submit]").getAttribute("formaction"),
         "/?create",
     );
 
@@ -422,13 +430,10 @@ test("Can create, edit, and delete a page", { concurrency: true }, async () => {
     // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
     // TODO: Add a replacing mechanism here and test that it worked
     assert.match(
-        createResponse.fileRoot.querySelector("h1")!.innerHTML,
+        createResponse.$("h1").innerHTML,
         /My First Testing Temp Page/,
     );
-    assert.match(
-        createResponse.fileRoot.querySelector("p")!.innerHTML,
-        /automatically created/,
-    );
+    assert.match(createResponse.$("p").innerHTML, /automatically created/);
 
     const fileContents = await readFile(`${__dirname}/../entries/${filename}`);
     assert.equal(fileContents, createResponse.responseText);
@@ -452,8 +457,8 @@ test("Can create, edit, and delete a page", { concurrency: true }, async () => {
 
     // Now edit the page
     const editedTitle = "My Edited First Testing Temp Page";
-    getResponse.fileRoot.querySelector("h1")!.innerHTML = editedTitle;
-    const editedContent = getResponse.fileRoot.toString();
+    getResponse.$("h1").innerHTML = editedTitle;
+    const editedContent = getResponse.dom.toString();
 
     const editResponse = await postPath(filename, {
         content: editedContent,
@@ -462,13 +467,10 @@ test("Can create, edit, and delete a page", { concurrency: true }, async () => {
     // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
     // TODO: Add a replacing mechanism here and test that it worked
     assert.match(
-        editResponse.fileRoot.querySelector("h1")!.innerHTML,
+        editResponse.$("h1").innerHTML,
         /My Edited First Testing Temp Page/,
     );
-    assert.match(
-        editResponse.fileRoot.querySelector("p")!.innerHTML,
-        /automatically created/,
-    );
+    assert.match(editResponse.$("p").innerHTML, /automatically created/);
 
     const getAfterEditResponse = await getPath(filename);
 
@@ -480,25 +482,16 @@ test("Can create, edit, and delete a page", { concurrency: true }, async () => {
     assert.match(deleteResponse.responseText, /are you sure/i);
     assert.match(deleteResponse.responseText, /cannot be undone/i);
     assert.match(
-        deleteResponse.fileRoot.querySelector(`button[type="submit"]`)!
-            .innerHTML,
+        deleteResponse.$(`button[type="submit"]`).innerHTML,
         /confirm and delete/i,
     );
     assert.ok(
-        deleteResponse.fileRoot.querySelector(
+        deleteResponse.$(
             `form[action="/${filename}?delete&delete-confirm"][method="POST"]`,
         ),
     );
-    assert.match(
-        deleteResponse.fileRoot.querySelector(`a[href=/${filename}]`)!
-            .innerHTML,
-        /cancel/,
-    );
-    assert.match(
-        deleteResponse.fileRoot.querySelector(`a[href=/${filename}]`)!
-            .innerHTML,
-        /go back/,
-    );
+    assert.match(deleteResponse.$(`a[href=/${filename}]`).innerHTML, /cancel/);
+    assert.match(deleteResponse.$(`a[href=/${filename}]`).innerHTML, /go back/);
 
     const deleteConfirmResponse = await postPath(
         `${filename}?delete&delete-confirm`,
