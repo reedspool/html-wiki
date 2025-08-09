@@ -3,11 +3,11 @@ import { escapeHtml, renderMarkdown } from "./utilities.mts";
 export type Operations = {
     serverError: (message: string) => void;
     getEntryFileName: () => string;
-    getQueryValue: (query: string) => string;
+    getQueryValue: (query: string) => Promise<string>;
     setContentType: (type: string) => void;
 };
 
-export const applyTemplating = (root: Node, ops: Operations) => {
+export const applyTemplating = async (root: Node, ops: Operations) => {
     const treeWalker = new TreeWalker(root, NodeFilter.SHOW_ELEMENT);
 
     do {
@@ -65,7 +65,7 @@ export const applyTemplating = (root: Node, ops: Operations) => {
                 switch (element.attributes.name) {
                     case "content":
                         const fileToEditContents =
-                            ops.getQueryValue("fileToEditContents");
+                            await ops.getQueryValue("fileToEditContents");
                         if (!fileToEditContents) break;
                         const text = new TextNode(
                             escapeHtml(fileToEditContents),
@@ -81,7 +81,11 @@ export const applyTemplating = (root: Node, ops: Operations) => {
                                 element.attributes.name === "remove";
                             switch (element.attributes.if) {
                                 case "raw":
-                                    if (!ops.getQueryValue("q/query/raw")) {
+                                    if (
+                                        !(await ops.getQueryValue(
+                                            "q/query/raw",
+                                        ))
+                                    ) {
                                         shouldRemove = !shouldRemove;
                                     }
                                     break;
@@ -111,9 +115,10 @@ export const applyTemplating = (root: Node, ops: Operations) => {
                         const replacementElement = new HTMLElement("a", {});
                         replacementElement.setAttribute(
                             "href",
-                            `/${ops.getEntryFileName()}`,
+                            `/${await ops.getEntryFileName()}`,
                         );
-                        replacementElement.innerHTML = ops.getEntryFileName();
+                        replacementElement.innerHTML =
+                            await ops.getEntryFileName();
                         element.replaceWith(replacementElement);
                         treeWalker.currentNode = replacementElement;
                         break;
@@ -145,7 +150,7 @@ export const applyTemplating = (root: Node, ops: Operations) => {
 
                             replacementElement.setAttribute(
                                 realKey,
-                                ops.getQueryValue(value),
+                                await ops.getQueryValue(value),
                             );
                         } else {
                             replacementElement.setAttribute(key, value);
@@ -171,11 +176,12 @@ export const applyTemplating = (root: Node, ops: Operations) => {
                     let conditional = false;
                     switch (conditionalKey) {
                         case "falsy": {
-                            conditional = !ops.getQueryValue(value);
+                            conditional = !(await ops.getQueryValue(value));
                         }
                         case "truthy":
                             {
-                                conditional = !!ops.getQueryValue(value);
+                                conditional =
+                                    !!(await ops.getQueryValue(value));
                             }
                             break;
                         default:

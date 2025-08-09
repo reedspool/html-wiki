@@ -46,7 +46,7 @@ export type Context = {
 };
 export const queryEngine =
   ({ query, fileToEditContents }: Context) =>
-  (input: string) => {
+  async (input: string) => {
     switch (input) {
       case "q/query/filename":
         return query.filename ? query.filename.toString() : null;

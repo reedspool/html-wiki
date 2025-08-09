@@ -9,7 +9,7 @@ import EventEmitter from "node:events";
 import { dirname } from "node:path";
 import { mkdir, open, readFile, rm, writeFile } from "node:fs/promises";
 import { parse as parseHtml } from "node-html-parser";
-import { escapeHtml, html, urlFromReq } from "./utilities.mts";
+import { escapeHtml, html } from "./utilities.mts";
 import {
     fullyQualifiedEntryName,
     pathToEntryFilename,
@@ -65,7 +65,7 @@ export const createServer = ({ port }: { port?: number }) => {
             // this at less critical times and cache the result, e.g. when the
             // server starts, when notified the file changed on disk
             const fileRoot = parseHtml(fileToEditContents);
-            applyTemplating(fileRoot, {
+            await applyTemplating(fileRoot, {
                 // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
                 serverError: () => {},
                 getEntryFileName: () => entryFileName,
@@ -89,7 +89,7 @@ export const createServer = ({ port }: { port?: number }) => {
         );
         const editFileContents = editFile.toString();
         const editRoot = parseHtml(editFileContents);
-        applyTemplating(editRoot, {
+        await applyTemplating(editRoot, {
             // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
             serverError: () => {},
             getEntryFileName: () => entryFileName,
@@ -356,7 +356,7 @@ export const createServer = ({ port }: { port?: number }) => {
         // this at less critical times and cache the result, e.g. when the
         // server starts, when notified the file changed on disk
         const fileRoot = parseHtml(fileToRenderContents);
-        applyTemplating(fileRoot, {
+        await applyTemplating(fileRoot, {
             // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
             serverError: () => {},
             getEntryFileName: () => entryFileName,
@@ -364,7 +364,7 @@ export const createServer = ({ port }: { port?: number }) => {
                 query: req.query,
                 fileToEditContents: "",
             }),
-            setContentType(type) {
+            setContentType(_type) {
                 throw new Error("not implemented setcontenttype");
             },
         });
@@ -379,9 +379,9 @@ export const createServer = ({ port }: { port?: number }) => {
     //       parameters defined. So you can't remove any of these parameters
     app.use(function (
         err: unknown,
-        req: express.Request,
+        _req: express.Request,
         res: express.Response,
-        next: () => void,
+        _next: () => void,
     ) {
         console.error("5XX", { err });
         res.status(500);
