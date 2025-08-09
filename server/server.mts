@@ -8,11 +8,10 @@ import express from "express";
 import EventEmitter from "node:events";
 import { fileURLToPath, URL } from "node:url";
 import { dirname } from "node:path";
-import { access, mkdir, open, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, open, readFile, rm, writeFile } from "node:fs/promises";
 import { parse as parseHtml, HTMLElement } from "node-html-parser";
 import { escapeHtml, html, renderMarkdown, urlFromReq } from "./utilities.mts";
 import { Temporal } from "temporal-polyfill";
-import { constants } from "node:fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -292,10 +291,7 @@ export const createServer = ({ port }: { port?: number }) => {
                 return;
             }
             try {
-                const fd = await open(
-                    __dirname + "/../entries/" + entryFileName,
-                    "wx",
-                );
+                await open(__dirname + "/../entries/" + entryFileName, "wx");
                 res.status(404);
                 res.write(`File ${escapeHtml(entryFileName)} doesn't exist`);
                 res.end();
