@@ -6,15 +6,16 @@
  */
 import express from "express";
 import EventEmitter from "node:events";
-import { fileURLToPath, URL } from "node:url";
 import { dirname } from "node:path";
 import { mkdir, open, readFile, rm, writeFile } from "node:fs/promises";
-import { parse as parseHtml, HTMLElement } from "node-html-parser";
-import { escapeHtml, html, renderMarkdown, urlFromReq } from "./utilities.mts";
-import { Temporal } from "temporal-polyfill";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { parse as parseHtml } from "node-html-parser";
+import { escapeHtml, html, urlFromReq } from "./utilities.mts";
+import {
+    fullyQualifiedEntryName,
+    pathToEntryFilename,
+    queryEngine,
+} from "./query.mts";
+import { applyTemplating } from "./dom.mts";
 
 export const createServer = ({ port }: { port?: number }) => {
     // Create an event emitter to handle cross-cutting communications
@@ -33,19 +34,12 @@ export const createServer = ({ port }: { port?: number }) => {
         if (req.method !== "GET" || req.query.edit === undefined) {
             return next();
         }
-        const entryFileName =
-            req.path === "/"
-                ? "index"
-                : // Special case to allow someone to target index.html
-                  // TODO: Probably don't want this to be a special case, and should
-                  // automatically deal with the inclusion of a proper file extension
-                  req.path === "/index.html"
-                  ? "index"
-                  : decodeURIComponent(req.path).slice(1); // Remove leading slash
+
+        let entryFileName = pathToEntryFilename(req.path);
         let fileToEditContents: string;
         try {
             const fileToEdit = await readFile(
-                `${__dirname}/../entries/${entryFileName}.html`,
+                fullyQualifiedEntryName(entryFileName),
             );
             fileToEditContents = fileToEdit.toString();
         } catch (error) {
@@ -64,114 +58,53 @@ export const createServer = ({ port }: { port?: number }) => {
             throw error;
         }
 
-        // If it's not raw, then filter/reshape the contents based on the meta
+        let contentType = `html`;
+        // If it's not raw, then apply any templates
         if (req.query.raw === undefined) {
             // TODO: Instead of inspecting a file at read-time, try to inspect
             // this at less critical times and cache the result, e.g. when the
             // server starts, when notified the file changed on disk
             const fileRoot = parseHtml(fileToEditContents);
-            const metaElements = fileRoot.querySelectorAll("meta");
-            for (const metaElement of metaElements) {
-                switch (metaElement.attributes.itemprop) {
-                    case undefined:
-                        break;
-                    case "content-type":
-                        switch (metaElement.attributes.content) {
-                            case "markdown":
-                                const body = fileRoot.querySelector("body");
-                                const markdownContent =
-                                    body?.querySelector("code > pre");
-                                if (!body) {
-                                    res.status(500);
-                                    res.write(
-                                        `No <body> found in file ${escapeHtml(entryFileName)}`,
-                                    );
-                                    res.end();
-                                    return;
-                                }
-                                if (!markdownContent) {
-                                    res.status(500);
-                                    res.write(
-                                        `No <code><pre> sequence found in file ${escapeHtml(entryFileName)}`,
-                                    );
-                                    res.end();
-                                    return;
-                                }
-                                fileToEditContents = markdownContent.innerHTML;
-                                break;
-                            default:
-                                console.error(
-                                    `Failed to handle content-type '${metaElement.attributes.content}' `,
-                                );
-                                break;
-                        }
-                        break;
-                    default:
-                        console.error(
-                            `Failed to handle meta itemprop '${metaElement.attributes.itemprop}' `,
-                        );
-                        break;
-                }
+            applyTemplating(fileRoot, {
+                // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
+                serverError: () => {},
+                getEntryFileName: () => entryFileName,
+                getQueryValue: queryEngine({
+                    query: req.query,
+                    fileToEditContents,
+                }),
+                setContentType: (type) => {
+                    contentType = type;
+                },
+            });
+
+            if (contentType === "markdown") {
+                fileToEditContents =
+                    fileRoot.querySelector("body > code > pre").innerHTML;
             }
         }
 
         const editFile = await readFile(
-            __dirname + "/../entries/$/templates/edit.html",
+            fullyQualifiedEntryName("$/templates/edit.html"),
         );
         const editFileContents = editFile.toString();
         const editRoot = parseHtml(editFileContents);
-        const slotElements = editRoot.querySelectorAll("slot");
-        for (const slotElement of slotElements) {
-            switch (slotElement.attributes.name) {
-                case "content":
-                    slotElement.replaceWith(escapeHtml(fileToEditContents));
-                    break;
-                case "keep":
-                case "remove":
-                    {
-                        // The rules are exactly inverted between keep and remove
-                        let shouldRemove =
-                            slotElement.attributes.name === "remove";
-                        switch (slotElement.attributes.if) {
-                            case "raw":
-                                if (req.query.raw === undefined) {
-                                    shouldRemove = !shouldRemove;
-                                }
-                                break;
-                            case undefined:
-                                break;
-                            default:
-                                break;
-                        }
-                        if (shouldRemove) {
-                            // Note: .remove() and event .replaceWith("") produce an
-                            // empty line with extra whitespace
-                            slotElement.innerHTML = "";
-                            // slotElement.parentNode.removeChild(slotElement);
-                        } else {
-                            // TODO: Ideally we replace the slot with its contents, but I can't think of a good way to do that
-                            // that doesn't have the same issue of introducing extra whitespace
-                            // Note that some extra whitespace might be intentional! But my HTML validator currently doesn't like it
-                            // and I want to keep it that way
-                            slotElement.childNodes.forEach((node) => {
-                                slotElement.after(node);
-                            });
-                            slotElement.innerHTML = "";
-                        }
-                    }
-                    break;
-                case "entry-link":
-                    slotElement.replaceWith(
-                        `<a href="/${entryFileName}">${entryFileName}</a>`,
+        applyTemplating(editRoot, {
+            // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
+            serverError: () => {},
+            getEntryFileName: () => entryFileName,
+            getQueryValue: queryEngine({
+                query: req.query,
+                fileToEditContents,
+            }),
+            setContentType: (type) => {
+                if (type !== contentType) {
+                    throw new Error(
+                        `mismatch between edit and target content types (${contentType} != ${type})`,
                     );
-                    break;
-                default:
-                    console.error(
-                        `Failed to handle slot named '${slotElement.attributes.name}' `,
-                    );
-                    break;
-            }
-        }
+                }
+            },
+        });
         res.send(editRoot.toString());
     });
     app.use("/", async (req, res, next) => {
@@ -195,14 +128,11 @@ export const createServer = ({ port }: { port?: number }) => {
                 ? filename
                 : `${filename}.html`;
             try {
-                await mkdir(
-                    __dirname + "/../entries/" + dirname(entryFileName),
-                    {
-                        recursive: true,
-                    },
-                );
+                await mkdir(fullyQualifiedEntryName(dirname(entryFileName)), {
+                    recursive: true,
+                });
                 const fd = await open(
-                    __dirname + "/../entries/" + entryFileName,
+                    fullyQualifiedEntryName(entryFileName),
                     "wx",
                 );
                 await writeFile(
@@ -213,7 +143,8 @@ export const createServer = ({ port }: { port?: number }) => {
                         // Remove any extra trailing spaces (but not double newlines!)
                         .replaceAll(/[ \t\r]+\n/g, "\n"),
                 );
-                res.redirect(entryFileName);
+                res.redirect(`/${entryFileName}`);
+                return;
             } catch (error) {
                 if (error.code === "EEXIST") {
                     res.status(422);
@@ -227,30 +158,7 @@ export const createServer = ({ port }: { port?: number }) => {
             return;
         }
 
-        let entryFileName =
-            req.path === "/"
-                ? "/index"
-                : // Special case to allow someone to target index.html
-                  // TODO: Probably don't want this to be a special case, and should
-                  // automatically deal with the inclusion of a proper file extension
-                  req.path === "/index.html"
-                  ? "/index"
-                  : null;
-
-        if (entryFileName == null) {
-            const url = urlFromReq(req);
-            const urlParsed = URL.parse(url);
-            if (urlParsed !== null) {
-                entryFileName = decodeURIComponent(urlParsed.pathname);
-            }
-        }
-
-        if (entryFileName == null) {
-            res.status(500);
-            res.write(`Problem :-/`);
-            res.end();
-            return;
-        }
+        let entryFileName = pathToEntryFilename(req.path);
 
         if (req.query.delete !== undefined) {
             if (req.query["delete-confirm"] === undefined) {
@@ -264,23 +172,23 @@ export const createServer = ({ port }: { port?: number }) => {
                             </head>
                             <body>
                                 <h1>
-                                    Really delete ${escapeHtml(entryFileName)}?
+                                    Really delete /${escapeHtml(entryFileName)}?
                                 </h1>
                                 <form
-                                    action="${escapeHtml(
+                                    action="/${escapeHtml(
                                         entryFileName,
                                     )}?delete&delete-confirm"
                                     method="POST"
                                 >
                                     <p>
                                         Are you sure you want to delete
-                                        ${escapeHtml(entryFileName)}? This
+                                        /${escapeHtml(entryFileName)}? This
                                         action cannot be undone.
                                     </p>
                                     <button type="submit">
                                         Confirm and delete
                                     </button>
-                                    <a href="${escapeHtml(entryFileName)}"
+                                    <a href="/${escapeHtml(entryFileName)}"
                                         >cancel deletion and go back</a
                                     >
                                 </form>
@@ -291,13 +199,13 @@ export const createServer = ({ port }: { port?: number }) => {
                 return;
             }
             try {
-                await open(__dirname + "/../entries/" + entryFileName, "wx");
+                await open(fullyQualifiedEntryName(entryFileName), "wx");
                 res.status(404);
                 res.write(`File ${escapeHtml(entryFileName)} doesn't exist`);
                 res.end();
             } catch (error) {
                 if (error.code === "EEXIST") {
-                    rm(__dirname + "/../entries/" + entryFileName);
+                    rm(fullyQualifiedEntryName(entryFileName));
                     res.send(
                         `Successfully deleted ${escapeHtml(entryFileName)}`,
                     );
@@ -310,7 +218,7 @@ export const createServer = ({ port }: { port?: number }) => {
         let fileToEditContents: string;
         try {
             const fileToEdit = await readFile(
-                `${__dirname}/../entries/${entryFileName}`,
+                fullyQualifiedEntryName(entryFileName),
             );
             fileToEditContents = fileToEdit.toString();
         } catch (error) {
@@ -400,7 +308,7 @@ export const createServer = ({ port }: { port?: number }) => {
         }
 
         await writeFile(
-            __dirname + "/../entries" + entryFileName,
+            fullyQualifiedEntryName(entryFileName),
             contentToWrite
                 // Browser sends CRLF, replace with unix-style LF,
                 .replaceAll(/\r\n/g, "\n")
@@ -408,35 +316,19 @@ export const createServer = ({ port }: { port?: number }) => {
                 .replaceAll(/[ \t\r]+\n/g, "\n"),
         );
 
-        res.redirect(entryFileName);
+        res.redirect(`/${entryFileName}`);
+        return;
     });
 
-    // You can always get the raw version of any content
-    // Expect that this should achieve "/" mapping directly to `index.html`
     app.use("/", async (req, res, next) => {
         if (req.method !== "GET") {
             return next();
         }
-        let entryFileName =
-            req.path === "/"
-                ? "index"
-                : // Special case to allow someone to target index.html
-                  // TODO: Probably don't want this to be a special case, and should
-                  // automatically deal with the inclusion of a proper file extension
-                  req.path === "/index.html"
-                  ? "index"
-                  : decodeURIComponent(req.path).slice(1); // Remove leading slash
-
-        if (!/.html$/.test(entryFileName)) {
-            // TODO: Instead of tacking on HTML to every file, maybe try
-            // actually loading the filename as given from disk and only if that
-            // doesn't exist try adding a file extension
-            entryFileName = entryFileName + ".html";
-        }
+        let entryFileName = pathToEntryFilename(req.path);
         let fileToRenderContents: string;
         try {
             const fileToEdit = await readFile(
-                `${__dirname}/../entries/${entryFileName}`,
+                fullyQualifiedEntryName(entryFileName),
             );
             fileToRenderContents = fileToEdit.toString();
         } catch (error) {
@@ -464,141 +356,18 @@ export const createServer = ({ port }: { port?: number }) => {
         // this at less critical times and cache the result, e.g. when the
         // server starts, when notified the file changed on disk
         const fileRoot = parseHtml(fileToRenderContents);
-        const metaElements = fileRoot.querySelectorAll("meta");
-        for (const metaElement of metaElements) {
-            switch (metaElement.attributes.itemprop) {
-                case undefined:
-                    break;
-                case "content-type":
-                    switch (metaElement.attributes.content) {
-                        case "markdown":
-                            const body = fileRoot.querySelector("body");
-                            const markdownContent =
-                                body?.querySelector("code > pre");
-                            if (!body) {
-                                res.status(500);
-                                res.write(
-                                    `No <body> found in file ${escapeHtml(entryFileName)}`,
-                                );
-                                res.end();
-                                return;
-                            }
-                            if (!markdownContent) {
-                                res.status(500);
-                                res.write(
-                                    `No <code><pre> sequence found in file ${escapeHtml(entryFileName)}`,
-                                );
-                                res.end();
-                                return;
-                            }
-                            body.innerHTML = renderMarkdown(
-                                markdownContent.innerHTML,
-                            );
-                            break;
-                        default:
-                            console.error(
-                                `Failed to handle content-type '${metaElement.attributes.content}' `,
-                            );
-                            break;
-                    }
-                    break;
-                default:
-                    console.error(
-                        `Failed to handle meta itemprop '${metaElement.attributes.itemprop}' `,
-                    );
-                    break;
-            }
-        }
-        const replaceWithElements = fileRoot.querySelectorAll("replace-with");
-        for (const replaceWithElement of replaceWithElements) {
-            const attributeEntries = Object.entries(
-                replaceWithElement.attributes,
-            );
-            const tagName = attributeEntries[0][0];
-            if (attributeEntries[0][1]) {
-                res.status(500);
-                res.write(
-                    `replace-with first attribute must be a tagName with no value, got value ${attributeEntries[0][1]}`,
-                );
-                res.end();
-                return;
-            }
-            const element = new HTMLElement(tagName, {});
-
-            for (let i = 1; i < attributeEntries.length; i++) {
-                const [key, value] = attributeEntries[i];
-                const match = key.match(/^x-(.*)$/);
-                if (match) {
-                    const realKey = match[1];
-                    switch (value) {
-                        case "q/query/filename":
-                            element.setAttribute(
-                                realKey,
-                                req.query.filename
-                                    ? req.query.filename.toString()
-                                    : "<req.query.filename>",
-                            );
-                            break;
-                        case "q/Now.plainDateTimeISO()":
-                            element.setAttribute(
-                                realKey,
-                                Temporal.Now.plainDateTimeISO().toString(),
-                            );
-                            break;
-                        default:
-                            res.status(500);
-                            res.write(`No value matcher for '${value}'`);
-                            res.end();
-                            return;
-                    }
-                } else {
-                    element.setAttribute(key, value);
-                }
-            }
-            replaceWithElement.replaceWith(element);
-        }
-        const dropIfElements = fileRoot
-            .querySelectorAll("drop-if")
-            .map((element) => [true, element] as const);
-        const keepIfElements = fileRoot
-            .querySelectorAll("keep-if")
-            .map((element) => [false, element] as const);
-        for (let [shouldDrop, element] of [
-            ...dropIfElements,
-            ...keepIfElements,
-        ]) {
-            const attributeEntries = Object.entries(element.attributes);
-            if (attributeEntries.length > 1) {
-                throw new Error("drop-/keep-if require exactly one attribute");
-            }
-            const conditionalKey = attributeEntries[0][0];
-            const value = attributeEntries[0][1];
-
-            let conditional = false;
-            switch (conditionalKey) {
-                case "truthy":
-                    switch (value) {
-                        case "q/query/filename":
-                            {
-                                conditional = req.query.filename !== undefined;
-                            }
-                            break;
-                        default: {
-                            throw new Error(
-                                `Couldn't provide conditional value for ${value}`,
-                            );
-                        }
-                    }
-                    break;
-                default:
-                    throw new Error(
-                        `Couldn't comprehend conditional attribute ${conditionalKey}`,
-                    );
-            }
-
-            if (!conditional) shouldDrop = !shouldDrop;
-            if (shouldDrop) element.innerHTML = "";
-        }
+        applyTemplating(fileRoot, {
+            // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
+            serverError: () => {},
+            getEntryFileName: () => entryFileName,
+            getQueryValue: queryEngine({
+                query: req.query,
+                fileToEditContents: "",
+            }),
+            setContentType(type) {
+                throw new Error("not implemented setcontenttype");
+            },
+        });
 
         res.send(fileRoot.toString());
     });
@@ -614,7 +383,7 @@ export const createServer = ({ port }: { port?: number }) => {
         res: express.Response,
         next: () => void,
     ) {
-        console.error("5XX", { err, req, next });
+        console.error("5XX", { err });
         res.status(500);
         res.send("500");
     });
