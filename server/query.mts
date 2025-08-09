@@ -1,7 +1,12 @@
 import { fileURLToPath, URL } from "node:url";
+import { parse as parseHtml } from "node-html-parser";
 import { dirname } from "node:path";
 import { type Request } from "express";
 import { Temporal } from "temporal-polyfill";
+import { applyTemplating } from "./dom.mts";
+import { readFile } from "node:fs/promises";
+import { escapeHtml } from "./utilities.mts";
+import { QueryError } from "./error.mts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -40,14 +45,25 @@ export const pathToEntryFilename = (path: string) => {
 export const fullyQualifiedEntryName = (entryFileName: string) =>
   `${__dirname}/../entries/${entryFileName}`;
 
+export const urlSearchParamsToRecord = (params: URLSearchParams) => {
+  const record = {};
+  for (const [key, value] of params) {
+    record[key] = value;
+  }
+  return record;
+};
 export type Context = {
-  query: Request["query"];
+  query: Request["query"] | Record<string, string>;
   fileToEditContents: string;
+  protocol: string;
+  host: string;
 };
 export const queryEngine =
-  ({ query, fileToEditContents }: Context) =>
+  ({ query, fileToEditContents, protocol, host }: Context) =>
   async (input: string) => {
     switch (input) {
+      case "q/query/title":
+        return "HTML Wiki";
       case "q/query/filename":
         return query.filename ? query.filename.toString() : null;
       case "q/query/raw":
@@ -56,9 +72,82 @@ export const queryEngine =
         return Temporal.Now.plainDateTimeISO().toString();
       case "fileToEditContents":
         return fileToEditContents;
+      case "q/query/content":
+        debugger;
+        if (query.content === undefined) return "";
+
+        const url = `${protocol}://${host}${query.content}`;
+        const urlParsed = URL.parse(url);
+        if (urlParsed == null) {
+          throw new Error(`Unable to parse url ${url}`);
+        }
+        const contentEntryFileName = pathToEntryFilename(urlParsed.pathname);
+        let contentFileContents: string;
+        try {
+          const contentFile = await readFile(
+            fullyQualifiedEntryName(contentEntryFileName),
+          );
+          contentFileContents = contentFile.toString();
+        } catch (error) {
+          throw caughtToQueryError(error, {
+            readingFileName: contentEntryFileName,
+          });
+          if (error.code === "ENOENT") {
+            throw new QueryError(
+              404,
+              `Couldn't find a file named ${escapeHtml(contentEntryFileName)}`,
+              error,
+            );
+          }
+          console.error(
+            "unknown error caught while trying to read edit file:",
+            error,
+          );
+          throw error;
+        }
+
+        const fileRoot = parseHtml(contentFileContents);
+        await applyTemplating(fileRoot, {
+          // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
+          serverError: () => {},
+          getEntryFileName: () => contentEntryFileName,
+          getQueryValue: queryEngine({
+            query: urlSearchParamsToRecord(urlParsed.searchParams),
+            fileToEditContents: "",
+            host,
+            protocol,
+          }),
+          setContentType(type) {
+            throw new Error("not implemented setcontenttype");
+          },
+        });
+        if (query.select) {
+          return fileRoot
+            .querySelector(query.select.toString())
+            .innerHTML.toString();
+        }
+        return fileRoot.toString();
+        break;
       default:
         // TODO: This shouldn't just be a random server crashing error
         throw new Error(`No value matcher for '${input}'`);
         return;
     }
   };
+
+export const caughtToQueryError = (
+  error: unknown,
+  details: { readingFileName: string },
+) => {
+  if (error instanceof Error) {
+    if ("code" in error && error.code === "ENOENT") {
+      return new QueryError(
+        404,
+        `Couldn't find a file named ${escapeHtml(details.readingFileName)}`,
+        error,
+      );
+    }
+  }
+
+  throw new QueryError(500, "Unknown error", error);
+};

@@ -436,7 +436,7 @@ test("Can create, edit, and delete a page", { concurrency: true }, async () => {
     assert.match(createResponse.$("p").innerHTML, /automatically created/);
 
     const fileContents = await readFile(`${__dirname}/../entries/${filename}`);
-    assert.equal(fileContents, createResponse.responseText);
+    assert.equal(fileContents.toString(), content);
 
     // Can't create the same thing again
     const createAgainResponse = await postPath(
@@ -502,3 +502,39 @@ test("Can create, edit, and delete a page", { concurrency: true }, async () => {
 
     await getPath(filename, 404);
 });
+
+test(
+    "Getting the index page has the features from the global template",
+    { concurrency: true },
+    async () => {
+        const { url, responseText, $ } = await getPath("");
+
+        assert.match($("header h2").innerHTML, /HTML Wiki/);
+        assert.match($('header nav a[href="/"]').innerHTML, /Home/);
+        assert.match($('header nav a[href="/sitemap"]').innerHTML, /Sitemap/);
+
+        assert.match($("footer h2").innerHTML, /HTML Wiki/);
+        assert.match($('footer nav a[href="/"]').innerHTML, /Home/);
+        assert.match($('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
+
+        await validateAssertAndReport(responseText, url);
+    },
+);
+
+test(
+    "Getting the edit page for the index has the features from the global template",
+    { concurrency: true },
+    async () => {
+        const { url, responseText, $ } = await getPath(`index?edit`);
+
+        assert.match($("header h2").innerHTML, /HTML Wiki/);
+        assert.match($('header nav a[href="/"]').innerHTML, /Home/);
+        assert.match($('header nav a[href="/sitemap"]').innerHTML, /Sitemap/);
+
+        assert.match($("footer h2").innerHTML, /HTML Wiki/);
+        assert.match($('footer nav a[href="/"]').innerHTML, /Home/);
+        assert.match($('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
+
+        await validateAssertAndReport(responseText, url);
+    },
+);

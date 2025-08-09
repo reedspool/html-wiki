@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <replace-with title x-content="q/query/title"> HTML Wiki </replace-with>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+      header {
+        background-color: blue;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h2>HTML Wiki</h2>
+      <nav aria-label="Main navigation">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/sitemap">Sitemap</a></li>
+        </ul>
+      </nav>
+    </header>
+    <replace-with main x-content="q/query/content">
+      <p>
+        This is the global page template. Usually, this text would be replaced
+        with the HTML content of another entry in the wiki. But I guess not
+        today!
+      </p>
+      <p>
+        You can <a href="?edit">Edit this page</a> to change the styling and
+        layout for most of the site.
+      </p>
+    </replace-with>
+    <footer>
+      <h2>HTML Wiki</h2>
+      <nav aria-label="Secondary navigation">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/sitemap">Sitemap</a></li>
+          <li><a href="#">Top of page</a></li>
+        </ul>
+      </nav>
+    </footer>
+  </body>
+</html>

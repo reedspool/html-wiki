@@ -147,11 +147,18 @@ export const applyTemplating = async (root: Node, ops: Operations) => {
                         const match = key.match(/^x-(.*)$/);
                         if (match) {
                             const realKey = match[1];
-
-                            replacementElement.setAttribute(
-                                realKey,
-                                await ops.getQueryValue(value),
-                            );
+                            const queryValue = await ops.getQueryValue(value);
+                            switch (realKey) {
+                                case "content":
+                                    replacementElement.innerHTML = queryValue;
+                                    break;
+                                default:
+                                    replacementElement.setAttribute(
+                                        realKey,
+                                        queryValue,
+                                    );
+                                    break;
+                            }
                         } else {
                             replacementElement.setAttribute(key, value);
                         }
