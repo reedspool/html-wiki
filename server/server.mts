@@ -11,11 +11,13 @@ import { mkdir, open, readFile, rm, writeFile } from "node:fs/promises";
 import { parse as parseHtml } from "node-html-parser";
 import { escapeHtml, html } from "./utilities.mts";
 import {
+    caughtToQueryError,
     fullyQualifiedEntryName,
     pathToEntryFilename,
     queryEngine,
 } from "./query.mts";
 import { applyTemplating } from "./dom.mts";
+import { QueryError } from "./error.mts";
 
 export const createServer = ({ port }: { port?: number }) => {
     // Create an event emitter to handle cross-cutting communications
@@ -72,6 +74,8 @@ export const createServer = ({ port }: { port?: number }) => {
                 getQueryValue: queryEngine({
                     query: req.query,
                     fileToEditContents,
+                    host: req.get("host"),
+                    protocol: req.protocol,
                 }),
                 setContentType: (type) => {
                     contentType = type;
@@ -96,6 +100,8 @@ export const createServer = ({ port }: { port?: number }) => {
             getQueryValue: queryEngine({
                 query: req.query,
                 fileToEditContents,
+                host: req.get("host"),
+                protocol: req.protocol,
             }),
             setContentType: (type) => {
                 if (type !== contentType) {
@@ -321,35 +327,56 @@ export const createServer = ({ port }: { port?: number }) => {
     });
 
     app.use("/", async (req, res, next) => {
+        // Req.query is immutable
+        const query: Record<string, string> = {};
+        for (const key in req.query) {
+            if (typeof key != "string")
+                throw new Error(`req.query key '${key}' was not a string.`);
+
+            const value = req.query[key];
+            if (typeof value != "string") {
+                console.error(
+                    `req.query['${key}'] was not a string: ${req.query[key]}`,
+                );
+                throw new Error(
+                    `req.query['${key}'] was not a string. See log`,
+                );
+            }
+            query[key] = value;
+        }
         if (req.method !== "GET") {
             return next();
         }
         let entryFileName = pathToEntryFilename(req.path);
         let fileToRenderContents: string;
-        try {
-            const fileToEdit = await readFile(
-                fullyQualifiedEntryName(entryFileName),
-            );
-            fileToRenderContents = fileToEdit.toString();
-        } catch (error) {
-            if (error.code === "ENOENT") {
-                res.status(404);
-                res.write(
-                    `Couldn't find a file named ${escapeHtml(entryFileName)}`,
+        if (typeof query.raw !== "undefined") {
+            try {
+                const fileToEdit = await readFile(
+                    fullyQualifiedEntryName(entryFileName),
                 );
-                res.end();
-                return;
+                fileToRenderContents = fileToEdit.toString();
+            } catch (error) {
+                caughtToQueryError(error, { readingFileName: entryFileName });
             }
-            console.error(
-                "unknown error caught while trying to read edit file:",
-                error,
-            );
-            throw error;
-        }
 
-        if (typeof req.query.raw !== "undefined") {
             res.send(fileToRenderContents);
             return;
+        } else {
+            if (query.content === undefined) {
+                entryFileName = pathToEntryFilename(
+                    "/$/templates/global-page.html",
+                );
+                query.content = req.path + `?${new URLSearchParams(query)}`;
+                query.select = "body";
+            }
+            try {
+                const fileToEdit = await readFile(
+                    fullyQualifiedEntryName(entryFileName),
+                );
+                fileToRenderContents = fileToEdit.toString();
+            } catch (error) {
+                caughtToQueryError(error, { readingFileName: entryFileName });
+            }
         }
 
         // TODO: Instead of inspecting a file at read-time, try to inspect
@@ -361,8 +388,10 @@ export const createServer = ({ port }: { port?: number }) => {
             serverError: () => {},
             getEntryFileName: () => entryFileName,
             getQueryValue: queryEngine({
-                query: req.query,
+                query: query,
                 fileToEditContents: "",
+                host: req.get("host"),
+                protocol: req.protocol,
             }),
             setContentType(_type) {
                 throw new Error("not implemented setcontenttype");
@@ -378,12 +407,19 @@ export const createServer = ({ port }: { port?: number }) => {
     // NOTE: Annoyingly, this error catcher in Express relies on the number of
     //       parameters defined. So you can't remove any of these parameters
     app.use(function (
-        err: unknown,
-        _req: express.Request,
+        error: unknown,
+        req: express.Request,
         res: express.Response,
         _next: () => void,
     ) {
-        console.error("5XX", { err });
+        if (error instanceof QueryError) {
+            console.log(`QueryError on ${req.path}:`, error);
+            res.status(error.status);
+            res.write(error.message);
+            res.end();
+            return;
+        }
+        console.error("5XX", { err: error });
         res.status(500);
         res.send("500");
     });
