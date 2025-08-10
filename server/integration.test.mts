@@ -31,7 +31,9 @@ let port = 3001;
 
 // It's not really a path cuz I want to write param string there too?
 async function getPath(path: string, status: number = 200) {
-    const url = `http://localhost:${port}/${path}`;
+    if (path[0] !== "/")
+        throw new Error("Paths must all start with a leading slash");
+    const url = `http://localhost:${port}${path}`;
     const response = await fetch(url);
     const responseText = await response.text();
     const dom = parseHtml(responseText);
@@ -51,7 +53,9 @@ async function postPath(
     body: Record<string, string> = {},
     status: number = 200,
 ) {
-    const url = `http://localhost:${port}/${path}`;
+    if (path[0] !== "/")
+        throw new Error("Paths must all start with a leading slash");
+    const url = `http://localhost:${port}${path}`;
     const response = await fetch(url, {
         method: "post",
         body: new URLSearchParams(body),
@@ -71,7 +75,7 @@ async function postPath(
 }
 
 test("Can get homepage", { concurrency: true }, async () => {
-    const { url, response, responseText } = await getPath("");
+    const { url, response, responseText } = await getPath("/");
 
     assert.strictEqual(response.status, 200);
     assert.match(responseText, /<h1>HTML Wiki<\/h1>/);
@@ -104,7 +108,7 @@ test(
     { concurrency: true },
     async () => {
         const { url, response, responseText, $ } = await getPath(
-            `$/templates/edit.html`,
+            `/$/templates/edit.html`,
         );
 
         assert.strictEqual(response.status, 200);
@@ -131,7 +135,7 @@ test(
     { concurrency: true },
     async () => {
         const { url, response, responseText, $ } = await getPath(
-            `$/templates/edit.html?raw`,
+            `/$/templates/edit.html?raw`,
         );
 
         assert.strictEqual(response.status, 200);
@@ -163,7 +167,7 @@ test(
 
 test("Normal path for no entry 404s", { concurrency: true }, async () => {
     const { url, responseText } = await getPath(
-        `This is a fake entry name`,
+        `/This is a fake entry name`,
         404,
     );
 
@@ -174,7 +178,7 @@ test("Normal path for no entry 404s", { concurrency: true }, async () => {
 
 test("Edit page for no entry 404s", { concurrency: true }, async () => {
     const { url, responseText } = await getPath(
-        `This is a fake entry name?edit`,
+        `/This is a fake entry name?edit`,
         404,
     );
 
@@ -188,7 +192,7 @@ test("Edit page for no entry 404s", { concurrency: true }, async () => {
 });
 
 test("Can get edit page for index", { concurrency: true }, async () => {
-    const { url, response, responseText } = await getPath(`index?edit`);
+    const { url, response, responseText } = await getPath(`/index?edit`);
 
     assert.strictEqual(response.status, 200);
     assert.match(responseText, /<h1>Edit.*<\/h1>/);
@@ -201,7 +205,7 @@ test(
     { concurrency: true },
     async () => {
         const { url, response, responseText } = await getPath(
-            `$/templates/edit?edit`,
+            `/$/templates/edit?edit`,
         );
 
         assert.strictEqual(response.status, 200);
@@ -224,8 +228,9 @@ test(
     "Can get markdown entry rendered as HTML",
     { concurrency: true },
     async () => {
-        const { url, response, responseText } =
-            await getPath(`project/logbook.html`);
+        const { url, response, responseText } = await getPath(
+            `/project/logbook.html`,
+        );
 
         assert.strictEqual(response.status, 200);
 
@@ -257,7 +262,7 @@ test(
     { concurrency: true },
     async () => {
         const { url, response, responseText } = await getPath(
-            `project/logbook.html?raw`,
+            `/project/logbook.html?raw`,
         );
 
         assert.strictEqual(response.status, 200);
@@ -292,8 +297,9 @@ test(
 );
 
 test("Can get edit page for markdown file", { concurrency: true }, async () => {
-    const { url, response, responseText } =
-        await getPath(`project/logbook?edit`);
+    const { url, response, responseText } = await getPath(
+        `/project/logbook?edit`,
+    );
 
     assert.strictEqual(response.status, 200);
     assert.match(responseText, /<h1>Edit(.|\n)*<\/h1>/);
@@ -376,7 +382,7 @@ test(
 );
 
 test("Can get create page", { concurrency: true }, async () => {
-    const { url, responseText, $ } = await getPath(`$/actions/create`);
+    const { url, responseText, $ } = await getPath(`/$/actions/create`);
 
     assert.match($("h1").innerHTML, /Create/);
 
@@ -399,7 +405,7 @@ test("Can get create page", { concurrency: true }, async () => {
 
 test("Can get create page with parameters", { concurrency: true }, async () => {
     const { url, response, responseText, $ } = await getPath(
-        `$/actions/create?filename=posts/My new page&rand=3`,
+        `/$/actions/create?filename=/posts/My new page&rand=3`,
     );
 
     assert.strictEqual(response.status, 200);
@@ -408,7 +414,7 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
     // Filename has a timestamp
     assert.equal(
         $("input[name=filename]").getAttribute("value")!,
-        "posts/My new page",
+        "/posts/My new page",
     );
     // Text area is blank
     assert.match($("textarea").innerHTML!, /^\s*$/);
@@ -423,7 +429,7 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
 });
 
 const tmpFileName = (extension: string = ".html") =>
-    `test/tmp/file${Temporal.Now.plainDateTimeISO()}${extension}`;
+    `/test/tmp/file${Temporal.Now.plainDateTimeISO()}${extension}`;
 
 //TODO: Instead of doing all these things at once, could use node filesystem commands to set up and clean up. With separate tests, it would be easier to tell if one thing was failing or everything was failing, and I'd have setups for more indepth testing of certain cases.
 test("Can create, edit, and delete a page", { concurrency: true }, async () => {
@@ -442,7 +448,7 @@ test("Can create, edit, and delete a page", { concurrency: true }, async () => {
                 </p>
             </body>
         </html>`;
-    const createResponse = await postPath(`?create`, {
+    const createResponse = await postPath(`/?create`, {
         filename,
         content,
     });
@@ -466,7 +472,7 @@ test("Can create, edit, and delete a page", { concurrency: true }, async () => {
 
     // Can't create the same thing again
     const createAgainResponse = await postPath(
-        `?create`,
+        `/?create`,
         {
             filename,
             content,
@@ -533,7 +539,7 @@ test(
     "Getting the index page has the features from the global template",
     { concurrency: true },
     async () => {
-        const { url, responseText, $ } = await getPath("");
+        const { url, responseText, $ } = await getPath("/");
 
         assert.match($("header h2").innerHTML, /HTML Wiki/);
         assert.match($('header nav a[href="/"]').innerHTML, /Home/);
@@ -551,7 +557,7 @@ test(
     "Getting the edit page for the index has the features from the global template",
     { concurrency: true },
     async () => {
-        const { url, responseText, $ } = await getPath(`index?edit`);
+        const { url, responseText, $ } = await getPath(`/index?edit`);
 
         assert.match($("header h2").innerHTML, /HTML Wiki/);
         assert.match($('header nav a[href="/"]').innerHTML, /Home/);

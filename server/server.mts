@@ -11,6 +11,7 @@ import { mkdir, open, rm, writeFile } from "node:fs/promises";
 import { parse as parseHtml } from "node-html-parser";
 import { escapeHtml, html } from "./utilities.mts";
 import {
+    caughtToQueryError,
     encodedEntryPathRequest,
     expressQueryToRecord,
     fullyQualifiedEntryName,
@@ -43,17 +44,13 @@ export const createServer = ({ port }: { port?: number }) => {
         if (req.query.create !== undefined) {
             const { filename, content } = req.body;
             if (typeof content !== "string" || typeof filename !== "string") {
-                res.status(400);
-                res.write(
+                throw new QueryError(
+                    500,
                     `POST ?create requires body containing content and filename`,
                 );
-                res.end();
-                return;
             }
 
-            const entryFileName = /\.[a-zA-Z0-9]+$/.test(filename)
-                ? filename
-                : `${filename}.html`;
+            const entryFileName = pathToEntryFilename(filename);
             try {
                 await mkdir(fullyQualifiedEntryName(dirname(entryFileName)), {
                     recursive: true,
@@ -74,15 +71,13 @@ export const createServer = ({ port }: { port?: number }) => {
                 return;
             } catch (error) {
                 if (error.code === "EEXIST") {
-                    res.status(422);
-                    res.write(
-                        `File ${escapeHtml(entryFileName)} already exists`,
+                    throw new QueryError(
+                        422,
+                        `File /${escapeHtml(entryFileName)} already exists`,
                     );
-                    res.end();
-                    return;
                 }
+                throw error;
             }
-            return;
         }
 
         let entryFileName = pathToEntryFilename(req.path);
@@ -90,46 +85,16 @@ export const createServer = ({ port }: { port?: number }) => {
         if (req.query.delete !== undefined) {
             if (req.query["delete-confirm"] === undefined) {
                 res.status(400);
-                // TODO: Make a template file and send this to the template instead
-                res.write(
-                    html`<!doctype html>
-                        <html lang="en-US">
-                            <head>
-                                <title>Test page</title>
-                            </head>
-                            <body>
-                                <h1>
-                                    Really delete /${escapeHtml(entryFileName)}?
-                                </h1>
-                                <form
-                                    action="/${escapeHtml(
-                                        entryFileName,
-                                    )}?delete&delete-confirm"
-                                    method="POST"
-                                >
-                                    <p>
-                                        Are you sure you want to delete
-                                        /${escapeHtml(entryFileName)}? This
-                                        action cannot be undone.
-                                    </p>
-                                    <button type="submit">
-                                        Confirm and delete
-                                    </button>
-                                    <a href="/${escapeHtml(entryFileName)}"
-                                        >cancel deletion and go back</a
-                                    >
-                                </form>
-                            </body>
-                        </html> `,
-                );
+                res.write(await getEntryContents("/$/templates/delete.html"));
                 res.end();
                 return;
             }
             try {
                 await open(fullyQualifiedEntryName(entryFileName), "wx");
-                res.status(404);
-                res.write(`File ${escapeHtml(entryFileName)} doesn't exist`);
-                res.end();
+                throw new QueryError(
+                    404,
+                    `File ${escapeHtml(entryFileName)} doesn't exist`,
+                );
             } catch (error) {
                 if (error.code === "EEXIST") {
                     rm(fullyQualifiedEntryName(entryFileName));
@@ -138,8 +103,8 @@ export const createServer = ({ port }: { port?: number }) => {
                     );
                     return;
                 }
+                throw error;
             }
-            return;
         }
 
         let fileToEditContents: string = await getEntryContents(entryFileName);
@@ -237,6 +202,7 @@ export const createServer = ({ port }: { port?: number }) => {
         }
         let entryFileName = pathToEntryFilename(req.path);
         let fileToRenderContents: string;
+        let raw: boolean = query.raw !== undefined;
         if (query.edit !== undefined) {
             entryFileName = pathToEntryFilename(
                 "/$/templates/global-page.html",
@@ -251,7 +217,7 @@ export const createServer = ({ port }: { port?: number }) => {
             });
             query.select = "body";
             fileToRenderContents = await getEntryContents(entryFileName);
-        } else if (query.raw !== undefined) {
+        } else if (raw) {
             fileToRenderContents = await getEntryContents(entryFileName);
             res.send(fileToRenderContents);
             return;
