@@ -432,108 +432,170 @@ const tmpFileName = (extension: string = ".html") =>
     `/test/tmp/file${Temporal.Now.plainDateTimeISO()}${extension}`;
 
 //TODO: Instead of doing all these things at once, could use node filesystem commands to set up and clean up. With separate tests, it would be easier to tell if one thing was failing or everything was failing, and I'd have setups for more indepth testing of certain cases.
-test("Can create, edit, and delete a page", { concurrency: true }, async () => {
-    const filename = tmpFileName();
-    const content = html`<!doctype html>
-        <html lang="en-US">
-            <head>
-                <title>Test page</title>
-            </head>
-            <body>
-                <h1>My First Testing Temp Page</h1>
-                <p>
-                    This is a page automatically created as part of integration
-                    tests. It was supposed to be deleted, but I guess that
-                    didn't work if you're looking at it?
-                </p>
-            </body>
-        </html>`;
-    const createResponse = await postPath(`/?create`, {
-        filename,
-        content,
-    });
-
-    await validateAssertAndReport(
-        createResponse.responseText,
-        createResponse.url,
-    );
-
-    // Create redirects to the page's contents
-    // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
-    // TODO: Add a replacing mechanism here and test that it worked
-    assert.match(
-        createResponse.$("h1").innerHTML,
-        /My First Testing Temp Page/,
-    );
-    assert.match(createResponse.$("p").innerHTML, /automatically created/);
-
-    const fileContents = await readFile(`${__dirname}/../entries/${filename}`);
-    assert.equal(fileContents.toString(), content);
-
-    // Can't create the same thing again
-    const createAgainResponse = await postPath(
-        `/?create`,
-        {
+test(
+    "Can create, edit, and delete a page",
+    { concurrency: true },
+    async (context) => {
+        const filename = tmpFileName();
+        const content = html`<!doctype html>
+            <html lang="en-US">
+                <head>
+                    <title>Test page</title>
+                </head>
+                <body>
+                    <h1>My First Testing Temp Page</h1>
+                    <p>
+                        This is a page automatically created as part of
+                        integration test <code>${context.name}</code>. It was
+                        supposed to be deleted, but I guess that didn't work if
+                        you're looking at it?
+                    </p>
+                </body>
+            </html>`;
+        const createResponse = await postPath(`/?create`, {
             filename,
             content,
-        },
-        422,
-    );
+        });
 
-    assert.match(createAgainResponse.responseText, new RegExp(`${filename}`));
-    assert.match(createAgainResponse.responseText, /exists/);
+        await validateAssertAndReport(
+            createResponse.responseText,
+            createResponse.url,
+        );
 
-    const getResponse = await getPath(filename);
+        // Create redirects to the page's contents
+        // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
+        // TODO: Add a replacing mechanism here and test that it worked
+        assert.match(
+            createResponse.$("h1").innerHTML,
+            /My First Testing Temp Page/,
+        );
+        assert.match(createResponse.$("p").innerHTML, /automatically created/);
 
-    assert.equal(getResponse.responseText, createResponse.responseText);
+        const fileContents = await readFile(
+            `${__dirname}/../entries/${filename}`,
+        );
+        assert.equal(fileContents.toString(), content);
 
-    // Now edit the page
-    const editedTitle = "My Edited First Testing Temp Page";
-    getResponse.$("h1").innerHTML = editedTitle;
-    const editedContent = getResponse.dom.toString();
+        // Can't create the same thing again
+        const createAgainResponse = await postPath(
+            `/?create`,
+            {
+                filename,
+                content,
+            },
+            422,
+        );
 
-    const editResponse = await postPath(filename, {
-        content: editedContent,
-    });
+        assert.match(
+            createAgainResponse.responseText,
+            new RegExp(`${filename}`),
+        );
+        assert.match(createAgainResponse.responseText, /exists/);
 
-    // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
-    // TODO: Add a replacing mechanism here and test that it worked
-    assert.match(
-        editResponse.$("h1").innerHTML,
-        /My Edited First Testing Temp Page/,
-    );
-    assert.match(editResponse.$("p").innerHTML, /automatically created/);
+        const getResponse = await getPath(filename);
 
-    const getAfterEditResponse = await getPath(filename);
+        assert.equal(getResponse.responseText, createResponse.responseText);
 
-    assert.equal(editResponse.responseText, getAfterEditResponse.responseText);
+        // Now edit the page
+        const editedTitle = "My Edited First Testing Temp Page";
+        getResponse.$("h1").innerHTML = editedTitle;
+        const editedContent = getResponse.dom.toString();
 
-    const deleteResponse = await postPath(filename + "?delete", {}, 400);
+        const editResponse = await postPath(filename, {
+            content: editedContent,
+        });
 
-    assert.match(deleteResponse.responseText, new RegExp(filename));
-    assert.match(deleteResponse.responseText, /are you sure/i);
-    assert.match(deleteResponse.responseText, /cannot be undone/i);
-    assert.match(
-        deleteResponse.$(`button[type="submit"]`).innerHTML,
-        /confirm and delete/i,
-    );
-    assert.ok(
-        deleteResponse.$(
-            `form[action="/${filename}?delete&delete-confirm"][method="POST"]`,
-        ),
-    );
-    assert.match(deleteResponse.$(`a[href=/${filename}]`).innerHTML, /cancel/);
-    assert.match(deleteResponse.$(`a[href=/${filename}]`).innerHTML, /go back/);
+        // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
+        // TODO: Add a replacing mechanism here and test that it worked
+        assert.match(
+            editResponse.$("h1").innerHTML,
+            /My Edited First Testing Temp Page/,
+        );
+        assert.match(editResponse.$("p").innerHTML, /automatically created/);
 
-    const deleteConfirmResponse = await postPath(
-        `${filename}?delete&delete-confirm`,
-    );
+        const getAfterEditResponse = await getPath(filename);
 
-    assert.match(deleteConfirmResponse.responseText, new RegExp(filename));
-    assert.match(deleteConfirmResponse.responseText, /successfully deleted/i);
+        assert.equal(
+            editResponse.responseText,
+            getAfterEditResponse.responseText,
+        );
 
-    await getPath(filename, 404);
-});
+        const deleteResponse = await postPath(filename + "?delete", {}, 400);
+
+        assert.match(deleteResponse.responseText, new RegExp(filename));
+        assert.match(deleteResponse.responseText, /are you sure/i);
+        assert.match(deleteResponse.responseText, /cannot be undone/i);
+        assert.match(
+            deleteResponse.$(`button[type="submit"]`).innerHTML,
+            /confirm and delete/i,
+        );
+        assert.ok(
+            deleteResponse.$(
+                `form[action="/${filename}?delete&delete-confirm"][method="POST"]`,
+            ),
+        );
+        assert.match(
+            deleteResponse.$(`a[href=/${filename}]`).innerHTML,
+            /cancel/,
+        );
+        assert.match(
+            deleteResponse.$(`a[href=/${filename}]`).innerHTML,
+            /go back/,
+        );
+
+        const deleteConfirmResponse = await postPath(
+            `${filename}?delete&delete-confirm`,
+        );
+
+        assert.match(deleteConfirmResponse.responseText, new RegExp(filename));
+        assert.match(
+            deleteConfirmResponse.responseText,
+            /successfully deleted/i,
+        );
+
+        await getPath(filename, 404);
+    },
+);
+
+test(
+    "Can delete a page immediately with confirmation",
+    { concurrency: true },
+    async (context) => {
+        const filename = tmpFileName();
+        const content = html`<!doctype html>
+            <html lang="en-US">
+                <head>
+                    <title>Test page for deletion</title>
+                </head>
+                <body>
+                    <h1>My First Testing Temp Page</h1>
+                    <p>
+                        This is a page automatically created as part of
+                        integration test <code>${context.fullName}</code>. It
+                        was supposed to be deleted, but I guess that didn't work
+                        if you're looking at it?
+                    </p>
+                </body>
+            </html>`;
+        const createResponse = await postPath(`/?create`, {
+            filename,
+            content,
+        });
+
+        assert.match(createResponse.$("p").innerHTML, /automatically created/);
+        const deleteConfirmResponse = await postPath(
+            `${filename}?delete&delete-confirm`,
+        );
+
+        assert.match(deleteConfirmResponse.responseText, new RegExp(filename));
+        assert.match(
+            deleteConfirmResponse.responseText,
+            /successfully deleted/i,
+        );
+
+        await getPath(filename, 404);
+    },
+);
 
 test(
     "Getting the index page has the features from the global template",

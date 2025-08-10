@@ -99,7 +99,7 @@ export const createServer = ({ port }: { port?: number }) => {
                 if (error.code === "EEXIST") {
                     rm(fullyQualifiedEntryName(entryFileName));
                     res.send(
-                        `Successfully deleted ${escapeHtml(entryFileName)}`,
+                        `Successfully deleted /${escapeHtml(entryFileName)}`,
                     );
                     return;
                 }
