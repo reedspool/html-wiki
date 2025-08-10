@@ -15,11 +15,70 @@
 
 ## Logbook
 
+### Sat Aug  9 09:57:24 PM PDT 2025
+
+Future: As I kept working I realized I wanted more string templating capabilities in my budding query language. At this stage, my "language" was really just a dispatch for some specific code, there wasn't any of the combination or imperative powers suggested by the title "programming language". But I found a clear use case for string manipulation: I wanted to append `?raw` to another query which I'd already written to determine an entry file name. It felt good to wait for specific usecases while working on the core of the server before trying to make a complicated programming language, so I continued to hold off on adding the feature for now.
+
+### Sat Aug  9 02:26:34 PM PDT 2025
+
+Implemented the tree walking strategy and it worked well. That started to make the whole theory sensible. The server had two core features. First it was an entry point to the templating engine. Second, it implemented the query langauge. Then, the templating engine could call on the query language during expansion. This made the templating engine and query language mutually recursive. The concept felt clear and powerful, but I felt I had a lot more work to do in order to realize the potential.
+
+The request for a basic page became a configuration and expansion. For example, in order to implement a global template, so I wouldn't have to repeat a header and footer in every HTML page, I made a `global-page.html`. This contained a custom element template HTML tag: `<replace-with main x-content="q/query/content">` This instructed the templating engine to replace this element with a `main` tag, with the contents of the result of the query in the value of the attribute, in this case `q/query/content`. 
+
+This part might be confusing since "query" means two separate things here. First, this whole string `q/query/content` is the input to my "query language". It's not a complex language, though the slashes might suggest as such, it's more the suggestion of becoming a complex language in the future. For now, though, that whole string literally just maps to one bit of functionality. That functionality derives the content from the URL query, aka search parameters, aka everything between `?` and `#`. So I have my query language getting content from the URL query.
+
+The value in the URL query parameter named `content` needed to be a path, exactly like you would use to get a file. In fact, you could replace your whole path with the path in the `content` query parameter to see what that content would be. The query language was responsible for applying the templating engine to the file at that content path.
+
+If this seems confusing, then yes, you're on the right track. Mutual recursion can be messy!
+
+I struggled with how to package further query strings into the `content` URL parameter, to parameterize how the template engine expanded that `content` page without interfering with how it expanded the top level page. For example, if my URL turned out to be `/some-page?content=another-page?edit&raw`, should the query engine interpret `&raw` as a query parameter for `some-page?` or `another-page?`. The answer, I thought, was to URI encode each path definition. And I'd end up URI encoding.
+
+This felt dangerous. Could one nest URI encodings without losing any information? I thought I saw a warning recently about that. I wrote a little function to test encoding and decoding components: 
+
+```js
+function encodeAndDecode(str, depth = 2) {
+  console.log(`${depth}: ${str}`);
+  if (depth === 0) return str;
+  const encoded = encodeAndDecode(encodeURIComponent(str), depth - 1);
+  const decoded = decodeURIComponent(encoded);
+  console.log(`${depth}: ${} [decoded]`);
+  return decodeURIComponent(encoded);
+}
+```
+
+Then I called it like this with a bunch of special characters:
+
+```js
+let a="?%3 quick+brown++fox 333^&*(/\\"; 
+encodeAndDecode(a, 5) === a
+```
+
+And got these results:
+
+```text
+5: ?%3 quick+brown++fox 333^&*(/\
+4: %3F%253%20quick%2Bbrown%2B%2Bfox%20333%5E%26*(%2F%5C
+3: %253F%25253%2520quick%252Bbrown%252B%252Bfox%2520333%255E%2526*(%252F%255C
+2: %25253F%2525253%252520quick%25252Bbrown%25252B%25252Bfox%252520333%25255E%252526*(%25252F%25255C
+1: %2525253F%252525253%25252520quick%2525252Bbrown%2525252B%2525252Bfox%25252520333%2525255E%25252526*(%2525252F%2525255C
+0: %252525253F%25252525253%2525252520quick%252525252Bbrown%252525252B%252525252Bfox%2525252520333%252525255E%2525252526*(%252525252F%252525255C
+1: %2525253F%252525253%25252520quick%2525252Bbrown%2525252B%2525252Bfox%25252520333%2525255E%25252526*(%2525252F%2525255C [decoded]
+2: %25253F%2525253%252520quick%25252Bbrown%25252B%25252Bfox%252520333%25255E%252526*(%25252F%25255C [decoded]
+3: %253F%25253%2520quick%252Bbrown%252B%252Bfox%2520333%255E%2526*(%252F%255C [decoded]
+4: %3F%253%20quick%2Bbrown%2B%2Bfox%20333%5E%26*(%2F%5C [decoded]
+5: ?%3 quick+brown++fox 333^&*(/\ [decoded]
+> true
+```
+
+That `true` at the end reassured me. It meant that the encoded and decoded strings were exactly the same. So I moved forward with this plan.
+
+Future: Immediately I saw these encoded values become noisy. Limits and reductions to that noise became a constraint and goal for the query language. Especially my abundant use of `/`. Maybe in the short term I could switch that character to something unencoded, like `.`. Every single character encoded became three characters!
+
 ### Wed Aug  6 04:57:31 PM PDT 2025
 
-Implementing the create page made a funny bug. At first I just copied and pasted the edit page, with the same form. And it seemed to work! Except... it edited the current page, just like the edit form. Which meant it wasn't creating a new page, it was overwriting the Create page. Almost lost all my work on creating that page. Facepalm. Luckily my text editor's undo worked on the changes made elsewhere. Whew.
+Implementing the create page made a funny bug. At first I just copied and pasted the edit page, with the same form. And it seemed to work! Except... it edited the current page, just like the edit form, which meant it wasn't creating a new page, it was overwriting the Create page. Almost lost all my work on creating that page. Facepalm. Luckily my text editor's undo worked on the changes made elsewhere. Whew.
 
-Future: I knew I wanted to use a tree-walking strategy to implement the HTML-as-template, replacing and updating elements from the root of the document down, replacing outer elements before inner elements (most of the time?). But the API to query all of a given kind of element and change just those was so straightforward that I kept that in for the time being while I played around. It wouldn't be hard to make the tree walker, I hoped, but it wasn't what I found most compelling at the moment.
+I knew I wanted to use a tree-walking strategy to implement the HTML-as-template, replacing and updating elements from the root of the document down, replacing outer elements before inner elements (most of the time?). But the API to query all of a given kind of element and change just those was so straightforward that I kept that in for the time being while I played around. It wouldn't be hard to make the tree walker, I hoped, but it wasn't what I found most compelling at the moment.
 
 ### Mon Aug  4 06:44:02 PM PDT 2025
 

@@ -103,8 +103,35 @@ test(
     "Can get entry at weird path $/templates/edit.html",
     { concurrency: true },
     async () => {
-        const { url, response, responseText } = await getPath(
+        const { url, response, responseText, $ } = await getPath(
             `$/templates/edit.html`,
+        );
+
+        assert.strictEqual(response.status, 200);
+        assert.match(responseText, /<h1>Edit.*<\/h1>/);
+
+        assert.match(
+            $("textarea").innerHTML,
+            /^\s*No content query provided\s*$/i,
+        );
+
+        await validateAssertAndReport(responseText, url);
+
+        // /index.html ges the same result as /
+        const responseWithoutDotHtml = await fetch(url.replace(/\.html$/, ""));
+        const responseTextWithoutDotHtml = await responseWithoutDotHtml.text();
+
+        assert.strictEqual(response.status, 200);
+        assert.strictEqual(responseText, responseTextWithoutDotHtml);
+    },
+);
+
+test(
+    "Can get raw entry at weird path $/templates/edit.html",
+    { concurrency: true },
+    async () => {
+        const { url, response, responseText, $ } = await getPath(
+            `$/templates/edit.html?raw`,
         );
 
         assert.strictEqual(response.status, 200);
@@ -112,8 +139,8 @@ test(
 
         // The slot is still present, untransformed
         assert.match(
-            responseText,
-            /<slot name="content">Something went wrong.*<\/slot>/,
+            $("textarea").innerHTML,
+            /<query-content[^>]*>(.|\n)*something went wrong(.|\n)*<\/query-content>/i,
         );
 
         await validateAssertAndReport(responseText, url, {
@@ -184,16 +211,12 @@ test(
         assert.match(responseText, /&lt;h1&gt;Edit.*&lt;\/h1&gt;/);
 
         // Save button should have a formaction without any special mode
-        assert.match(responseText, /<button\s+type="submit"\s+formaction="\?"/);
+        assert.match(
+            responseText,
+            /<button\s+type="submit"\s+formaction="\/\$\/templates\/edit.html"/,
+        );
 
-        await validateAssertAndReport(responseText, url, {
-            // TODO: The <slot> element can't be within a
-            // <textarea>, because no HTML can. Could choose to
-            // solve this by escaping it, or maybe this shows
-            // why the greater concept is flawed? Passing that
-            // buck for now
-            "element-permitted-content": "off",
-        });
+        await validateAssertAndReport(responseText, url);
     },
 );
 
@@ -298,7 +321,10 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
     assert.match(responseText, /&lt;code&gt;&lt;pre&gt;/);
 
     // Save button should have a formaction without any special mode
-    assert.match(responseText, /<button\s+type="submit"\s+formaction="\?"/);
+    assert.match(
+        responseText,
+        /<button\s+type="submit"\s+formaction="\/project\/logbook.html"/,
+    );
 
     await validateAssertAndReport(responseText, url);
 });
@@ -308,7 +334,7 @@ test(
     { concurrency: true },
     async () => {
         const { url, response, responseText } = await getPath(
-            `project/logbook?edit&raw`,
+            `/$/templates/edit.html?content=/project/logbook?raw`,
         );
 
         assert.strictEqual(response.status, 200);
@@ -339,7 +365,7 @@ test(
         // Save button should have a formaction to raw mode
         assert.match(
             responseText,
-            /<button\s+type="submit"\s+formaction="\?raw"/,
+            /<button\s+type="submit"\s+formaction="\/project\/logbook.html"/,
         );
 
         // HTML within the markdown content should still come escaped

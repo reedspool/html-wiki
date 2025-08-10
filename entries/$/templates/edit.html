@@ -60,14 +60,22 @@
     </slot>
     <form method="POST">
       <textarea name="content">
-<slot name="content">Something went wrong :-/ the content you are attempting to edit should have apeared here</slot></textarea
+<query-content q="q/query/content">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
       >
-
       <slot name="keep" if="raw">
         <button type="submit" formaction="?raw">Save</button>
-      </slot>
+        <p>
+          This isn't implemented correctly. Need to add <code>?raw</code> to
+          query <code>q/query/content/filename</code>
+        </p></slot
+      >
       <slot name="remove" if="raw">
-        <button type="submit" formaction="?">Save</button>
+        <replace-with
+          button
+          type="submit"
+          x-formaction="q/query/content/filename"
+          >Save</replace-with
+        >
       </slot>
     </form>
   </body>

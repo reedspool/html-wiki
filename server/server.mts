@@ -7,11 +7,12 @@
 import express from "express";
 import EventEmitter from "node:events";
 import { dirname } from "node:path";
-import { mkdir, open, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, open, rm, writeFile } from "node:fs/promises";
 import { parse as parseHtml } from "node-html-parser";
 import { escapeHtml, html } from "./utilities.mts";
 import {
-    caughtToQueryError,
+    encodedEntryPathRequest,
+    expressQueryToRecord,
     fullyQualifiedEntryName,
     getEntryContents,
     pathToEntryFilename,
@@ -33,65 +34,6 @@ export const createServer = ({ port }: { port?: number }) => {
 
     app.use(express.urlencoded({ extended: true }));
 
-    app.use("/", async (req, res, next) => {
-        if (req.method !== "GET" || req.query.edit === undefined) {
-            return next();
-        }
-
-        let entryFileName = pathToEntryFilename(req.path);
-        let fileToEditContents: string = await getEntryContents(entryFileName);
-
-        let contentType = `html`;
-        // If it's not raw, then apply any templates
-        if (req.query.raw === undefined) {
-            // TODO: Instead of inspecting a file at read-time, try to inspect
-            // this at less critical times and cache the result, e.g. when the
-            // server starts, when notified the file changed on disk
-            await applyTemplating(fileToEditContents, {
-                // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
-                serverError: () => {},
-                getEntryFileName: () => entryFileName,
-                getQueryValue: queryEngine({
-                    query: req.query,
-                    fileToEditContents,
-                    host: req.get("host"),
-                    protocol: req.protocol,
-                }),
-                setContentType: (type, fileRoot) => {
-                    contentType = type;
-                    if (contentType === "markdown") {
-                        fileToEditContents =
-                            fileRoot.querySelector(
-                                "body > code > pre",
-                            ).innerHTML;
-                    }
-                },
-            });
-        }
-
-        const editFileContents = await getEntryContents(
-            "$/templates/edit.html",
-        );
-        const result = await applyTemplating(editFileContents, {
-            // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
-            serverError: () => {},
-            getEntryFileName: () => entryFileName,
-            getQueryValue: queryEngine({
-                query: req.query,
-                fileToEditContents,
-                host: req.get("host"),
-                protocol: req.protocol,
-            }),
-            setContentType: (type) => {
-                if (type !== contentType) {
-                    throw new Error(
-                        `mismatch between edit and target content types (${contentType} != ${type})`,
-                    );
-                }
-            },
-        });
-        res.send(result);
-    });
     app.use("/", async (req, res, next) => {
         if (req.method !== "POST") {
             // Edit should be PUT, but forms don't support that
@@ -200,27 +142,7 @@ export const createServer = ({ port }: { port?: number }) => {
             return;
         }
 
-        let fileToEditContents: string;
-        try {
-            const fileToEdit = await readFile(
-                fullyQualifiedEntryName(entryFileName),
-            );
-            fileToEditContents = fileToEdit.toString();
-        } catch (error) {
-            if (error.code === "ENOENT") {
-                res.status(404);
-                res.write(
-                    `Couldn't find a file named ${escapeHtml(entryFileName)}`,
-                );
-                res.end();
-                return;
-            }
-            console.error(
-                "unknown error caught while trying to read edit file:",
-                error,
-            );
-            throw error;
-        }
+        let fileToEditContents: string = await getEntryContents(entryFileName);
 
         console.log(`Logging contents of ${entryFileName} before write:`);
         console.log(fileToEditContents);
@@ -306,38 +228,31 @@ export const createServer = ({ port }: { port?: number }) => {
     });
 
     app.use("/", async (req, res, next) => {
+        // Silly chrome dev tools stuff is noisy
+        if (req.path.match(/\.well-known\/appspecific\/com.chrome/)) return;
         // Req.query is immutable
-        const query: Record<string, string> = {};
-        for (const key in req.query) {
-            if (typeof key != "string")
-                throw new Error(`req.query key '${key}' was not a string.`);
-
-            const value = req.query[key];
-            if (typeof value != "string") {
-                console.error(
-                    `req.query['${key}'] was not a string: ${req.query[key]}`,
-                );
-                throw new Error(
-                    `req.query['${key}'] was not a string. See log`,
-                );
-            }
-            query[key] = value;
-        }
+        const query = expressQueryToRecord(req.query);
         if (req.method !== "GET") {
             return next();
         }
         let entryFileName = pathToEntryFilename(req.path);
         let fileToRenderContents: string;
-        if (typeof query.raw !== "undefined") {
-            try {
-                const fileToEdit = await readFile(
-                    fullyQualifiedEntryName(entryFileName),
-                );
-                fileToRenderContents = fileToEdit.toString();
-            } catch (error) {
-                caughtToQueryError(error, { readingFileName: entryFileName });
-            }
-
+        if (query.edit !== undefined) {
+            entryFileName = pathToEntryFilename(
+                "/$/templates/global-page.html",
+            );
+            query.content = encodedEntryPathRequest("/$/templates/edit.html", {
+                ...query,
+                content: encodedEntryPathRequest(req.path, {
+                    ...query,
+                    raw: "raw",
+                    escape: "escape",
+                }),
+            });
+            query.select = "body";
+            fileToRenderContents = await getEntryContents(entryFileName);
+        } else if (query.raw !== undefined) {
+            fileToRenderContents = await getEntryContents(entryFileName);
             res.send(fileToRenderContents);
             return;
         } else {
@@ -345,25 +260,21 @@ export const createServer = ({ port }: { port?: number }) => {
                 entryFileName = pathToEntryFilename(
                     "/$/templates/global-page.html",
                 );
-                query.content = req.path + `?${new URLSearchParams(query)}`;
+                query.content = encodedEntryPathRequest(req.path, query);
                 query.select = "body";
             }
-            try {
-                const fileToEdit = await readFile(
-                    fullyQualifiedEntryName(entryFileName),
-                );
-                fileToRenderContents = fileToEdit.toString();
-            } catch (error) {
-                caughtToQueryError(error, { readingFileName: entryFileName });
-            }
+            fileToRenderContents = await getEntryContents(entryFileName);
         }
 
         // TODO: Instead of inspecting a file at read-time, try to inspect
         // this at less critical times and cache the result, e.g. when the
         // server starts, when notified the file changed on disk
+        let contentType = `html`;
+        console.log(
+            `Applying top-level templating for ${entryFileName} with query ${new URLSearchParams(query)}`,
+            query,
+        );
         const result = await applyTemplating(fileToRenderContents, {
-            // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
-            serverError: () => {},
             getEntryFileName: () => entryFileName,
             getQueryValue: queryEngine({
                 query: query,
@@ -371,9 +282,18 @@ export const createServer = ({ port }: { port?: number }) => {
                 host: req.get("host"),
                 protocol: req.protocol,
             }),
-            setContentType(_type) {
-                throw new Error("not implemented setcontenttype");
+            setContentType: (type) => {
+                contentType = type;
             },
+            // TODO: This should only be applied if content type is set
+            // That obnoxiously relies on knowledge that this will occur
+            // after the parsing and processing of the meta elements
+            // But honestly I want to get rid of this special case,
+            // so just support it for now.
+            select: () =>
+                query.raw === undefined && contentType === "markdown"
+                    ? "body > code > pre"
+                    : null,
         });
 
         res.send(result);
@@ -391,7 +311,11 @@ export const createServer = ({ port }: { port?: number }) => {
         _next: () => void,
     ) {
         if (error instanceof QueryError) {
-            console.log(`QueryError on ${req.path}:`, error);
+            if (error.status === 404) {
+                console.log(`404: Req ${req.path}, ${error.message}`);
+            } else {
+                console.log(`QueryError on ${req.path}:`, error);
+            }
             res.status(error.status);
             res.write(error.message);
             res.end();

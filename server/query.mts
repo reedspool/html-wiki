@@ -1,5 +1,4 @@
 import { fileURLToPath, URL } from "node:url";
-import { parse as parseHtml } from "node-html-parser";
 import { dirname } from "node:path";
 import { type Request } from "express";
 import { Temporal } from "temporal-polyfill";
@@ -45,7 +44,9 @@ export const pathToEntryFilename = (path: string) => {
 export const fullyQualifiedEntryName = (entryFileName: string) =>
   `${__dirname}/../entries/${entryFileName}`;
 
-export const urlSearchParamsToRecord = (params: URLSearchParams) => {
+export const urlSearchParamsToRecord = (
+  params: URLSearchParams,
+): Record<string, string> => {
   const record = {};
   for (const [key, value] of params) {
     record[key] = value;
@@ -53,7 +54,7 @@ export const urlSearchParamsToRecord = (params: URLSearchParams) => {
   return record;
 };
 export type Context = {
-  query: Request["query"] | Record<string, string>;
+  query: Record<string, string>;
   fileToEditContents: string;
   protocol: string;
   host: string;
@@ -63,20 +64,37 @@ export const queryEngine =
   async (input: string) => {
     switch (input) {
       case "q/query/title":
-        return "HTML Wiki";
+        // TODO: I have 10 different ways of doing this query stuff, probably just this one is best
+        return query.title || "";
       case "q/query/filename":
-        return query.filename ? query.filename.toString() : null;
+        return query.filename ? query.filename.toString() : "";
       case "q/query/raw":
         return query.raw === undefined ? "" : "raw";
       case "q/Now.plainDateTimeISO()":
         return Temporal.Now.plainDateTimeISO().toString();
       case "fileToEditContents":
         return fileToEditContents;
+      case "q/query/escape":
+        return query.escape === undefined ? "" : "escape";
+      case "q/query/content/filename": {
+        if (query.content === undefined) return "";
+        const content = decodeURIComponent(query.content.toString());
+
+        const url = `${protocol}://${host}${content}`;
+        const urlParsed = URL.parse(url);
+        if (urlParsed == null) {
+          throw new Error(`Unable to parse url ${url}`);
+        }
+        return "/" + pathToEntryFilename(urlParsed.pathname);
+      }
+
       case "q/query/content":
         debugger;
-        if (query.content === undefined) return "";
+        if (query.content === undefined) return "No content query provided";
 
-        const url = `${protocol}://${host}${query.content}`;
+        const content = decodeURIComponent(query.content.toString());
+
+        const url = `${protocol}://${host}${content}`;
         const urlParsed = URL.parse(url);
         if (urlParsed == null) {
           throw new Error(`Unable to parse url ${url}`);
@@ -84,25 +102,29 @@ export const queryEngine =
         const contentEntryFileName = pathToEntryFilename(urlParsed.pathname);
         const contentFileContents =
           await getEntryContents(contentEntryFileName);
+        const contentQuery = urlSearchParamsToRecord(urlParsed.searchParams);
+        console.log(
+          `Applying in-query templating for ${content} original query ${JSON.stringify(query)} and content query ${JSON.stringify(contentQuery)}`,
+        );
+        if (contentQuery.raw !== undefined) {
+          return contentFileContents;
+        }
         return applyTemplating(contentFileContents, {
-          // TODO: This doesn't really make sense. Probably should return it from fileRoot instead like Go
-          serverError: () => {},
           getEntryFileName: () => contentEntryFileName,
           getQueryValue: queryEngine({
-            query: urlSearchParamsToRecord(urlParsed.searchParams),
+            query: contentQuery,
             fileToEditContents: "",
             host,
             protocol,
           }),
           setContentType(type) {
-            throw new Error("not implemented setcontenttype");
+            console.log(`setContentType('${type}') does nothing in-query`);
           },
-          select: query.select.toString(),
+          select: () => query.select && query.select.toString(),
         });
       default:
         // TODO: This shouldn't just be a random server crashing error
-        throw new Error(`No value matcher for '${input}'`);
-        return;
+        throw new QueryError(500, `No value matcher for '${input}'`);
     }
   };
 
@@ -132,4 +154,27 @@ export const getEntryContents = async (filename: string) => {
       readingFileName: filename,
     });
   }
+};
+
+export const encodedEntryPathRequest = (
+  entryFileName: string,
+  query: Record<string, string>,
+) => encodeURIComponent(`${entryFileName}?${new URLSearchParams(query)}`);
+
+export const expressQueryToRecord = (
+  reqQuery: Request["query"],
+): Record<string, string> => {
+  const query: Record<string, string> = {};
+  for (const key in reqQuery) {
+    if (typeof key != "string")
+      throw new Error(`req.query key '${key}' was not a string.`);
+
+    const value = reqQuery[key];
+    if (typeof value != "string") {
+      console.error(`req.query['${key}'] was not a string: ${reqQuery[key]}`);
+      throw new Error(`req.query['${key}'] was not a string. See log`);
+    }
+    query[key] = value;
+  }
+  return query;
 };

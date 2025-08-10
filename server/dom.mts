@@ -1,25 +1,28 @@
 import { type Node, NodeType, HTMLElement, TextNode } from "node-html-parser";
 import { parse as parseHtml } from "node-html-parser";
 import { escapeHtml, renderMarkdown } from "./utilities.mts";
+import { QueryError } from "./error.mts";
 export type Operations = {
-    serverError: (message: string) => void;
     getEntryFileName: () => string;
     getQueryValue: (query: string) => Promise<string>;
-    setContentType: (type: string, fileRoot: HTMLElement) => void;
-    select?: string;
+    setContentType: (type: string) => void;
+    select?: () => string;
 };
-
 export const applyTemplating = async (contents: string, ops: Operations) => {
     const root = parseHtml(contents);
     const treeWalker = new TreeWalker(root, NodeFilter.SHOW_ELEMENT);
 
+    let alreadySetForNextIteration = false;
+    let stopAtElement: HTMLElement;
     do {
+        alreadySetForNextIteration = false;
         if (treeWalker.currentNode.nodeType !== NodeType.ELEMENT_NODE) {
             throw new Error(
                 `Treewalker showed a non-HTMLElement Node '${treeWalker.currentNode}'`,
             );
         }
         const element = treeWalker.currentNode as HTMLElement;
+        if (stopAtElement && element === stopAtElement) break;
         switch (element.tagName) {
             case "META":
                 switch (element.attributes.itemprop) {
@@ -34,20 +37,22 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                                 const markdownContent =
                                     body?.querySelector("code > pre");
                                 if (!body) {
-                                    ops.serverError(
+                                    throw new QueryError(
+                                        500,
                                         `No <body> found in file ${escapeHtml(ops.getEntryFileName())}`,
                                     );
-                                    return;
                                 }
                                 if (!markdownContent) {
-                                    ops.serverError(
+                                    throw new QueryError(
+                                        500,
                                         `No <code><pre> sequence found in file ${escapeHtml(ops.getEntryFileName())}`,
                                     );
-                                    return;
                                 }
+                                ops.setContentType("markdown");
                                 body.innerHTML = renderMarkdown(
                                     markdownContent.innerHTML,
                                 );
+                                stopAtElement = body;
                                 break;
                             default:
                                 console.error(
@@ -73,8 +78,9 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                         const text = new TextNode(
                             escapeHtml(fileToEditContents),
                         );
+                        treeWalker.nextNode();
+                        alreadySetForNextIteration = true;
                         element.replaceWith(text);
-                        treeWalker.currentNode = text;
                         break;
                     case "keep":
                     case "remove":
@@ -98,19 +104,16 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                                     break;
                             }
                             if (shouldRemove) {
-                                // Note: .remove() and event .replaceWith("") produce an
-                                // empty line with extra whitespace
-                                element.innerHTML = "";
-                                // element.parentNode.removeChild(slotElement);
+                                treeWalker.nextNodeNotChildren();
+                                alreadySetForNextIteration = true;
+                                element.remove();
                             } else {
-                                // TODO: Ideally we replace the slot with its contents, but I can't think of a good way to do that
-                                // that doesn't have the same issue of introducing extra whitespace
-                                // Note that some extra whitespace might be intentional! But my HTML validator currently doesn't like it
-                                // and I want to keep it that way
+                                treeWalker.nextNode();
+                                alreadySetForNextIteration = true;
                                 element.childNodes.forEach((node) => {
                                     element.after(node);
                                 });
-                                element.innerHTML = "";
+                                element.remove();
                             }
                         }
                         break;
@@ -118,12 +121,12 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                         const replacementElement = new HTMLElement("a", {});
                         replacementElement.setAttribute(
                             "href",
-                            `/${await ops.getEntryFileName()}`,
+                            `/${ops.getEntryFileName()}`,
                         );
-                        replacementElement.innerHTML =
-                            await ops.getEntryFileName();
+                        replacementElement.innerHTML = ops.getEntryFileName();
+                        treeWalker.nextNodeNotChildren();
+                        alreadySetForNextIteration = true;
                         element.replaceWith(replacementElement);
-                        treeWalker.currentNode = replacementElement;
                         break;
                     default:
                         console.error(
@@ -138,12 +141,14 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                     const attributeEntries = Object.entries(element.attributes);
                     const tagName = attributeEntries[0][0];
                     if (attributeEntries[0][1]) {
-                        ops.serverError(
+                        throw new QueryError(
+                            500,
                             `replace-with first attribute must be a tagName with no value, got value ${attributeEntries[0][1]}`,
                         );
-                        return;
                     }
+
                     const replacementElement = new HTMLElement(tagName, {});
+                    replacementElement.innerHTML = element.innerHTML;
 
                     for (let i = 1; i < attributeEntries.length; i++) {
                         const [key, value] = attributeEntries[i];
@@ -166,8 +171,36 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                             replacementElement.setAttribute(key, value);
                         }
                     }
+                    treeWalker.nextNodeNotChildren();
+                    alreadySetForNextIteration = true;
                     element.replaceWith(replacementElement);
-                    treeWalker.currentNode = replacementElement;
+                }
+                break;
+            case "QUERY-CONTENT":
+                {
+                    const attributeEntries = Object.entries(element.attributes);
+                    if (attributeEntries[0][0] !== "q") {
+                        throw new QueryError(
+                            500,
+                            "query-content only supports a single attribute, `q` whose value is the query to use to replace ",
+                        );
+                    }
+                    if (typeof attributeEntries[0][1] !== "string") {
+                        throw new QueryError(
+                            500,
+                            `query-content first attribute must be 'q' with a query as value, got value ${attributeEntries[0][1]}`,
+                        );
+                    }
+                    const query = attributeEntries[0][1];
+
+                    let queryValue = await ops.getQueryValue(query);
+                    if (!queryValue) {
+                        queryValue = element.innerHTML;
+                    }
+                    const text = new TextNode(escapeHtml(queryValue));
+                    treeWalker.nextNodeNotChildren();
+                    alreadySetForNextIteration = true;
+                    element.replaceWith(text);
                 }
                 break;
             case "DROP-IF":
@@ -201,16 +234,23 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                     }
 
                     if (!conditional) shouldDrop = !shouldDrop;
-                    if (shouldDrop) element.innerHTML = "";
+                    if (shouldDrop) {
+                        treeWalker.nextNodeNotChildren();
+                        alreadySetForNextIteration = true;
+                        element.innerHTML = "";
+                    }
                 }
                 break;
             default:
                 break;
         }
-    } while (treeWalker.nextNode());
+    } while (alreadySetForNextIteration || treeWalker.nextNode());
 
     if (ops.select) {
-        return root.querySelector(ops.select).innerHTML.toString();
+        const selector = ops.select();
+        if (selector) {
+            return root.querySelector(selector).innerHTML.toString();
+        }
     }
 
     return root.toString();
@@ -313,6 +353,23 @@ export class TreeWalker {
     // Depth first
     nextNode(): Node | null {
         if (this.firstChild()) return this.currentNode;
+        if (this.nextSibling()) return this.currentNode;
+        while (this.parentNode()) {
+            if (this.nextSibling()) return this.currentNode;
+        }
+        return null;
+    }
+
+    previousNode(): Node | null {
+        if (this.previousSibling()) return this.currentNode;
+        if (this.parentNode()) return this.currentNode;
+        return null;
+    }
+
+    /**
+     * Useful for skipping a node's contents, e.g. when it is to be removed
+     **/
+    nextNodeNotChildren(): Node | null {
         if (this.nextSibling()) return this.currentNode;
         while (this.parentNode()) {
             if (this.nextSibling()) return this.currentNode;

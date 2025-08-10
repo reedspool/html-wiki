@@ -10,7 +10,9 @@ const htmlvalidate = new HtmlValidate({
         // See https://github.com/prettier/prettier/issues/5641
         "doctype-style": "off",
         "void-style": "off",
-        "no-trailing-whitespace": "warn",
+        // TODO: Using `replaceWith` and `remove` from node-html-parser
+        // leaves a huge amount of unattractive whitespace. Want to fix that
+        "no-trailing-whitespace": "off",
     },
 });
 
