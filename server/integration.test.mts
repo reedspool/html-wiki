@@ -45,8 +45,8 @@ async function getPath(path: string, status: number = 200) {
         response,
         responseText,
         dom,
-        $1: (selector: string) => dom.querySelector(selector),
-        $: (selector: string) => dom.querySelectorAll(selector),
+        $1: (selector: string) => dom.querySelector(selector)!,
+        $: (selector: string) => dom.querySelectorAll(selector)!,
     };
 }
 async function postPath(
@@ -71,8 +71,8 @@ async function postPath(
         response,
         responseText,
         dom,
-        $1: (selector: string) => dom.querySelector(selector),
-        $: (selector: string) => dom.querySelectorAll(selector),
+        $1: (selector: string) => dom.querySelector(selector)!,
+        $: (selector: string) => dom.querySelectorAll(selector)!,
     };
 }
 
@@ -243,9 +243,9 @@ test(
         assert.equal(anchors.length, 2);
 
         assert.match(anchors[0].innerHTML, /Google/);
-        assert.match(anchors[0].getAttribute("href"), /google\.com/);
+        assert.match(anchors[0].getAttribute("href")!, /google\.com/);
         assert.match(anchors[1].innerHTML, /reference link/);
-        assert.match(anchors[1].getAttribute("href"), /\/index/);
+        assert.match(anchors[1].getAttribute("href")!, /\/index/);
         assert.match($1("em").innerHTML, /emphasized/);
         assert.match($1("strong").innerHTML, /bold/);
         const inlineCode = $(":not(:has(pre)) code");

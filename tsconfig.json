@@ -3,6 +3,7 @@
     "lib": ["esnext"],
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "module": "nodenext"
+    "module": "nodenext",
+    "strict": true
   }
 }

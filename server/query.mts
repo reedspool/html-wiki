@@ -38,7 +38,7 @@ export const fullyQualifiedEntryName = (entryFileName: string) =>
 export const urlSearchParamsToRecord = (
   params: URLSearchParams,
 ): Record<string, string> => {
-  const record = {};
+  const record: Record<string, string> = {};
   for (const [key, value] of params) {
     record[key] = value;
   }
@@ -112,7 +112,7 @@ export const queryEngine =
             host,
             protocol,
           }),
-          setContentType(type) {
+          setContentType(_type) {
             throw new QueryError(400, "Setting content type is not supported");
           },
           select: () => query.select && query.select.toString(),

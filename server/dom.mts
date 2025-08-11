@@ -13,7 +13,7 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
     const treeWalker = new TreeWalker(root, NodeFilter.SHOW_ELEMENT);
 
     let alreadySetForNextIteration = false;
-    let stopAtElement: HTMLElement;
+    let stopAtElement: HTMLElement | null = null;
     do {
         alreadySetForNextIteration = false;
         if (treeWalker.currentNode.nodeType !== NodeType.ELEMENT_NODE) {
@@ -222,11 +222,15 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
         }
     } while (alreadySetForNextIteration || treeWalker.nextNode());
 
-    if (ops.select) {
-        const selector = ops.select();
-        if (selector) {
-            return root.querySelector(selector).innerHTML.toString();
-        }
+    const selector = ops.select?.();
+    if (selector) {
+        const selected = root.querySelector(selector);
+        if (!selected)
+            throw new QueryError(
+                400,
+                `selector ${selector} did not match any elements`,
+            );
+        return selected.innerHTML.toString();
     }
 
     return root.toString();

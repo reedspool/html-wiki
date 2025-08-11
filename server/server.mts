@@ -68,7 +68,11 @@ export const createServer = ({ port }: { port?: number }) => {
                 res.redirect(`/${entryFileName}`);
                 return;
             } catch (error) {
-                if (error.code === "EEXIST") {
+                if (
+                    error instanceof Error &&
+                    "code" in error &&
+                    error.code === "EEXIST"
+                ) {
                     throw new QueryError(
                         422,
                         `File /${escapeHtml(entryFileName)} already exists`,
@@ -94,7 +98,11 @@ export const createServer = ({ port }: { port?: number }) => {
                     `File /${escapeHtml(entryFileName)} doesn't exist`,
                 );
             } catch (error) {
-                if (error.code === "EEXIST") {
+                if (
+                    error instanceof Error &&
+                    "code" in error &&
+                    error.code === "EEXIST"
+                ) {
                     rm(fullyQualifiedEntryName(entryFileName));
                     res.send(
                         `Successfully deleted ${escapeHtml(entryFileName)}`,
@@ -182,21 +190,16 @@ export const createServer = ({ port }: { port?: number }) => {
             getQueryValue: queryEngine({
                 query: query,
                 fileToEditContents: "",
-                host: req.get("host"),
+                host: req.get("host")!,
                 protocol: req.protocol,
             }),
-            setContentType: (type) => {
+            setContentType: (_type) => {
                 throw new QueryError(
                     400,
                     "Setting content type is not supported",
                 );
             },
-            // TODO: This should only be applied if content type is set
-            // That obnoxiously relies on knowledge that this will occur
-            // after the parsing and processing of the meta elements
-            // But honestly I want to get rid of this special case,
-            // so just support it for now.
-            select: () => null,
+            select: () => query.select && query.select.toString(),
         });
 
         res.send(result);
