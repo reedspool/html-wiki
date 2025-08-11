@@ -113,24 +113,7 @@ export const createServer = ({ port }: { port?: number }) => {
             }
         }
 
-        let fileToEditContents: string = await getEntryContents(entryFileName);
-
-        console.log(`Logging contents of /${entryFileName} before write:`);
-        console.log(fileToEditContents);
-
-        let contentToWrite = req.body.content;
-
-        await writeFile(
-            fullyQualifiedEntryName(entryFileName),
-            contentToWrite
-                // Browser sends CRLF, replace with unix-style LF,
-                .replaceAll(/\r\n/g, "\n")
-                // Remove any extra trailing spaces (but not double newlines!)
-                .replaceAll(/[ \t\r]+\n/g, "\n"),
-        );
-
-        res.redirect(`/${entryFileName}`);
-        return;
+        next();
     });
 
     app.use("/", async (req, res, next) => {
@@ -138,13 +121,26 @@ export const createServer = ({ port }: { port?: number }) => {
         if (req.path.match(/\.well-known\/appspecific\/com.chrome/)) return;
         // Req.query is immutable
         const query = expressQueryToRecord(req.query);
-        if (req.method !== "GET") {
+        if (req.method !== "GET" && req.method !== "POST") {
             return next();
         }
         let entryFileName = pathToEntryFilename(req.path);
-        let fileToRenderContents: string;
+        let fileToRenderContents: string | undefined;
+        let bodyContents: string | undefined;
+        let command: "render" | "write" = "render";
         let raw: boolean = query.raw !== undefined;
-        if (query.edit !== undefined) {
+
+        if (req.method === "POST") {
+            command = "write";
+            raw = true;
+            if (!req.body.content) {
+                throw new QueryError(
+                    400,
+                    "Writing to file requires a POST body",
+                );
+            }
+            bodyContents = req.body.content;
+        } else if (query.edit !== undefined) {
             entryFileName = pathToEntryFilename(
                 "/$/templates/global-page.html",
             );
@@ -163,7 +159,10 @@ export const createServer = ({ port }: { port?: number }) => {
             res.send(fileToRenderContents);
             return;
         } else {
-            if (query.content === undefined) {
+            // TODO: Want this to be discovered in the process of applyTemplating
+            // so that it can be configured by the template itself e.g. in a
+            // meta tag, `<meta itemprop="layout" value="my/layout.html">`
+            if (query.content === undefined && !raw) {
                 entryFileName = pathToEntryFilename(
                     "/$/templates/global-page.html",
                 );
@@ -185,23 +184,75 @@ export const createServer = ({ port }: { port?: number }) => {
             `Applying top-level templating for ${entryFileName} with query ${new URLSearchParams(query)}`,
             query,
         );
-        const result = await applyTemplating(fileToRenderContents, {
-            getEntryFileName: () => entryFileName,
-            getQueryValue: queryEngine({
-                query: query,
-                fileToEditContents: "",
-                host: req.get("host")!,
-                protocol: req.protocol,
-            }),
-            setContentType: (_type) => {
-                throw new QueryError(
-                    400,
-                    "Setting content type is not supported",
-                );
-            },
-        });
 
-        res.send(result);
+        switch (command) {
+            case "render":
+                if (fileToRenderContents === undefined) {
+                    throw new QueryError(
+                        400,
+                        "Cannot render file with no contents",
+                    );
+                }
+                const result = await applyTemplating(fileToRenderContents, {
+                    getEntryFileName: () => entryFileName,
+                    getQueryValue: queryEngine({
+                        query: query,
+                        fileToEditContents: "",
+                        host: req.get("host")!,
+                        protocol: req.protocol,
+                    }),
+                    setContentType: (_type) => {
+                        throw new QueryError(
+                            400,
+                            "Setting content type is not supported",
+                        );
+                    },
+                    select: () => query.select && query.select.toString(),
+                });
+
+                res.send(result);
+                return;
+            case "write":
+                if (bodyContents === undefined) {
+                    throw new QueryError(
+                        400,
+                        "Writing to file requires POST body contents",
+                    );
+                }
+                try {
+                    await open(fullyQualifiedEntryName(entryFileName), "wx");
+                    throw new QueryError(
+                        404,
+                        `File /${escapeHtml(entryFileName)} doesn't exist. Did you mean to create it?`,
+                    );
+                } catch (error) {
+                    if (
+                        error instanceof Error &&
+                        "code" in error &&
+                        error.code === "EEXIST"
+                    ) {
+                        let fileToEditContents: string =
+                            await getEntryContents(entryFileName);
+
+                        console.log(
+                            `Logging contents of /${entryFileName} before write:`,
+                        );
+                        console.log(fileToEditContents);
+
+                        await writeFile(
+                            fullyQualifiedEntryName(entryFileName),
+                            bodyContents
+                                // Browser sends CRLF, replace with unix-style LF,
+                                .replaceAll(/\r\n/g, "\n")
+                                // Remove any extra trailing spaces (but not double newlines!)
+                                .replaceAll(/[ \t\r]+\n/g, "\n"),
+                        );
+                        res.redirect(`/${entryFileName}`);
+                        return;
+                    }
+                    throw error;
+                }
+        }
     });
 
     //
