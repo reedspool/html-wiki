@@ -45,7 +45,8 @@ async function getPath(path: string, status: number = 200) {
         response,
         responseText,
         dom,
-        $: (selector: string) => dom.querySelector(selector),
+        $1: (selector: string) => dom.querySelector(selector),
+        $: (selector: string) => dom.querySelectorAll(selector),
     };
 }
 async function postPath(
@@ -70,7 +71,8 @@ async function postPath(
         response,
         responseText,
         dom,
-        $: (selector: string) => dom.querySelector(selector),
+        $1: (selector: string) => dom.querySelector(selector),
+        $: (selector: string) => dom.querySelectorAll(selector),
     };
 }
 
@@ -107,15 +109,16 @@ test(
     "Can get entry at weird path $/templates/edit.html",
     { concurrency: true },
     async () => {
-        const { url, response, responseText, $ } = await getPath(
+        const { url, response, responseText, $1 } = await getPath(
             `/$/templates/edit.html`,
         );
 
         assert.strictEqual(response.status, 200);
-        assert.match(responseText, /<h1>Edit.*<\/h1>/);
+        assert.match($1("h1").innerHTML, /Editing/);
+        assert.match($1("h1").innerHTML, /template/);
 
         assert.match(
-            $("textarea").innerHTML,
+            $1("textarea").innerHTML,
             /^\s*No content query provided\s*$/i,
         );
 
@@ -134,16 +137,16 @@ test(
     "Can get raw entry at weird path $/templates/edit.html",
     { concurrency: true },
     async () => {
-        const { url, response, responseText, $ } = await getPath(
+        const { url, response, responseText, $1 } = await getPath(
             `/$/templates/edit.html?raw`,
         );
 
         assert.strictEqual(response.status, 200);
-        assert.match(responseText, /<h1>Edit.*<\/h1>/);
+        assert.match($1("h1").innerHTML, /Edit/);
 
         // The slot is still present, untransformed
         assert.match(
-            $("textarea").innerHTML,
+            $1("textarea").innerHTML,
             /<query-content[^>]*>(.|\n)*something went wrong(.|\n)*<\/query-content>/i,
         );
 
@@ -192,10 +195,10 @@ test("Edit page for no entry 404s", { concurrency: true }, async () => {
 });
 
 test("Can get edit page for index", { concurrency: true }, async () => {
-    const { url, response, responseText } = await getPath(`/index?edit`);
+    const { url, response, responseText, $1 } = await getPath(`/index?edit`);
 
     assert.strictEqual(response.status, 200);
-    assert.match(responseText, /<h1>Edit.*<\/h1>/);
+    assert.match($1("h1").innerHTML, /Edit/);
 
     await validateAssertAndReport(responseText, url);
 });
@@ -204,15 +207,14 @@ test(
     "Can get edit page for weird path $/templates/edit",
     { concurrency: true },
     async () => {
-        const { url, response, responseText } = await getPath(
+        const { url, responseText, $1 } = await getPath(
             `/$/templates/edit?edit`,
         );
 
-        assert.strictEqual(response.status, 200);
-        assert.match(responseText, /<h1>Edit.*<\/h1>/);
+        assert.match($1("h1").innerHTML, /Edit/);
 
         // Should also include itself but escaped
-        assert.match(responseText, /&lt;h1&gt;Edit.*&lt;\/h1&gt;/);
+        assert.match(responseText, /&lt;h1&gt;(.|\n)*Edit(.|\n)*&lt;\/h1&gt;/);
 
         // Save button should have a formaction without any special mode
         assert.match(
@@ -228,32 +230,35 @@ test(
     "Can get markdown entry rendered as HTML",
     { concurrency: true },
     async () => {
-        const { url, response, responseText } = await getPath(
-            `/project/logbook.html`,
+        const { url, responseText, $1, $ } = await getPath(
+            `/$/test/fixtures/test.md`,
         );
-
-        assert.strictEqual(response.status, 200);
 
         // The markdown has been transformed!
-        assert.match(responseText, /<h1>About.*<\/h1>/);
-        assert.match(responseText, /<h2>Logbook.*<\/h2>/);
-        assert.match(responseText, /<h3>Sun\s+Aug\s+3.*<\/h3>/);
-        // One of the links has been transformed properly
-        assert.match(
-            responseText,
-            /<a href="http:\/\/tiddlywiki.com\/".*>TiddlyWiki<\/a>/,
-        );
+        assert.match($1("h1").innerHTML, /Test file/);
+        assert.match($1("h2").innerHTML, /Second heading/);
+
+        const anchors = $("main a");
+
+        assert.equal(anchors.length, 2);
+
+        assert.match(anchors[0].innerHTML, /Google/);
+        assert.match(anchors[0].getAttribute("href"), /google\.com/);
+        assert.match(anchors[1].innerHTML, /reference link/);
+        assert.match(anchors[1].getAttribute("href"), /\/index/);
+        assert.match($1("em").innerHTML, /emphasized/);
+        assert.match($1("strong").innerHTML, /bold/);
+        const inlineCode = $(":not(:has(pre)) code");
+        assert.match(inlineCode[0].innerHTML, /inline code/);
+        assert.match(inlineCode[1].innerHTML, /&lt;code&gt;&lt;pre&gt;/);
+        assert.equal(inlineCode[2], undefined);
+        // Don't know why `pre code` doesn't work, but meh, probably
+        // idiosyncracy with the parser library
+        assert.match($1("pre").innerHTML, /<code/);
+        assert.match($1("pre").innerHTML, /\/\/ Comment/);
+        assert.match($1("pre").innerHTML, /\(\) =&gt; console.log\(/);
 
         await validateAssertAndReport(responseText, url);
-
-        // /<>.html ges the same result as /<>
-        const responseWithoutDotHtml = await fetch(
-            `http://localhost:${port}/project/logbook`,
-        );
-        const responseTextWithoutDotHtml = await responseWithoutDotHtml.text();
-
-        assert.strictEqual(response.status, 200);
-        assert.strictEqual(responseText, responseTextWithoutDotHtml);
     },
 );
 
@@ -261,67 +266,39 @@ test(
     "Can get markdown entry rendered as raw",
     { concurrency: true },
     async () => {
-        const { url, response, responseText } = await getPath(
-            `/project/logbook.html?raw`,
+        const { responseText, $1 } = await getPath(
+            `/$/test/fixtures/test.md?raw`,
         );
-
-        assert.strictEqual(response.status, 200);
 
         // The markdown has not been transformed!
-        assert.match(responseText, /# About/);
-        assert.match(responseText, /## Logbook/);
-        assert.match(responseText, /### Sun\s+Aug\s+3/);
-        assert.doesNotMatch(responseText, /<h1>About.*<\/h1>/);
-        assert.doesNotMatch(responseText, /<h2>Logbook.*<\/h2>/);
-        assert.doesNotMatch(responseText, /<h3>Sun\s+Aug\s+3.*<\/h3>/);
+        assert.match(responseText, /# Test file/);
+        assert.match(responseText, /## Second heading/);
+        assert.equal($1("h1"), null);
+        assert.equal($1("h2"), null);
+
         // One of the links has not been transformed
-        assert.match(responseText, /[Tiddlywiki][tiddlywiki]/);
-        assert.doesNotMatch(
-            responseText,
-            /<a href="http:\/\/tiddlywiki.com\/".*>TiddlyWiki<\/a>/,
-        );
+        assert.match(responseText, /[Google][https:\/\/www.google.com]/);
 
         const report = await validateHtml(responseText);
 
         // Validation expected to fail because this markdown file is full of
         // tags inside inline code, e.g. `<tag>`.
         assert.equal(report.valid, false);
-
-        // /<>.html ges the same result as /<>
-        const responseWithoutDotHtml = await fetch(url.replace(/\.html/, ""));
-        const responseTextWithoutDotHtml = await responseWithoutDotHtml.text();
-
-        assert.strictEqual(response.status, 200);
-        assert.strictEqual(responseText, responseTextWithoutDotHtml);
     },
 );
 
 test("Can get edit page for markdown file", { concurrency: true }, async () => {
-    const { url, response, responseText } = await getPath(
-        `/project/logbook?edit`,
+    const { url, response, responseText, $1 } = await getPath(
+        `/$/test/fixtures/test.md?edit`,
     );
 
-    assert.strictEqual(response.status, 200);
-    assert.match(responseText, /<h1>Edit(.|\n)*<\/h1>/);
+    assert.match($1("h1").innerHTML, /Edit/);
     // Markdown appears within the text area
-    assert.match(responseText, /<textarea(.|\n)*# About(.|\n)*<\/textarea>/m);
-    assert.match(
-        responseText,
-        /<textarea(.|\n)*## Logbook(.|\n)*<\/textarea>/m,
-    );
-    assert.match(
-        responseText,
-        /<textarea(.|\n)*### Sun\s+Aug\s+3(.|\n)*<\/textarea>/m,
-    );
+    assert.match($1("textarea").innerHTML, /# Test file/);
+    assert.match($1("textarea").innerHTML, /## Second heading/);
     // HTML doesn't appear within the text area
-    assert.doesNotMatch(
-        responseText,
-        /<textarea(.|\n)*<!doctype(.|\n)*<\/textarea>/m,
-    );
-    assert.doesNotMatch(
-        responseText,
-        /<textarea(.|\n)*<html>(.|\n)*<\/textarea>/m,
-    );
+    assert.doesNotMatch($1("textarea").innerHTML, /<!doctype/);
+    assert.doesNotMatch($1("textarea").innerHTML, /<html>/);
 
     // HTML within the markdown content should come escaped
     assert.match(responseText, /&lt;code&gt;&lt;pre&gt;/);
@@ -329,74 +306,37 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
     // Save button should have a formaction without any special mode
     assert.match(
         responseText,
-        /<button\s+type="submit"\s+formaction="\/project\/logbook.html"/,
+        /<button\s+type="submit"\s+formaction="\/\$\/test\/fixtures\/test.md"/,
     );
 
     await validateAssertAndReport(responseText, url);
+
+    // The page should be exactly the same as if we call the expanded version
+    const responseForExpandedUrl = await fetch(
+        `http://localhost:${port}/$/templates/global-page.html?select=body&content=/$/templates/edit.html?content=/$/test/fixtures/test.md?raw`,
+    );
+    const responseTextWithoutDotHtml = await responseForExpandedUrl.text();
+
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(responseText, responseTextWithoutDotHtml);
 });
 
-test(
-    "Can get edit page in raw mode for markdown file",
-    { concurrency: true },
-    async () => {
-        const { url, response, responseText } = await getPath(
-            `/$/templates/edit.html?content=/project/logbook?raw`,
-        );
-
-        assert.strictEqual(response.status, 200);
-        assert.match(responseText, /<h1>Edit(.|\n)*<\/h1>/);
-        // Markdown still appears within the text area
-        assert.match(
-            responseText,
-            /<textarea(.|\n)*# About(.|\n)*<\/textarea>/m,
-        );
-        assert.match(
-            responseText,
-            /<textarea(.|\n)*## Logbook(.|\n)*<\/textarea>/m,
-        );
-        assert.match(
-            responseText,
-            /<textarea(.|\n)*### Sun\s+Aug\s+3(.|\n)*<\/textarea>/m,
-        );
-        // HTML does appear within the text area, but escaped
-        assert.match(
-            responseText,
-            /<textarea(.|\n)*&lt;!doctype(.|\n)*<\/textarea>/m,
-        );
-        assert.match(
-            responseText,
-            /<textarea(.|\n)*&lt;html lang=&quot;(.|\n)*<\/textarea>/m,
-        );
-
-        // Save button should have a formaction to raw mode
-        assert.match(
-            responseText,
-            /<button\s+type="submit"\s+formaction="\/project\/logbook.html"/,
-        );
-
-        // HTML within the markdown content should still come escaped
-        assert.match(responseText, /&lt;code&gt;&lt;pre&gt;/);
-
-        await validateAssertAndReport(responseText, url);
-    },
-);
-
 test("Can get create page", { concurrency: true }, async () => {
-    const { url, responseText, $ } = await getPath(`/$/actions/create`);
+    const { url, responseText, $1 } = await getPath(`/$/actions/create`);
 
-    assert.match($("h1").innerHTML, /Create/);
+    assert.match($1("h1").innerHTML, /Create/);
 
     // Filename has a timestamp
     assert.match(
-        $("input[name=filename]").getAttribute("value")!,
+        $1("input[name=filename]").getAttribute("value")!,
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/,
     );
     // Text area is blank
-    assert.match($("textarea").innerHTML!, /^\s*$/);
+    assert.match($1("textarea").innerHTML!, /^\s*$/);
 
     // Save button should have a basic formaction
     assert.equal(
-        $("button[type=submit]").getAttribute("formaction"),
+        $1("button[type=submit]").getAttribute("formaction"),
         "/?create",
     );
 
@@ -404,7 +344,7 @@ test("Can get create page", { concurrency: true }, async () => {
 });
 
 test("Can get create page with parameters", { concurrency: true }, async () => {
-    const { url, response, responseText, $ } = await getPath(
+    const { url, response, responseText, $1 } = await getPath(
         `/$/actions/create?filename=/posts/My new page&rand=3`,
     );
 
@@ -413,15 +353,15 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
 
     // Filename has a timestamp
     assert.equal(
-        $("input[name=filename]").getAttribute("value")!,
+        $1("input[name=filename]").getAttribute("value")!,
         "/posts/My new page",
     );
     // Text area is blank
-    assert.match($("textarea").innerHTML!, /^\s*$/);
+    assert.match($1("textarea").innerHTML!, /^\s*$/);
 
     // Save button should have a basic formaction
     assert.equal(
-        $("button[type=submit]").getAttribute("formaction"),
+        $1("button[type=submit]").getAttribute("formaction"),
         "/?create",
     );
 
@@ -429,7 +369,7 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
 });
 
 const tmpFileName = (extension: string = ".html") =>
-    `/test/tmp/file${Temporal.Now.plainDateTimeISO()}${extension}`;
+    `/$/test/tmp/file${Temporal.Now.plainDateTimeISO()}${extension}`;
 
 //TODO: Instead of doing all these things at once, could use node filesystem commands to set up and clean up. With separate tests, it would be easier to tell if one thing was failing or everything was failing, and I'd have setups for more indepth testing of certain cases.
 test(
@@ -466,10 +406,10 @@ test(
         // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
         // TODO: Add a replacing mechanism here and test that it worked
         assert.match(
-            createResponse.$("h1").innerHTML,
+            createResponse.$1("h1").innerHTML,
             /My First Testing Temp Page/,
         );
-        assert.match(createResponse.$("p").innerHTML, /automatically created/);
+        assert.match(createResponse.$1("p").innerHTML, /automatically created/);
 
         const fileContents = await readFile(
             `${__dirname}/../entries/${filename}`,
@@ -488,7 +428,7 @@ test(
 
         assert.match(
             createAgainResponse.responseText,
-            new RegExp(`${filename}`),
+            new RegExp(`${filename.replaceAll(/\$/g, "\\$")}`),
         );
         assert.match(createAgainResponse.responseText, /exists/);
 
@@ -498,7 +438,7 @@ test(
 
         // Now edit the page
         const editedTitle = "My Edited First Testing Temp Page";
-        getResponse.$("h1").innerHTML = editedTitle;
+        getResponse.$1("h1").innerHTML = editedTitle;
         const editedContent = getResponse.dom.toString();
 
         const editResponse = await postPath(filename, {
@@ -508,10 +448,10 @@ test(
         // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
         // TODO: Add a replacing mechanism here and test that it worked
         assert.match(
-            editResponse.$("h1").innerHTML,
+            editResponse.$1("h1").innerHTML,
             /My Edited First Testing Temp Page/,
         );
-        assert.match(editResponse.$("p").innerHTML, /automatically created/);
+        assert.match(editResponse.$1("p").innerHTML, /automatically created/);
 
         const getAfterEditResponse = await getPath(filename);
 
@@ -522,24 +462,27 @@ test(
 
         const deleteResponse = await postPath(filename + "?delete", {}, 400);
 
-        assert.match(deleteResponse.responseText, new RegExp(filename));
+        assert.match(
+            deleteResponse.responseText,
+            new RegExp(filename.replaceAll(/\$/g, "\\$")),
+        );
         assert.match(deleteResponse.responseText, /are you sure/i);
         assert.match(deleteResponse.responseText, /cannot be undone/i);
         assert.match(
-            deleteResponse.$(`button[type="submit"]`).innerHTML,
+            deleteResponse.$1(`button[type="submit"]`).innerHTML,
             /confirm and delete/i,
         );
         assert.ok(
-            deleteResponse.$(
+            deleteResponse.$1(
                 `form[action="/${filename}?delete&delete-confirm"][method="POST"]`,
             ),
         );
         assert.match(
-            deleteResponse.$(`a[href=/${filename}]`).innerHTML,
+            deleteResponse.$1(`a[href=/${filename}]`).innerHTML,
             /cancel/,
         );
         assert.match(
-            deleteResponse.$(`a[href=/${filename}]`).innerHTML,
+            deleteResponse.$1(`a[href=/${filename}]`).innerHTML,
             /go back/,
         );
 
@@ -582,12 +525,15 @@ test(
             content,
         });
 
-        assert.match(createResponse.$("p").innerHTML, /automatically created/);
+        assert.match(createResponse.$1("p").innerHTML, /automatically created/);
         const deleteConfirmResponse = await postPath(
-            `${filename}?delete&delete-confirm`,
+            `${filename.replaceAll(/\$/g, "\\$")}?delete&delete-confirm`,
         );
 
-        assert.match(deleteConfirmResponse.responseText, new RegExp(filename));
+        assert.match(
+            deleteConfirmResponse.responseText,
+            new RegExp(filename.replaceAll(/\$/g, "\\$")),
+        );
         assert.match(
             deleteConfirmResponse.responseText,
             /successfully deleted/i,
@@ -601,15 +547,15 @@ test(
     "Getting the index page has the features from the global template",
     { concurrency: true },
     async () => {
-        const { url, responseText, $ } = await getPath("/");
+        const { url, responseText, $1 } = await getPath("/");
 
-        assert.match($("header h2").innerHTML, /HTML Wiki/);
-        assert.match($('header nav a[href="/"]').innerHTML, /Home/);
-        assert.match($('header nav a[href="/sitemap"]').innerHTML, /Sitemap/);
+        assert.match($1("header>a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('header nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1('header nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
-        assert.match($("footer h2").innerHTML, /HTML Wiki/);
-        assert.match($('footer nav a[href="/"]').innerHTML, /Home/);
-        assert.match($('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
+        assert.match($1("footer > a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('footer nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
         await validateAssertAndReport(responseText, url);
     },
@@ -619,15 +565,15 @@ test(
     "Getting the edit page for the index has the features from the global template",
     { concurrency: true },
     async () => {
-        const { url, responseText, $ } = await getPath(`/index?edit`);
+        const { url, responseText, $1 } = await getPath(`/index?edit`);
 
-        assert.match($("header h2").innerHTML, /HTML Wiki/);
-        assert.match($('header nav a[href="/"]').innerHTML, /Home/);
-        assert.match($('header nav a[href="/sitemap"]').innerHTML, /Sitemap/);
+        assert.match($1("header>a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('header nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1('header nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
-        assert.match($("footer h2").innerHTML, /HTML Wiki/);
-        assert.match($('footer nav a[href="/"]').innerHTML, /Home/);
-        assert.match($('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
+        assert.match($1("footer > a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('footer nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
         await validateAssertAndReport(responseText, url);
     },

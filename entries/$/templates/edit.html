@@ -45,7 +45,18 @@
   </head>
 
   <body>
-    <h1>Editing <slot name="entry-link">nothing :-/</slot></h1>
+    <h1>
+      Editing
+      <keep-if truthy="q/query/content/filename">
+        <replace-with
+          a
+          x-href="q/query/content/filename"
+          x-content="q/query/content/filename"
+          >[filename] :-/</replace-with
+        >
+      </keep-if>
+      <remove-if truthy="q/query/content/filename"> template </remove-if>
+    </h1>
     <slot name="remove">
       <p><a href="?edit">Edit this page</a></p>
       <p>

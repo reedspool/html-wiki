@@ -1,6 +1,6 @@
 import { type Node, NodeType, HTMLElement, TextNode } from "node-html-parser";
 import { parse as parseHtml } from "node-html-parser";
-import { escapeHtml, renderMarkdown } from "./utilities.mts";
+import { escapeHtml } from "./utilities.mts";
 import { QueryError } from "./error.mts";
 export type Operations = {
     getEntryFileName: () => string;
@@ -30,30 +30,6 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                         break;
                     case "content-type":
                         switch (element.attributes.content) {
-                            case "markdown":
-                                const body = (
-                                    root as HTMLElement
-                                ).querySelector("body");
-                                const markdownContent =
-                                    body?.querySelector("code > pre");
-                                if (!body) {
-                                    throw new QueryError(
-                                        500,
-                                        `No <body> found in file ${escapeHtml(ops.getEntryFileName())}`,
-                                    );
-                                }
-                                if (!markdownContent) {
-                                    throw new QueryError(
-                                        500,
-                                        `No <code><pre> sequence found in file ${escapeHtml(ops.getEntryFileName())}`,
-                                    );
-                                }
-                                ops.setContentType("markdown");
-                                body.innerHTML = renderMarkdown(
-                                    markdownContent.innerHTML,
-                                );
-                                stopAtElement = body;
-                                break;
                             default:
                                 console.error(
                                     `Failed to handle content-type '${element.attributes.content}' `,

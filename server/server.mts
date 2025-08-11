@@ -8,10 +8,8 @@ import express from "express";
 import EventEmitter from "node:events";
 import { dirname } from "node:path";
 import { mkdir, open, rm, writeFile } from "node:fs/promises";
-import { parse as parseHtml } from "node-html-parser";
-import { escapeHtml, html } from "./utilities.mts";
+import { escapeHtml } from "./utilities.mts";
 import {
-    caughtToQueryError,
     encodedEntryPathRequest,
     expressQueryToRecord,
     fullyQualifiedEntryName,
@@ -93,13 +91,13 @@ export const createServer = ({ port }: { port?: number }) => {
                 await open(fullyQualifiedEntryName(entryFileName), "wx");
                 throw new QueryError(
                     404,
-                    `File ${escapeHtml(entryFileName)} doesn't exist`,
+                    `File /${escapeHtml(entryFileName)} doesn't exist`,
                 );
             } catch (error) {
                 if (error.code === "EEXIST") {
                     rm(fullyQualifiedEntryName(entryFileName));
                     res.send(
-                        `Successfully deleted /${escapeHtml(entryFileName)}`,
+                        `Successfully deleted ${escapeHtml(entryFileName)}`,
                     );
                     return;
                 }
@@ -109,75 +107,10 @@ export const createServer = ({ port }: { port?: number }) => {
 
         let fileToEditContents: string = await getEntryContents(entryFileName);
 
-        console.log(`Logging contents of ${entryFileName} before write:`);
+        console.log(`Logging contents of /${entryFileName} before write:`);
         console.log(fileToEditContents);
 
         let contentToWrite = req.body.content;
-
-        // If it's not raw, then filter/reshape the contents based on the meta
-        if (req.query.raw === undefined) {
-            // TODO: Instead of inspecting a file at read-time, try to inspect
-            // this at less critical times and cache the result, e.g. when the
-            // server starts, when notified the file changed on disk
-            const fileRoot = parseHtml(fileToEditContents);
-            const metaElements = fileRoot.querySelectorAll("meta");
-            for (const metaElement of metaElements) {
-                switch (metaElement.attributes.itemprop) {
-                    case undefined:
-                        break;
-                    case "content-type":
-                        switch (metaElement.attributes.content) {
-                            case "markdown":
-                                const body = fileRoot.querySelector("body");
-                                const markdownContent =
-                                    body?.querySelector("code > pre");
-                                if (!body) {
-                                    res.status(500);
-                                    res.write(
-                                        `No <body> found in file ${escapeHtml(entryFileName)}`,
-                                    );
-                                    res.end();
-                                    return;
-                                }
-                                if (!markdownContent) {
-                                    res.status(500);
-                                    res.write(
-                                        `No <code><pre> sequence found in file ${escapeHtml(entryFileName)}`,
-                                    );
-                                    res.end();
-                                    return;
-                                }
-
-                                // Since the HTML content isn't supposed to be
-                                // valid HTML, we can't just put it straight
-                                // into the proper HTML structure So instead put
-                                // a marker in there and then swap the marker
-                                // for the content we want.
-                                // TODO: Could we do this in a more valid way by
-                                // making a TextNode, putting the content in there,
-                                // and replacing the <pre> content with the text
-                                // node?
-                                const marker = "!!!MARKER!!!";
-                                markdownContent.innerHTML = marker;
-                                contentToWrite = fileRoot
-                                    .toString()
-                                    .replace(marker, req.body.content);
-                                break;
-                            default:
-                                console.error(
-                                    `Failed to handle content-type '${metaElement.attributes.content}' `,
-                                );
-                                break;
-                        }
-                        break;
-                    default:
-                        console.error(
-                            `Failed to handle meta itemprop '${metaElement.attributes.itemprop}' `,
-                        );
-                        break;
-                }
-            }
-        }
 
         await writeFile(
             fullyQualifiedEntryName(entryFileName),
@@ -226,7 +159,12 @@ export const createServer = ({ port }: { port?: number }) => {
                 entryFileName = pathToEntryFilename(
                     "/$/templates/global-page.html",
                 );
-                query.content = encodedEntryPathRequest(req.path, query);
+                const contentQuery = { ...query };
+                if (/\.md$/.test(req.path)) {
+                    contentQuery.renderMarkdown = "true";
+                }
+
+                query.content = encodedEntryPathRequest(req.path, contentQuery);
                 query.select = "body";
             }
             fileToRenderContents = await getEntryContents(entryFileName);
@@ -235,7 +173,6 @@ export const createServer = ({ port }: { port?: number }) => {
         // TODO: Instead of inspecting a file at read-time, try to inspect
         // this at less critical times and cache the result, e.g. when the
         // server starts, when notified the file changed on disk
-        let contentType = `html`;
         console.log(
             `Applying top-level templating for ${entryFileName} with query ${new URLSearchParams(query)}`,
             query,
@@ -249,17 +186,17 @@ export const createServer = ({ port }: { port?: number }) => {
                 protocol: req.protocol,
             }),
             setContentType: (type) => {
-                contentType = type;
+                throw new QueryError(
+                    400,
+                    "Setting content type is not supported",
+                );
             },
             // TODO: This should only be applied if content type is set
             // That obnoxiously relies on knowledge that this will occur
             // after the parsing and processing of the meta elements
             // But honestly I want to get rid of this special case,
             // so just support it for now.
-            select: () =>
-                query.raw === undefined && contentType === "markdown"
-                    ? "body > code > pre"
-                    : null,
+            select: () => null,
         });
 
         res.send(result);

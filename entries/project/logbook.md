@@ -1,19 +1,20 @@
-<!doctype html>
-<html lang="en-US">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title>Logbook</title>
-    <meta name="description" content="Logbook about the HTML Wiki Project" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta itemprop="content-type" content="markdown" />
-  </head>
-
-  <body>
-    <code>
-      <pre># About this project
+# About this project
 
 ## Logbook
+
+### Sun Aug 10 09:56:20 AM PDT 2025
+
+Future: I thought in my query language that I'd want to control whether or not the result would be HTML escaped. Maybe also URI encoded?
+
+I removed the features which allowed a markdown file to rest in the content of an HTML file. It added a lot of complication to both rendering and saving files. I thought maybe in the future I'd end up with tools to achieve this, but for now it didn't seem worth it to continue supporting. Instead, I put my markdown content in their own `.md` files.
+
+I had peppered in so much direct references and assumptions to files ending with `.html` that implementing special rendering for `.md` files was intimidating. If I requested path `project/logbook` with no file extension my server assumed I meant to append `.html` to it, and did so for itself so it could access the real file on disk. Should this "automatic file extension" feature not exist? Or should it only work for `.html` files? The latter seemed like the simplest root right now. Maybe I'd consider other options in the future.
+
+Future: All around I had peppered `/${filename}` because some places I was storing filenames with no leading slash and other places I was storing it with a leading slash. I wanted to unify on one expectation, leading slash or no. I felt I was going to head towards yes, always including the leading slash. I couldn't think of anywhere in the codebase I was removing the leading slash, only adding it. From the URL spec, it looked like I was talking about ["path absolute URL strings"](https://url.spec.whatwg.org/#path-absolute-url-string) as opposed to ["path relative URL strings"](https://url.spec.whatwg.org/#path-relative-url-string), which maybe I'd find use for later. For now, I was always referring to a full path from some root so absolute made sense. I refactored everything around this. I considered using TypeScript's string template types to help, but I worried that might be too finicky for any possible gain.
+
+Future: I thought about how the bulk of the work was building an engine which comprised both the templating engine and the query language together. And this engine was a distinct component from the server. It so happened that the engine did a lot of things we consider a server to do. But the server part which dealt with HTTP requests was distinct. When the server received an HTTP request, it used all the information in that request to configure a call to this engine, and then it handled the response of that engine to the HTTP response most of the time. But the engine was a well-delineated compoonent, so I thought it was a good idea to extract and separate that from the server. I imagined other uses for the engine as well, for example:
+
+Future: I made a CLI command to generate a static site out of all the dynamic pages. This process used the same engine as the HTTP server, but it didn't need to start the server and make an HTTP request, it just called that engine directly. It essentially scanned the whole directory structure of the "entries" directory, and for each page, sent a command to the engine to do what it would do if it got a request to view that page, including applying any templating, and then write out the results into a similar directory structure which could be packaged or served statically.
 
 ### Sat Aug  9 09:57:24 PM PDT 2025
 
@@ -80,6 +81,10 @@ Implementing the create page made a funny bug. At first I just copied and pasted
 
 I knew I wanted to use a tree-walking strategy to implement the HTML-as-template, replacing and updating elements from the root of the document down, replacing outer elements before inner elements (most of the time?). But the API to query all of a given kind of element and change just those was so straightforward that I kept that in for the time being while I played around. It wouldn't be hard to make the tree walker, I hoped, but it wasn't what I found most compelling at the moment.
 
+After fixing creation, I quickly implemented deletion. With that, I had all the tools to write a complete integration test which created, retrieved, edited, and deleted a temporary page.
+
+Future: I wrote more integration tests to cover more configurations with various uses of "raw" and file types.
+
 ### Mon Aug  4 06:44:02 PM PDT 2025
 
 I began work on the `create` template and functionality. An idea I cribbed from TiddlyWiki was to name a new file with a timestamp. That led me to want a syntax for inserting a value into an `input` tag's `value` attribute. My only templating concept so far was to use `slot` tags. Was there another HTML-first or otherwise-web-first method for targeting a certain attribute? I thought about making a surrounding `slot` tag with attributes pointing to the element, attribute, and value which should be set within it. I also thought of some special global attributes, like `x-set`. I wanted to avoid non-standard syntax for the attribute values themselves, like how many templating languages use curly braces to signify calculated attributes, e.g. `<input value={inputValue} />`. That syntax makes sense if you already take it as a given that you're not writing HTML, but something which resolves to HTML. I wanted to write HTML.
@@ -117,7 +122,7 @@ My second idea was that the Markdown would be within a `<code><pre>` combination
 
 So it seemed like I was either going to end up adding some extra CSS or some extra HTML to my "raw markdown in HTML" file. So be it. Maybe I could try both and see which I liked more?
 
-Future: I searched for a way to embed content in HTML which would escape any internal HTML without an external process. I couldn't think of one off the top of my head, but hopefully that was a blind spot which I could fill in, not a signal that the concept was misguided.
+I searched for a way to embed content in HTML which would escape any internal HTML without an external process. I couldn't think of one off the top of my head, but hopefully that was a blind spot which I could fill in, not a signal that the concept was misguided. Later I realized that a `script` tag would be appropriate with CSS to display its contents.
 
 I created a markdown file (in HTML) to test with (probably this one you're looking at!). I started to write it in a ["logbook" format][reeds-website-logbooks] I enjoy. I backdated some content in the logbook to explain the project's origins.
 
@@ -132,8 +137,6 @@ I added a query parameter option via `?raw` to skip this rendering step and see 
 Then I made the `?edit` page also only put the Markdown textual content within the editable area. Of course, I also had to make the save functionality also only replace the markdown content.
 
 And finally the other side where `?edit&raw` brings you back to the normal, full HTML page edit experience even if you have a different content-type.
-
-Future: I finally added tests for save functionality. There were a lot of use-cases to cover, with the various `raw` and `content-type` combinations.
 
 ### Sat Aug  2 10:28:03 AM PDT 2025
 
@@ -176,7 +179,5 @@ I was excited, and I wanted to work all night on it, but I made myself go to bed
 [mdn-meta-tag]: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta "MDN, <meta> tag"
 [mdn-itemprop-attribute]: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/itemprop "MDN, itemprop attribute"
 [reeds-website-logbooks]: https://reeds.website/topic-project-logs "Reed's Website, Logbooks"
-[tiddlywiki-filter-syntax-history]: https://tiddlywiki.com/#Filter%20Syntax%20History "TiddlyWiki Filter Syntax History"</pre>
-    </code>
-  </body>
-</html>
+[tiddlywiki-filter-syntax-history]: https://tiddlywiki.com/#Filter%20Syntax%20History "TiddlyWiki Filter Syntax History"
+

@@ -4,7 +4,7 @@ import { type Request } from "express";
 import { Temporal } from "temporal-polyfill";
 import { applyTemplating } from "./dom.mts";
 import { readFile } from "node:fs/promises";
-import { escapeHtml } from "./utilities.mts";
+import { escapeHtml, renderMarkdown } from "./utilities.mts";
 import { QueryError } from "./error.mts";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,19 +24,10 @@ export const pathToEntryFilename = (path: string) => {
         ? "index"
         : path.slice(1); // Remove leading slash
 
-  if (!/.html$/.test(entryFileName)) {
-    // TODO: Instead of tacking on HTML to every file, maybe try
-    // actually loading the filename as given from disk and only if that
-    // doesn't exist try adding a file extension
+  // Only if there's no extension at all
+  if (!/\.[a-zA-Z0-9]+$/.test(entryFileName)) {
     entryFileName = entryFileName + ".html";
   }
-
-  // TODO: FOr some reason I did this before, maybe useful?
-  // const url = urlFromReq(req);
-  // const urlParsed = URL.parse(url);
-  // if (urlParsed !== null) {
-  //     entryFileName = decodeURIComponent(urlParsed.pathname);
-  // }
 
   return decodeURIComponent(entryFileName);
 };
@@ -109,6 +100,10 @@ export const queryEngine =
         if (contentQuery.raw !== undefined) {
           return contentFileContents;
         }
+        if (contentQuery.renderMarkdown !== undefined) {
+          // TODO: Maybe in the future this can also apply templating? Why shouldn't it?
+          return renderMarkdown(contentFileContents);
+        }
         return applyTemplating(contentFileContents, {
           getEntryFileName: () => contentEntryFileName,
           getQueryValue: queryEngine({
@@ -118,7 +113,7 @@ export const queryEngine =
             protocol,
           }),
           setContentType(type) {
-            console.log(`setContentType('${type}') does nothing in-query`);
+            throw new QueryError(400, "Setting content type is not supported");
           },
           select: () => query.select && query.select.toString(),
         });
