@@ -150,13 +150,13 @@ export const createServer = ({ port }: { port?: number }) => {
             );
             query.content = encodedEntryPathRequest("/$/templates/edit.html", {
                 ...query,
+                select: "body",
                 content: encodedEntryPathRequest(req.path, {
                     ...query,
                     raw: "raw",
                     escape: "escape",
                 }),
             });
-            query.select = "body";
             fileToRenderContents = await getEntryContents(entryFileName);
         } else if (raw) {
             fileToRenderContents = await getEntryContents(entryFileName);
@@ -172,8 +172,8 @@ export const createServer = ({ port }: { port?: number }) => {
                     contentQuery.renderMarkdown = "true";
                 }
 
+                contentQuery.select = "body";
                 query.content = encodedEntryPathRequest(req.path, contentQuery);
-                query.select = "body";
             }
             fileToRenderContents = await getEntryContents(entryFileName);
         }
@@ -199,7 +199,6 @@ export const createServer = ({ port }: { port?: number }) => {
                     "Setting content type is not supported",
                 );
             },
-            select: () => query.select && query.select.toString(),
         });
 
         res.send(result);

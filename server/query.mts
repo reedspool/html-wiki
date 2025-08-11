@@ -115,7 +115,7 @@ export const queryEngine =
           setContentType(_type) {
             throw new QueryError(400, "Setting content type is not supported");
           },
-          select: () => query.select && query.select.toString(),
+          select: () => contentQuery.select && contentQuery.select.toString(),
         });
       default:
         // TODO: This shouldn't just be a random server crashing error
