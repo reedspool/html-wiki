@@ -461,6 +461,9 @@ test(
 
         const deleteResponse = await postPath(filename + "?delete", {}, 400);
 
+        assert.fail(
+            "Replacements in deletion are not implemented because they require string concatenation in the values supplied by the query",
+        );
         assert.match(
             deleteResponse.responseText,
             new RegExp(filename.replaceAll(/\$/g, "\\$")),
