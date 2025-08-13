@@ -2,11 +2,9 @@ import { type Node, NodeType, HTMLElement, TextNode } from "node-html-parser";
 import { parse as parseHtml } from "node-html-parser";
 import { escapeHtml } from "./utilities.mts";
 import { QueryError } from "./error.mts";
+import { type GetQueryValue } from "./query.mts";
 export type Operations = {
-    getEntryFileName: () => string;
-    getQueryValue: (query: string) => Promise<string>;
-    setContentType: (type: string) => void;
-    select?: () => string;
+    getQueryValue: GetQueryValue;
 };
 export const applyTemplating = async (contents: string, ops: Operations) => {
     const root = parseHtml(contents);
@@ -47,17 +45,6 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                 break;
             case "SLOT":
                 switch (element.attributes.name) {
-                    case "content":
-                        const fileToEditContents =
-                            await ops.getQueryValue("fileToEditContents");
-                        if (!fileToEditContents) break;
-                        const text = new TextNode(
-                            escapeHtml(fileToEditContents),
-                        );
-                        treeWalker.nextNode();
-                        alreadySetForNextIteration = true;
-                        element.replaceWith(text);
-                        break;
                     case "keep":
                     case "remove":
                         {
@@ -93,17 +80,6 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                             }
                         }
                         break;
-                    case "entry-link":
-                        const replacementElement = new HTMLElement("a", {});
-                        replacementElement.setAttribute(
-                            "href",
-                            `/${ops.getEntryFileName()}`,
-                        );
-                        replacementElement.innerHTML = ops.getEntryFileName();
-                        treeWalker.nextNodeNotChildren();
-                        alreadySetForNextIteration = true;
-                        element.replaceWith(replacementElement);
-                        break;
                     default:
                         console.error(
                             `Failed to handle slot named '${element.attributes.name}' `,
@@ -134,9 +110,19 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                             const queryValue = await ops.getQueryValue(value);
                             switch (realKey) {
                                 case "content":
+                                    if (typeof queryValue !== "string") {
+                                        throw new Error(
+                                            "query value expected string",
+                                        );
+                                    }
                                     replacementElement.innerHTML = queryValue;
                                     break;
                                 default:
+                                    if (typeof queryValue !== "string") {
+                                        throw new Error(
+                                            "query value expected string",
+                                        );
+                                    }
                                     replacementElement.setAttribute(
                                         realKey,
                                         queryValue,
@@ -172,6 +158,9 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                     let queryValue = await ops.getQueryValue(query);
                     if (!queryValue) {
                         queryValue = element.innerHTML;
+                    }
+                    if (typeof queryValue !== "string") {
+                        throw new Error("query value expected string");
                     }
                     const text = new TextNode(escapeHtml(queryValue));
                     treeWalker.nextNodeNotChildren();
@@ -222,8 +211,11 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
         }
     } while (alreadySetForNextIteration || treeWalker.nextNode());
 
-    const selector = ops.select?.();
+    const selector = await ops.getQueryValue("q/query/select");
     if (selector) {
+        if (typeof selector !== "string") {
+            throw new Error("query value expected string");
+        }
         const selected = root.querySelector(selector);
         if (!selected)
             throw new QueryError(

@@ -117,10 +117,7 @@ test(
         assert.match($1("h1").innerHTML, /Editing/);
         assert.match($1("h1").innerHTML, /template/);
 
-        assert.match(
-            $1("textarea").innerHTML,
-            /^\s*No content query provided\s*$/i,
-        );
+        assert.match($1("textarea").innerHTML, /something went wrong/i);
 
         await validateAssertAndReport(responseText, url);
 
@@ -138,7 +135,7 @@ test(
     { concurrency: true },
     async () => {
         const { url, response, responseText, $1 } = await getPath(
-            `/$/templates/edit.html?raw`,
+            `/?contentPath=/$/templates/edit.html&raw`,
         );
 
         assert.strictEqual(response.status, 200);
@@ -149,6 +146,7 @@ test(
             $1("textarea").innerHTML,
             /<query-content[^>]*>(.|\n)*something went wrong(.|\n)*<\/query-content>/i,
         );
+        // assert.match($1("textarea").innerHTML, /^\s*something went wrong\s*$/i);
 
         await validateAssertAndReport(responseText, url, {
             // TODO: The <slot> element can't be within a
@@ -267,7 +265,7 @@ test(
     { concurrency: true },
     async () => {
         const { responseText, $1 } = await getPath(
-            `/$/test/fixtures/test.md?raw`,
+            `/?contentPath=/$/test/fixtures/test.md&raw`,
         );
 
         // The markdown has not been transformed!
@@ -314,10 +312,10 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
     // The page should be exactly the same as if we call the expanded version
     const expandedUrl = `http://localhost:${port}/$/templates/global-page.html?content=${encodeURIComponent("/$/templates/edit.html?select=body&content=/$/test/fixtures/test.md?raw")}`;
     const responseForExpandedUrl = await fetch(expandedUrl);
-    const responseTextWithoutDotHtml = await responseForExpandedUrl.text();
+    const responseTextForExpandedUrl = await responseForExpandedUrl.text();
 
     assert.strictEqual(response.status, 200);
-    assert.strictEqual(responseText, responseTextWithoutDotHtml);
+    assert.strictEqual(responseText, responseTextForExpandedUrl);
 });
 
 test("Can get create page", { concurrency: true }, async () => {
@@ -327,7 +325,7 @@ test("Can get create page", { concurrency: true }, async () => {
 
     // Filename has a timestamp
     assert.match(
-        $1("input[name=filename]").getAttribute("value")!,
+        $1("input[name=contentPath]").getAttribute("value")!,
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/,
     );
     // Text area is blank
@@ -344,6 +342,9 @@ test("Can get create page", { concurrency: true }, async () => {
 
 test("Can get create page with parameters", { concurrency: true }, async () => {
     const { url, response, responseText, $1 } = await getPath(
+        // TODO: The reason this isn't working is that these aren't cascaded
+        // down to the contentParameters. And it seems like some things
+        // definitely should be
         `/$/actions/create?filename=/posts/My new page&rand=3`,
     );
 
@@ -352,7 +353,7 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
 
     // Filename has a timestamp
     assert.equal(
-        $1("input[name=filename]").getAttribute("value")!,
+        $1("input[name=contentPath]").getAttribute("value")!,
         "/posts/My new page",
     );
     // Text area is blank
@@ -392,23 +393,30 @@ test(
                 </body>
             </html>`;
         const createResponse = await postPath(`/?create`, {
-            filename,
+            contentPath: filename,
             content,
         });
+
+        assert.match(createResponse.responseText, /success/i);
 
         await validateAssertAndReport(
             createResponse.responseText,
             createResponse.url,
         );
 
-        // Create redirects to the page's contents
+        // Create used to redirect to the page's contents but no more
+        const afterCreateResponse = await getPath(filename);
+
         // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
         // TODO: Add a replacing mechanism here and test that it worked
         assert.match(
-            createResponse.$1("h1").innerHTML,
+            afterCreateResponse.$1("h1").innerHTML,
             /My First Testing Temp Page/,
         );
-        assert.match(createResponse.$1("p").innerHTML, /automatically created/);
+        assert.match(
+            afterCreateResponse.$1("p").innerHTML,
+            /automatically created/,
+        );
 
         const fileContents = await readFile(
             `${__dirname}/../entries/${filename}`,
@@ -419,7 +427,7 @@ test(
         const createAgainResponse = await postPath(
             `/?create`,
             {
-                filename,
+                contentPath: filename,
                 content,
             },
             422,
@@ -431,14 +439,10 @@ test(
         );
         assert.match(createAgainResponse.responseText, /exists/);
 
-        const getResponse = await getPath(filename);
-
-        assert.equal(getResponse.responseText, createResponse.responseText);
-
         // Now edit the page
         const editedTitle = "My Edited First Testing Temp Page";
-        getResponse.$1("h1").innerHTML = editedTitle;
-        const editedContent = getResponse.dom.toString();
+        afterCreateResponse.$1("h1").innerHTML = editedTitle;
+        const editedContent = afterCreateResponse.dom.toString();
 
         const editResponse = await postPath(filename, {
             content: editedContent,
@@ -446,59 +450,52 @@ test(
 
         // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
         // TODO: Add a replacing mechanism here and test that it worked
-        assert.match(
-            editResponse.$1("h1").innerHTML,
-            /My Edited First Testing Temp Page/,
-        );
-        assert.match(editResponse.$1("p").innerHTML, /automatically created/);
+        assert.match(editResponse.responseText, /success/i);
 
         const getAfterEditResponse = await getPath(filename);
 
-        assert.equal(
-            editResponse.responseText,
-            getAfterEditResponse.responseText,
-        );
+        assert.match(getAfterEditResponse.$1("h1").innerHTML, /edited/i);
 
-        const deleteResponse = await postPath(filename + "?delete", {}, 400);
+        // const deleteResponse = await postPath(filename + "?delete", {}, 400);
 
         assert.fail(
             "Replacements in deletion are not implemented because they require string concatenation in the values supplied by the query",
         );
-        assert.match(
-            deleteResponse.responseText,
-            new RegExp(filename.replaceAll(/\$/g, "\\$")),
-        );
-        assert.match(deleteResponse.responseText, /are you sure/i);
-        assert.match(deleteResponse.responseText, /cannot be undone/i);
-        assert.match(
-            deleteResponse.$1(`button[type="submit"]`).innerHTML,
-            /confirm and delete/i,
-        );
-        assert.ok(
-            deleteResponse.$1(
-                `form[action="/${filename}?delete&delete-confirm"][method="POST"]`,
-            ),
-        );
-        assert.match(
-            deleteResponse.$1(`a[href=/${filename}]`).innerHTML,
-            /cancel/,
-        );
-        assert.match(
-            deleteResponse.$1(`a[href=/${filename}]`).innerHTML,
-            /go back/,
-        );
+        // assert.match(
+        //     deleteResponse.responseText,
+        //     new RegExp(filename.replaceAll(/\$/g, "\\$")),
+        // );
+        // assert.match(deleteResponse.responseText, /are you sure/i);
+        // assert.match(deleteResponse.responseText, /cannot be undone/i);
+        // assert.match(
+        //     deleteResponse.$1(`button[type="submit"]`).innerHTML,
+        //     /confirm and delete/i,
+        // );
+        // assert.ok(
+        //     deleteResponse.$1(
+        //         `form[action="/${filename}?delete&delete-confirm"][method="POST"]`,
+        //     ),
+        // );
+        // assert.match(
+        //     deleteResponse.$1(`a[href=/${filename}]`).innerHTML,
+        //     /cancel/,
+        // );
+        // assert.match(
+        //     deleteResponse.$1(`a[href=/${filename}]`).innerHTML,
+        //     /go back/,
+        // );
 
-        const deleteConfirmResponse = await postPath(
-            `${filename}?delete&delete-confirm`,
-        );
+        // const deleteConfirmResponse = await postPath(
+        //     `${filename}?delete&delete-confirm`,
+        // );
 
-        assert.match(deleteConfirmResponse.responseText, new RegExp(filename));
-        assert.match(
-            deleteConfirmResponse.responseText,
-            /successfully deleted/i,
-        );
+        // assert.match(deleteConfirmResponse.responseText, new RegExp(filename));
+        // assert.match(
+        //     deleteConfirmResponse.responseText,
+        //     /successfully deleted/i,
+        // );
 
-        await getPath(filename, 404);
+        // await getPath(filename, 404);
     },
 );
 
@@ -523,11 +520,11 @@ test(
                 </body>
             </html>`;
         const createResponse = await postPath(`/?create`, {
-            filename,
+            contentPath: filename,
             content,
         });
 
-        assert.match(createResponse.$1("p").innerHTML, /automatically created/);
+        assert.match(createResponse.responseText, /success/i);
         const deleteConfirmResponse = await postPath(
             `${filename.replaceAll(/\$/g, "\\$")}?delete&delete-confirm`,
         );
@@ -538,7 +535,7 @@ test(
         );
         assert.match(
             deleteConfirmResponse.responseText,
-            /successfully deleted/i,
+            /deleted successfully/i,
         );
 
         await getPath(filename, 404);

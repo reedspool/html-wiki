@@ -2,6 +2,28 @@
 
 ## Logbook
 
+### Sun Aug 17 11:21:46 PM PDT 2025
+
+Finally got the engine extracted and all my tests passing except for the one which had been failing before that. 
+
+### Fri Aug 15 07:33:20 PM PDT 2025
+
+Found [AutoSite](https://autosite.somnolescent.net/) which has some similar design goals as a HTML-centric site generator. One difference is that it uses a non-HTML-centric template language, but that language sits as text within valid HTML documents which is a similarity. Another interesting similarity is its focus on HTML-based "input pages"
+
+As I extracted the engine from the server, I found that the parameters to the engine had multiple sources. Some parameters came from the server's configuration. Other parameters came from different parts of the HTTP request: the query string, the path, and the request body. The engine required some particular parameters, like the directory to operate within. Other parameters could be arbitrary, and the templates may or may not react to those parameters based on the logic therein. An example of an arbitrary parameter might be a user's desire to specify `?color=blue` and interact with that in a template like `<keep-if truthy='query/color == blue'>...</keep-if>`. Why not?
+
+Since I used TypeScript, I wanted to get all the well-defined parameters to be well-typed. At first I tried to do that in the server before I passed the parameters to the engine. But that suggested I should have a different, separate place for the not-so-well-defined parameters, which I could type as a generic bag, e.g. `Record<string, string>`. That was unsatisfying in a way I found difficult to put to words. I went the other way, putting everything in that generic bag and letting the engine rigorously validate that it got everything it needed to perform. I hoped I'd come up with better words to describe the problem later.
+
+My generic bag type, `Record<string, string>`, wasn't enough to account for the more complex structure of the recursive template expansion I did before. I know that sentence was word soup. Before, I used the `content` parameter as a kind of sub-URL. The top-level URL path and query combined to fully parameterize the templating engine. But when that template involved rendering the content of another template within it, those parameters were packed into a single query parameter, e.g. `/top/file.html?content=/sub/file.html%3Ffont=serif%26color=blue`. That URL entity `%3F` is for that sub-command's separator `?` between its path and query, and `%26` is an encoded `&`, separating one of the sub-command's query parameters from another. If those weren't encoded, then that `&` would be parsed as a separator of that top level command. Anyways, I needed a recursive shape for the generic bag of parameters.
+
+I also needed to know which parameters to parse and decode from that "sub-URL" format. Should I treat the `content` parameter as a special name, and only that one would be parsed that way? Or could there be some special signifier that a parameter should be parsed, like a prefix or a special glyph like `!`? For now, I stuck with the special name.
+
+### Wed Aug 13 11:09:54 PM PDT 2025
+
+Continued to slowly extract the templating engine from the server code.
+
+Future: Thought it might be nice to have a mode for the templating engine which left diagnostic information in the generated page. Where should that diagnostic information be? How should it be accessible? Should it be visible in the webpage? That might conflict with how the page is supposed to look, unless it was cleverly spread around. Maybe the information could be invisibly kept in the HTML, perhaps in custom elements which wrap each replaced element. Either way, this could be a really nice tool to help a user understand the query and templating languages.
+
 ### Sun Aug 10 09:56:20 AM PDT 2025
 
 Future: I thought in my query language that I'd want to control whether or not the result would be HTML escaped. Maybe also URI encoded?
