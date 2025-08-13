@@ -6,6 +6,7 @@
  */
 import express from "express";
 import EventEmitter from "node:events";
+import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import { mkdir, open, rm, writeFile } from "node:fs/promises";
 import { escapeHtml } from "./utilities.mts";
@@ -16,9 +17,20 @@ import {
     getEntryContents,
     pathToEntryFilename,
     queryEngine,
+    urlSearchParamsToRecord,
 } from "./query.mts";
 import { applyTemplating } from "./dom.mts";
 import { QueryError } from "./error.mts";
+import {
+    execute,
+    narrowStringToCommand,
+    type ParametersWithSource,
+    type ParameterValue,
+} from "./engine.mts";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const baseDirectory = `${__dirname}/../entries`;
 
 export const createServer = ({ port }: { port?: number }) => {
     // Create an event emitter to handle cross-cutting communications
@@ -32,6 +44,69 @@ export const createServer = ({ port }: { port?: number }) => {
     const baseURL = `localhost:${port}`;
 
     app.use(express.urlencoded({ extended: true }));
+
+    app.use("/", async (req, res, next) => {
+        // Silly chrome dev tools stuff is noisy
+        if (req.path.match(/\.well-known\/appspecific\/com.chrome/)) return;
+        // Req.query is immutable
+        let query: ParametersWithSource[1] = expressQueryToRecord(req.query);
+        let urlFacts: ParametersWithSource[1] = {
+            host: req.get("host")!,
+            protocol: req.protocol!,
+        };
+
+        // Merge the contents of the reuqest body into query.
+        // TODO: Feels like it should be an error to have the same field in
+        // both, because you could easily be accidentally overwriting yourself.
+        let reqBody: ParametersWithSource[1] = req.body ? { ...req.body } : {};
+
+        let command = narrowStringToCommand(query.command);
+
+        // Next, try to derive the query from the method
+        if (command === undefined) {
+            if (req.method === "GET") {
+                command = "read";
+            } else if (req.method === "POST") {
+                // Since we want to support basic HTML which only have GET and
+                // POST to work with without JS, overload POST and look for
+                // another hint as to what to do
+                if (query.edit !== undefined) {
+                    command = "update";
+                } else if (query.delete !== undefined) {
+                    command = "delete";
+                } else if (query.create !== undefined) {
+                    command = "create";
+                } else {
+                    // The most RESTful
+                    command = "update";
+                }
+            } else if (req.method === "PUT") {
+                command = "create";
+            } else if (req.method === "DELETE") {
+                command = "delete";
+            }
+        }
+
+        if (command === undefined) {
+            throw new Error(
+                `Unable to derive command from method '${req.method}' and query string`,
+            );
+        }
+
+        if (query.content) {
+        }
+
+        res.write(
+            execute([
+                ["query parameters", query],
+                ["request body", reqBody],
+                ["request-derived", { command }],
+                ["url facts", urlFacts],
+                ["server configuration", { baseDirectory }],
+            ]),
+        );
+        next();
+    });
 
     app.use("/", async (req, res, next) => {
         if (req.method !== "POST") {
@@ -121,6 +196,8 @@ export const createServer = ({ port }: { port?: number }) => {
         if (req.path.match(/\.well-known\/appspecific\/com.chrome/)) return;
         // Req.query is immutable
         const query = expressQueryToRecord(req.query);
+        query.host = req.get("host")!;
+        query.protocol = req.protocol!;
         if (req.method !== "GET" && req.method !== "POST") {
             return next();
         }
@@ -194,20 +271,9 @@ export const createServer = ({ port }: { port?: number }) => {
                     );
                 }
                 const result = await applyTemplating(fileToRenderContents, {
-                    getEntryFileName: () => entryFileName,
                     getQueryValue: queryEngine({
-                        query: query,
-                        fileToEditContents: "",
-                        host: req.get("host")!,
-                        protocol: req.protocol,
+                        parameters: query,
                     }),
-                    setContentType: (_type) => {
-                        throw new QueryError(
-                            400,
-                            "Setting content type is not supported",
-                        );
-                    },
-                    select: () => query.select && query.select.toString(),
                 });
 
                 res.send(result);
@@ -302,4 +368,33 @@ export const createServer = ({ port }: { port?: number }) => {
     });
 
     return { cleanup: () => emitter.emit("cleanup") };
+};
+
+export const decodeToContentParameters = (
+    queryParam: string,
+): ParameterValue => {
+    const content = decodeURIComponent(queryParam);
+
+    const url = `http://0.0.0.0${content}`;
+    const urlParsed = URL.parse(url);
+    if (urlParsed == null) {
+        throw new Error(`Unable to parse url ${url}`);
+    }
+    const parameters: ParameterValue = urlSearchParamsToRecord(
+        urlParsed.searchParams,
+    );
+    if (parameters.content) {
+        const decodedSubParameters = decodeToContentParameters(
+            parameters.content as string,
+        );
+        if (typeof decodedSubParameters == "string") {
+            throw new Error(`Couldn't parse sub parameters ${content}`);
+        }
+
+        parameters.content = decodedSubParameters;
+    }
+    return {
+        pathname: url,
+        parameters,
+    };
 };

@@ -6,6 +6,7 @@ import { applyTemplating } from "./dom.mts";
 import { readFile } from "node:fs/promises";
 import { escapeHtml, renderMarkdown } from "./utilities.mts";
 import { QueryError } from "./error.mts";
+import { type ParameterValue } from "./engine.mts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -45,47 +46,38 @@ export const urlSearchParamsToRecord = (
   return record;
 };
 export type Context = {
-  query: Record<string, string>;
-  fileToEditContents: string;
-  protocol: string;
-  host: string;
+  parameters: ParameterValue;
 };
+export type GetQueryValue = ReturnType<typeof queryEngine>;
 export const queryEngine =
-  ({ query, fileToEditContents, protocol, host }: Context) =>
+  ({ parameters }: Context) =>
   async (input: string) => {
     switch (input) {
       case "q/query/title":
         // TODO: I have 10 different ways of doing this query stuff, probably just this one is best
-        return query.title || "";
+        return parameters.title || "";
+      case "q/query/select":
+        return parameters.select || "";
       case "q/query/filename":
-        return query.filename ? query.filename.toString() : "";
+        return parameters.contentPath ? parameters.contentPath.toString() : "";
       case "q/query/raw":
-        return query.raw === undefined ? "" : "raw";
+        return parameters.raw === undefined ? "" : "raw";
       case "q/Now.plainDateTimeISO()":
         return Temporal.Now.plainDateTimeISO().toString();
-      case "fileToEditContents":
-        return fileToEditContents;
       case "q/query/escape":
-        return query.escape === undefined ? "" : "escape";
+        return parameters.escape === undefined ? "" : "escape";
       case "q/query/content/filename": {
-        if (query.content === undefined) return "";
-        const content = decodeURIComponent(query.content.toString());
-
-        const url = `${protocol}://${host}${content}`;
-        const urlParsed = URL.parse(url);
-        if (urlParsed == null) {
-          throw new Error(`Unable to parse url ${url}`);
-        }
-        return "/" + pathToEntryFilename(urlParsed.pathname);
+        if (parameters.contentPath === undefined) return "";
+        return parameters.contentPath;
       }
 
       case "q/query/content":
-        debugger;
-        if (query.content === undefined) return "No content query provided";
+        if (typeof parameters.contentPath !== "string")
+          return "No content query provided";
 
-        const content = decodeURIComponent(query.content.toString());
+        const content = decodeURIComponent(parameters.contentPath);
 
-        const url = `${protocol}://${host}${content}`;
+        const url = `${parameters.protocol}://${parameters.host}${content}`;
         const urlParsed = URL.parse(url);
         if (urlParsed == null) {
           throw new Error(`Unable to parse url ${url}`);
@@ -93,11 +85,16 @@ export const queryEngine =
         const contentEntryFileName = pathToEntryFilename(urlParsed.pathname);
         const contentFileContents =
           await getEntryContents(contentEntryFileName);
-        const contentQuery = urlSearchParamsToRecord(urlParsed.searchParams);
+        // const contentQuery = urlSearchParamsToRecord(urlParsed.searchParams);
+        const contentQuery = parameters.contentParameters;
+        if (!contentQuery)
+          throw new Error("Cannot retrieve subcontent, no content parameters");
+        if (typeof contentQuery === "string")
+          throw new Error("Subcontent was a string, expected a map");
         console.log(
-          `Applying in-query templating for ${content} original query ${JSON.stringify(query)} and content query ${JSON.stringify(contentQuery)}`,
+          `Applying in-query templating for ${content} original query ${JSON.stringify(parameters)} and content query ${JSON.stringify(contentQuery)}`,
         );
-        if (contentQuery.raw !== undefined) {
+        if ("raw" in contentQuery && typeof contentQuery.raw === "string") {
           return contentFileContents;
         }
         if (contentQuery.renderMarkdown !== undefined) {
@@ -105,17 +102,9 @@ export const queryEngine =
           return renderMarkdown(contentFileContents);
         }
         return applyTemplating(contentFileContents, {
-          getEntryFileName: () => contentEntryFileName,
           getQueryValue: queryEngine({
-            query: contentQuery,
-            fileToEditContents: "",
-            host,
-            protocol,
+            parameters: contentQuery,
           }),
-          setContentType(_type) {
-            throw new QueryError(400, "Setting content type is not supported");
-          },
-          select: () => contentQuery.select && contentQuery.select.toString(),
         });
       default:
         // TODO: This shouldn't just be a random server crashing error
