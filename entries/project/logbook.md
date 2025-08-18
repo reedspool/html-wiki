@@ -46,7 +46,7 @@ Future: As I kept working I realized I wanted more string templating capabilitie
 
 Implemented the tree walking strategy and it worked well. That started to make the whole theory sensible. The server had two core features. First it was an entry point to the templating engine. Second, it implemented the query langauge. Then, the templating engine could call on the query language during expansion. This made the templating engine and query language mutually recursive. The concept felt clear and powerful, but I felt I had a lot more work to do in order to realize the potential.
 
-The request for a basic page became a configuration and expansion. For example, in order to implement a global template, so I wouldn't have to repeat a header and footer in every HTML page, I made a `global-page.html`. This contained a custom element template HTML tag: `<replace-with main x-content="q/query/content">` This instructed the templating engine to replace this element with a `main` tag, with the contents of the result of the query in the value of the attribute, in this case `q/query/content`. 
+The request for a basic page became a configuration and expansion. For example, in order to implement a global template, so I wouldn't have to repeat a header and footer in every HTML page, I made a `global-page.html`. This contained a custom element template HTML tag: `<replace-with main x-content="q/query/content">` This instructed the templating engine to replace this element with a `main` tag, with the contents of the result of the query in the value of the attribute, in this case `q/query/content`.
 
 This part might be confusing since "query" means two separate things here. First, this whole string `q/query/content` is the input to my "query language". It's not a complex language, though the slashes might suggest as such, it's more the suggestion of becoming a complex language in the future. For now, though, that whole string literally just maps to one bit of functionality. That functionality derives the content from the URL query, aka search parameters, aka everything between `?` and `#`. So I have my query language getting content from the URL query.
 
@@ -56,7 +56,7 @@ If this seems confusing, then yes, you're on the right track. Mutual recursion c
 
 I struggled with how to package further query strings into the `content` URL parameter, to parameterize how the template engine expanded that `content` page without interfering with how it expanded the top level page. For example, if my URL turned out to be `/some-page?content=another-page?edit&raw`, should the query engine interpret `&raw` as a query parameter for `some-page?` or `another-page?`. The answer, I thought, was to URI encode each path definition. And I'd end up URI encoding.
 
-This felt dangerous. Could one nest URI encodings without losing any information? I thought I saw a warning recently about that. I wrote a little function to test encoding and decoding components: 
+This felt dangerous. Could one nest URI encodings without losing any information? I thought I saw a warning recently about that. I wrote a little function to test encoding and decoding components:
 
 ```js
 function encodeAndDecode(str, depth = 2) {
@@ -72,7 +72,7 @@ function encodeAndDecode(str, depth = 2) {
 Then I called it like this with a bunch of special characters:
 
 ```js
-let a="?%3 quick+brown++fox 333^&*(/\\"; 
+let a="?%3 quick+brown++fox 333^&*(/\\";
 encodeAndDecode(a, 5) === a
 ```
 
