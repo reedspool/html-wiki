@@ -1,11 +1,12 @@
 import { QueryError } from "./error.mts";
-import { dirname } from "node:path";
+import { basename, dirname, normalize } from "node:path";
 import {
     mkdir,
     open,
     rm,
     writeFile,
     readFile as fsReadFile,
+    readdir,
 } from "node:fs/promises";
 
 export const filePath = ({
@@ -134,6 +135,30 @@ export const removeFile = async ({
         throw error;
     }
 };
+
+export const listAllDirectoryContents = async ({
+    baseDirectory,
+}: {
+    baseDirectory: string;
+}) => {
+    const normalizedBaseDirectory = normalize(baseDirectory);
+    const all = await readdir(normalizedBaseDirectory, {
+        recursive: true,
+        withFileTypes: true,
+    });
+    return all.map((dirent) => ({
+        name: dirent.name,
+        contentPath: `${dirent.parentPath.slice(
+            normalizedBaseDirectory.length,
+        )}/${dirent.name}`,
+        type: dirent.isDirectory()
+            ? "directory"
+            : dirent.isFile()
+              ? "file"
+              : "other",
+    }));
+};
+
 export const cleanContent = ({ content }: { content: string }) =>
     content
         // Browser sends CRLF, replace with unix-style LF,

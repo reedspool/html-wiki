@@ -1,6 +1,7 @@
 import { applyTemplating } from "./dom.mts";
 import {
     createFileAndDirectories,
+    listAllDirectoryContents,
     readFile,
     removeFile,
     updateFile,
@@ -268,4 +269,15 @@ export const maybeRecordParameterValue = (
 ): ParameterValue | null => {
     if (!parameter || typeof parameter.value === "string") return null;
     return parameter.value;
+};
+
+export const listNonDirectoryFiles = async ({
+    baseDirectory,
+}: {
+    baseDirectory: string;
+}) => {
+    const allDirents = await listAllDirectoryContents({ baseDirectory });
+    return allDirents
+        .filter(({ type }) => type === "file")
+        .map(({ contentPath }) => contentPath);
 };

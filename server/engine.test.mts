@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert";
 import {
     execute,
+    listNonDirectoryFiles,
     type ParameterValue,
     setAllParameterWithSource,
 } from "./engine.mts";
@@ -47,3 +48,20 @@ test("Render a file which doens't exist", { concurrency: true }, async () => {
         }
     }
 });
+
+test(
+    "Generate list of files in baseDirectory",
+    { concurrency: true },
+    async () => {
+        const allFiles = await listNonDirectoryFiles({ baseDirectory });
+        [
+            "/index.html",
+            "/project/logbook.md",
+            "/$/test/fixtures/test.md",
+            "/$/templates/delete.html",
+            "/$/templates/edit.html",
+            "/$/templates/global-page.html",
+            "/$/actions/create.html",
+        ].forEach((contentPath) => assert.ok(allFiles.includes(contentPath)));
+    },
+);
