@@ -6,20 +6,12 @@
  */
 import express from "express";
 import EventEmitter from "node:events";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
-import { mkdir, open, rm, writeFile } from "node:fs/promises";
 import { escapeHtml } from "./utilities.mts";
 import {
-    encodedEntryPathRequest,
     expressQueryToRecord,
-    fullyQualifiedEntryName,
-    getEntryContents,
     pathToEntryFilename,
-    queryEngine,
     urlSearchParamsToRecord,
 } from "./query.mts";
-import { applyTemplating } from "./dom.mts";
 import { QueryError } from "./error.mts";
 import {
     execute,
@@ -31,11 +23,13 @@ import {
     type ParameterValue,
 } from "./engine.mts";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const baseDirectory = `${__dirname}/../entries`;
-
-export const createServer = ({ port }: { port?: number }) => {
+export const createServer = ({
+    port,
+    baseDirectory,
+}: {
+    port: number;
+    baseDirectory: string;
+}) => {
     // Create an event emitter to handle cross-cutting communications
     const emitter = new EventEmitter();
 

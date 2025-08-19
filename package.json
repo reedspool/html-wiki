@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "description": "A wiki with data stored as HTML",
   "scripts": {
-    "build:client": "npm run build",
+    "build": "node server/cli.mts generate -i entries -o ./build",
     "start": "npm run start:server",
-    "start:server": "node server/cli.mts",
+    "start:server": "node server/cli.mts server --port 3001 -i entries",
     "test": "cd server && node --test",
     "test:watch": "cd server && node --test --watch"
   },

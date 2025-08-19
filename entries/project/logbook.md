@@ -2,6 +2,18 @@
 
 ## Logbook
 
+### Mon Aug 18 09:16:04 PM PDT 2025
+
+Quickly made a static site generation CLI. 
+
+Future: If I had a markdown input file with a `.md` extension, and I was going to generate `.html`, I probably would want the output filename to be `.html` as well. And I'd probably want any links which directly referenced the `.md` file input then I'd want to rewrite those links to point to the `.html` version. This was disheartening because it suggested I'd need to visit the same file multiple times, first to generate a list of links and then to go back and rewrite any (if I discover rewrites needed later). Maybe a possible solution was to discover all the rewrites up front?
+
+I began to write a sitemap page. I started simple. First, I added a query for a list of all the files. I already had this function from the site generation. Then I added a new template custom element `map-list` with the intention that it takes a list from the query and then creates an instance of the given elements for each entry. Several challenges arose immediately.
+
+Future: Until now, every one of my queries returned a flat string. Now I wanted to add a query which returned a list of complex objects. That complicated the TypeScript signature of the query engine. Was the query engine fit for TypeScript at all? I had a goal since I started the query language (which I may not have written down at all yet) that it also be usable as a data API through a web server alongside the site's web server, and this seemed to make that more complicated. I also had the idea that the query language might just be JavaScript, or something close to JavaScript, to not reinvent the wheel but use my existing environment.
+
+Future: I wanted to pass in a template value as a child of my new `map-list` element. I wasn't at all sure how to map the values of each list value to the values in the child element. I thought however I ended up doing it, I'd be applying my templating engine to the children for each element in the list, using the list element as the parameters. Maybe that was enough.
+
 ### Sun Aug 17 11:21:46 PM PDT 2025
 
 Finally got the engine extracted and all my tests passing except for the one which had been failing before that. 
