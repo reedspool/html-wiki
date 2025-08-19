@@ -269,7 +269,15 @@ export const createServer = ({ port }: { port?: number }) => {
         return;
     });
 
-    const listener = app.listen(port, () => {
+    const listener = app.listen(port, (error) => {
+        if (error) {
+            if ("code" in error && error.code === "EADDRINUSE") {
+                console.error("Port in use, exiting");
+                process.exit(1);
+            }
+            console.error("Error when starting to listen:", error);
+            process.exit(1);
+        }
         console.log(`Server is available at http://${baseURL}`);
     });
 
