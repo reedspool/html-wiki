@@ -13,3 +13,5 @@ yarn-error.log*
 
 secrets/
 build/
+
+entries/$/test/tmp/
