@@ -11,9 +11,14 @@ import { queryEngine } from "./query.mts";
 // Parameters come in tagged with a source to enable specific diagnostic reports
 // on where certain values came from. Parameters are validated to turn into a
 // much more specifically typed Request
-export type ParameterValue = {
-    [key: string]: { value: string | ParameterValue; source: ParameterSources };
-};
+export type ParameterValue = Record<
+    string | number | symbol,
+    {
+        value?: unknown;
+        children?: ParameterValue;
+        source: ParameterSources;
+    }
+>;
 export type ParametersWithSource = [string, ParameterValue];
 
 // The high level operation to perform
@@ -127,9 +132,13 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             });
             const content = (await getQueryValue("q/query/raw"))
                 ? fileContents
-                : await applyTemplating(fileContents, {
-                      getQueryValue,
-                  });
+                : (
+                      await applyTemplating({
+                          content: fileContents,
+                          parameters: parameters,
+                          topLevelParameters: parameters,
+                      })
+                  ).content;
             return {
                 status: Status.OK,
                 content,
@@ -182,10 +191,13 @@ export const validateReadParameters = (
         validationIssues.push("contentPath required");
     }
     // TODO: Validate contentPath, something which says it's valid? Maybe check that the file exists?
-    if (parameters.contentParameters) {
-        if (typeof parameters.contentParameters === "string") {
+    if (
+        parameters.contentParameters &&
+        maybeRecordParameterValue(parameters.contentParameters)
+    ) {
+        if (typeof parameters.contentParameters !== "object") {
             validationIssues.push(
-                "contentParameters should be a map of parameters, got a string",
+                "contentParameters should be a map of parameters",
             );
         } else {
             validateReadParameters(
@@ -225,7 +237,7 @@ export const setParameterWithSource = (
     const original = parameters[key];
     if (original) {
         console.log(
-            `Overwriting parameter '${key}' to '${value}' (${source}) from '${original.value}' (original.source)`,
+            `Overwriting parameter '${String(key)}' to '${value}' (${source}) from '${original.value}' (original.source)`,
         );
     }
 
@@ -259,16 +271,15 @@ export const maybeStringParameterValue = (
 export const recordParameterValue = (
     parameter: ParameterValue["string"],
 ): ParameterValue => {
-    if (typeof parameter.value === "string")
-        throw new Error("Non-string required");
-    return parameter.value;
+    if (!parameter.children) throw new Error("Object required");
+    return parameter.children;
 };
 
 export const maybeRecordParameterValue = (
     parameter: ParameterValue["string"],
 ): ParameterValue | null => {
-    if (!parameter || typeof parameter.value === "string") return null;
-    return parameter.value;
+    if (!parameter.children) return null;
+    return parameter.children;
 };
 
 export const listNonDirectoryFiles = async ({

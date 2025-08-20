@@ -12,7 +12,7 @@ import {
   stringParameterValue,
   type ParameterValue,
 } from "./engine.mts";
-import { readFile } from "./filesystem.mts";
+import { listAllDirectoryContents, readFile } from "./filesystem.mts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -62,26 +62,26 @@ export const queryEngine =
   async (input: string) => {
     switch (input) {
       case "q/query/title":
-        // TODO: I have 10 different ways of doing this query stuff, probably just this one is best
-        return maybeStringParameterValue(parameters.title) || "";
       case "q/query/select":
-        return maybeStringParameterValue(parameters.select) || "";
       case "q/query/contentPath":
-        return maybeStringParameterValue(parameters.contentPath) || "";
+      // TODO: I'm conflating the idea of `q/query` even within my own stuff.
+      // This should just be q/query/contentPath if it's supposed to find the
+      // exact value of parameters (and should it be q/parameters instead to
+      // target the unified parameters?)
+      // And this bit me already because I was using it to refer to the
+      // file name
       case "q/query/filename":
-        // TODO: I'm conflating the idea of `q/query` even within my own stuff.
-        // This should just be q/query/contentPath if it's supposed to find the
-        // exact value of parameters (and should it be q/parameters instead to
-        // target the unified parameters?)
-        // And this bit me already because I was using it to refer to the
-        // file name
-        return maybeStringParameterValue(topLevelParameters.filename) || "";
-      case "q/query/raw":
-        return maybeStringParameterValue(parameters.raw) || "";
+      case "q/query/escape":
+      case "q/query/raw": {
+        const field = input.split("/")[2]!;
+        return maybeStringParameterValue(parameters[field]) || "";
+      }
+      case "q/site/allFiles":
+        return await listAllDirectoryContents({
+          baseDirectory: stringParameterValue(topLevelParameters.baseDirectory),
+        });
       case "q/Now.plainDateTimeISO()":
         return Temporal.Now.plainDateTimeISO().toString();
-      case "q/query/escape":
-        return maybeStringParameterValue(parameters.escape) || "";
       case "q/query/content/filename": {
         if (
           typeof parameters.contentParameters !== "object" ||
@@ -119,13 +119,20 @@ export const queryEngine =
         if (maybeStringParameterValue(subParameters.renderMarkdown)) {
           return renderMarkdown(contentFileContents);
         }
-        return applyTemplating(contentFileContents, {
-          getQueryValue: queryEngine({
+        return (
+          await applyTemplating({
+            content: contentFileContents,
             parameters: subParameters,
             topLevelParameters,
-          }),
-        });
+          })
+        ).content;
       }
+      case "topLevelParameters":
+        return topLevelParameters;
+      case "q/params/currentListItem/contentPath":
+      case "q/params/currentListItem/title":
+        const field = input.split("/")[3]!;
+        return recordParameterValue(parameters.current)[field];
       default:
         // TODO: This shouldn't just be a random server crashing error
         throw new QueryError(500, `No value matcher for '${input}'`);

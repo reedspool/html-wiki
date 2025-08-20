@@ -2,6 +2,24 @@
 
 ## Logbook
 
+### Sat Aug 23 10:46:53 PDT 2025
+
+Future: Henderson shared [Pollen in Racket](https://docs.racket-lang.org/pollen/) which seemed to have a lot of similar goals. The biggest difference from his description to me (before I did my own research) sounded like it had a custom Markdown format, instead of using HTML. Definitely wanted to check it out to see the similarities.
+
+Up to now I had succeeded with a "flat" query solution. That is, it wasn't a dynamic programming language in any way, there was just a list of string commands which kind of looked like a programming language.
+
+I ran into a problem for which that "flat" solution became annoying. To make a sitemap, I had to template a list of things. Each list item needed to access a certain item. So the contents of a list was essentially a separate template, reparameterized for each list item, which accessed fields on that list item. It was simple enough to write custom "flat" query commands for each field accessed, but it was also overly-specific. 
+
+I wanted a more general solution so that I wouldn't have to touch the query engine every time I accessed a differenlty-named property. My solution to that would be to properly write a dynamic query command, where the specific field accessed would be a parameter to the command.
+
+### Thu Aug 21 11:40:49 PM PDT 2025
+
+I looked over my usage of my simple "query language engine" so far and I found two primary usecases. One was to query for dynamic data in the text of the templating language. The other was me as the programmer using the same query engine to query dynamic data about the current run of the templating engine. Perhaps that was just convenience. Or perhaps it represented a cohesive approach, the fact that this concept was useful to me the programmer and to the users who I hoped would have some feeling of efficacy like the feeling I had as the system's programmer.
+
+Whether or not it was a good thing, there was trouble. As the core programmer, I was using TypeScript, and I wanted the results of my queries to be well-typed. Whereas a user of the templating language would be typing in queries as strings, and not really handling the results themselves. The results from the templating language would either end up directly in the HTML output, which was always a flat string, or they would be input for other internals of the templating engine, nearly invisible to the template author, which still spit out strings in the end.
+
+Future: If I were to use the same query language as I hoped template authors would use, I wanted my programmer's version to be well-typed in TypeScript. I figured I'd start by breaking the query engine up into small, well-typed functions which I could use directly. Then I'd have to figure out a way to make a query language which ended up as a composition of those small utilities. That seemed like a good plan, though I was uncertain.
+
 ### Mon Aug 18 09:16:04 PM PDT 2025
 
 Quickly made a static site generation CLI. 

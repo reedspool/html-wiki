@@ -17,6 +17,7 @@ import {
     execute,
     maybeStringParameterValue,
     narrowStringToCommand,
+    recordParameterValue,
     setAllParameterWithSource,
     setParameterWithSource,
     stringParameterValue,
@@ -213,7 +214,7 @@ export const createServer = ({
             };
             if (/\.md$/.test(req.path)) {
                 setParameterWithSource(
-                    parameters.contentParameters.value,
+                    recordParameterValue(parameters.contentParameters),
                     "renderMarkdown",
                     "true",
                     "derived",

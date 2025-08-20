@@ -1,5 +1,5 @@
 import { QueryError } from "./error.mts";
-import { basename, dirname, normalize } from "node:path";
+import { dirname, normalize } from "node:path";
 import {
     mkdir,
     open,
@@ -57,7 +57,7 @@ export const readFile = async ({
 }: {
     contentPath: string;
     baseDirectory: string;
-}) => {
+}): Promise<string> => {
     const path = filePath({ contentPath, baseDirectory });
     try {
         const buffer = await fsReadFile(path);

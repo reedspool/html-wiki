@@ -2,12 +2,40 @@ import { type Node, NodeType, HTMLElement, TextNode } from "node-html-parser";
 import { parse as parseHtml } from "node-html-parser";
 import { escapeHtml } from "./utilities.mts";
 import { QueryError } from "./error.mts";
-import { type GetQueryValue } from "./query.mts";
-export type Operations = {
-    getQueryValue: GetQueryValue;
-};
-export const applyTemplating = async (contents: string, ops: Operations) => {
-    const root = parseHtml(contents);
+import { queryEngine } from "./query.mts";
+import {
+    type ParameterValue,
+    recordParameterValue,
+    setParameterWithSource,
+} from "./engine.mts";
+export type Meta = Record<string, string | string[]>;
+export const applyTemplating = async (
+    params: {
+        parameters: ParameterValue;
+        topLevelParameters: ParameterValue;
+    } & (
+        | {
+              content: string;
+          }
+        | {
+              element: HTMLElement;
+          }
+    ),
+): Promise<{
+    content: string;
+    meta: Meta;
+}> => {
+    const { parameters, topLevelParameters } = params;
+    const getQueryValue = queryEngine({ parameters, topLevelParameters });
+    const meta: Meta = {};
+    let root: HTMLElement;
+    if ("content" in params) {
+        root = parseHtml(params.content);
+    } else if ("element" in params) {
+        root = params.element;
+    } else {
+        throw new Error("element or content is required");
+    }
     const treeWalker = new TreeWalker(root, NodeFilter.SHOW_ELEMENT);
 
     let alreadySetForNextIteration = false;
@@ -22,26 +50,34 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
         const element = treeWalker.currentNode as HTMLElement;
         if (stopAtElement && element === stopAtElement) break;
         switch (element.tagName) {
+            case "LINK":
+                if (element.attributes.rel === "icon") {
+                    meta.favicon = element.attributes.href;
+                }
+                break;
             case "META":
+                switch (element.attributes.name) {
+                    case "description":
+                        meta[element.attributes.name] =
+                            element.attributes.content;
+                        break;
+                    case undefined:
+                        break;
+                    default:
+                        break;
+                }
                 switch (element.attributes.itemprop) {
                     case undefined:
                         break;
-                    case "content-type":
-                        switch (element.attributes.content) {
-                            default:
-                                console.error(
-                                    `Failed to handle content-type '${element.attributes.content}' `,
-                                );
-                                break;
-                        }
-                        break;
                     default:
-                        console.error(
-                            `Failed to handle meta itemprop '${element.attributes.itemprop}' `,
-                        );
+                        meta[element.attributes.itemprop] =
+                            element.attributes.content;
                         break;
                 }
 
+                break;
+            case "TITLE":
+                meta.title = element.innerText;
                 break;
             case "SLOT":
                 switch (element.attributes.name) {
@@ -53,11 +89,7 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                                 element.attributes.name === "remove";
                             switch (element.attributes.if) {
                                 case "raw":
-                                    if (
-                                        !(await ops.getQueryValue(
-                                            "q/query/raw",
-                                        ))
-                                    ) {
+                                    if (!(await getQueryValue("q/query/raw"))) {
                                         shouldRemove = !shouldRemove;
                                     }
                                     break;
@@ -88,6 +120,76 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                 }
 
                 break;
+            case "MAP-LIST":
+                {
+                    const attributeEntries = Object.entries(element.attributes);
+                    if (attributeEntries[0][0] !== "q") {
+                        throw new QueryError(
+                            500,
+                            "query-content only supports a single attribute, `q` whose value is the query to use to replace ",
+                        );
+                    }
+                    if (typeof attributeEntries[0][1] !== "string") {
+                        throw new QueryError(
+                            500,
+                            `query-content first attribute must be 'q' with a query as value, got value ${attributeEntries[0][1]}`,
+                        );
+                    }
+                    const query = attributeEntries[0][1];
+
+                    let queryValue = await getQueryValue(query);
+                    if (typeof queryValue == "string") {
+                        throw new Error("query value got unexpected string");
+                    }
+                    if (!Array.isArray(queryValue)) {
+                        throw new Error("Expected an array value for map-list");
+                    }
+                    const text = new TextNode(
+                        escapeHtml(
+                            queryValue
+                                .map(({ contentPath }) => contentPath)
+                                .join(", "),
+                        ),
+                    );
+                    treeWalker.nextNodeNotChildren();
+                    alreadySetForNextIteration = true;
+                    // TODO: apply templating here to children
+                    element.childNodes.forEach(async (node, index) => {
+                        if (!(node instanceof HTMLElement)) {
+                            element.after(node);
+                            return;
+                        }
+                        const parameters: ParameterValue = {};
+                        setParameterWithSource(
+                            parameters,
+                            "list",
+                            queryValue,
+                            "query param",
+                        );
+                        setParameterWithSource(
+                            parameters,
+                            "index",
+                            index,
+                            "query param",
+                        );
+                        setParameterWithSource(
+                            parameters,
+                            "current",
+                            queryValue[index],
+                            "query param",
+                        );
+                        const { content } = await applyTemplating({
+                            element: node,
+                            parameters: parameters,
+                            topLevelParameters,
+                        });
+                        element.after(content);
+                    });
+                    element.replaceWith(text);
+                    // TODO Above is for debugging, below is really what we want
+                    // element.remove()
+                }
+                break;
             case "REPLACE-WITH":
                 {
                     const attributeEntries = Object.entries(element.attributes);
@@ -107,7 +209,7 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                         const match = key.match(/^x-(.*)$/);
                         if (match) {
                             const realKey = match[1];
-                            const queryValue = await ops.getQueryValue(value);
+                            const queryValue = await getQueryValue(value);
                             switch (realKey) {
                                 case "content":
                                     if (typeof queryValue !== "string") {
@@ -155,7 +257,7 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                     }
                     const query = attributeEntries[0][1];
 
-                    let queryValue = await ops.getQueryValue(query);
+                    let queryValue = await getQueryValue(query);
                     if (!queryValue) {
                         queryValue = element.innerHTML;
                     }
@@ -184,12 +286,11 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                     let conditional = false;
                     switch (conditionalKey) {
                         case "falsy": {
-                            conditional = !(await ops.getQueryValue(value));
+                            conditional = !(await getQueryValue(value));
                         }
                         case "truthy":
                             {
-                                conditional =
-                                    !!(await ops.getQueryValue(value));
+                                conditional = !!(await getQueryValue(value));
                             }
                             break;
                         default:
@@ -211,7 +312,7 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
         }
     } while (alreadySetForNextIteration || treeWalker.nextNode());
 
-    const selector = await ops.getQueryValue("q/query/select");
+    const selector = await getQueryValue("q/query/select");
     if (selector) {
         if (typeof selector !== "string") {
             throw new Error("query value expected string");
@@ -222,10 +323,10 @@ export const applyTemplating = async (contents: string, ops: Operations) => {
                 400,
                 `selector ${selector} did not match any elements`,
             );
-        return selected.innerHTML.toString();
+        return { content: selected.innerHTML.toString(), meta };
     }
 
-    return root.toString();
+    return { content: root.toString(), meta };
 };
 
 export type Filter = (
