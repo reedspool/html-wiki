@@ -69,6 +69,15 @@ export const applyTemplating = async (
                 switch (element.attributes.itemprop) {
                     case undefined:
                         break;
+                    case "tag":
+                    case "tags":
+                        if (!meta.tags) meta.tags = [];
+                        (meta.tags as string[]).push(
+                            ...element.attributes.content
+                                .trim()
+                                .split(/\s*,\s*/),
+                        );
+                        break;
                     default:
                         meta[element.attributes.itemprop] =
                             element.attributes.content;
