@@ -7,6 +7,8 @@ import {
     updateFile,
 } from "./filesystem.mts";
 import { queryEngine } from "./query.mts";
+import debug from "debug";
+const log = debug("server:engine");
 
 // Parameters come in tagged with a source to enable specific diagnostic reports
 // on where certain values came from. Parameters are validated to turn into a
@@ -82,10 +84,7 @@ export type Result = {
 export const execute = async (parameters: ParameterValue): Promise<Result> => {
     // NOTE: Despite TypeScript, it's on us to explicitly validate every property
 
-    console.log(
-        "Engine executing parameters:",
-        JSON.stringify(parameters, null, 2),
-    );
+    log("Engine executing parameters: %O", parameters);
     const validationIssues: Array<string> = [];
     if (!parameters.baseDirectory) {
         validationIssues.push("baseDirectory required");
@@ -236,7 +235,7 @@ export const setParameterWithSource = (
         throw new Error(`Can't set parameter on ${parameters}`);
     const original = parameters[key];
     if (original) {
-        console.log(
+        log(
             `Overwriting parameter '${String(key)}' to '${value}' (${source}) from '${original.value}' (original.source)`,
         );
     }

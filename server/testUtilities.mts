@@ -1,5 +1,7 @@
 import { HtmlValidate, type RuleConfig, type Report } from "html-validate";
 import assert from "node:assert";
+import debug from "debug";
+const log = debug("server:test-utilities");
 // TODO: Maybe try using node-html-parser's valid method (already
 // installed for server) to get rid of one dependency
 const htmlvalidate = new HtmlValidate({
@@ -23,7 +25,7 @@ export async function validateAssertAndReport(
 ) {
     const report = await validateHtml(responseText, rules);
     if (report.errorCount == 0 && report.warningCount == 0) return;
-    console.log(`Validation report for URL ${url}`);
+    log(`Validation report for URL ${url}`);
     printHtmlValidationReport(report);
     assert.equal(
         report.valid,
@@ -45,26 +47,24 @@ export const validateHtml = (
 export const printHtmlValidationReport = (report: Report) => {
     // Copied from https://html-validate.org/guide/api/getting-started.html#displaying-the-results
     const severity = ["", "Warning", "Error"];
-    console.log(
-        `${report.errorCount} error(s), ${report.warningCount} warning(s)\n`,
-    );
-    console.log("─".repeat(60));
+    log(`${report.errorCount} error(s), ${report.warningCount} warning(s)\n`);
+    log("─".repeat(60));
     for (const result of report.results) {
         const lines = (result.source ?? "").split("\n");
         for (const message of result.messages) {
             const marker = message.size === 1 ? "▲" : "━".repeat(message.size);
-            console.log();
-            console.log(
+            log("\n");
+            log(
                 severity[message.severity],
                 `(${message.ruleId}):`,
                 message.message,
             );
-            console.log(message.ruleUrl);
-            console.log();
-            console.log(lines[message.line - 1]);
-            console.log(`${" ".repeat(message.column - 1)}${marker}`);
-            console.log();
-            console.log("─".repeat(60));
+            log(message.ruleUrl);
+            log("\n");
+            log(lines[message.line - 1]);
+            log(`${" ".repeat(message.column - 1)}${marker}`);
+            log("\n");
+            log("─".repeat(60));
         }
     }
 };

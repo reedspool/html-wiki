@@ -23,6 +23,8 @@ import {
     stringParameterValue,
     type ParameterValue,
 } from "./engine.mts";
+import debug from "debug";
+const log = debug("server:server");
 
 export const createServer = ({
     port,
@@ -239,16 +241,16 @@ export const createServer = ({
     ) {
         if (error instanceof QueryError) {
             if (error.status === 404) {
-                console.log(`404: Req ${req.path}, ${error.message}`);
+                log(`404: Req ${req.path}, ${error.message}`);
             } else {
-                console.log(`QueryError on ${req.path}:`, error);
+                log(`QueryError on ${req.path}:`, error);
             }
             res.status(error.status);
             res.write(error.message);
             res.end();
             return;
         }
-        console.error("5XX", { err: error });
+        log("5XX", { err: error });
         res.status(500);
         res.send("500");
     });
@@ -267,13 +269,13 @@ export const createServer = ({
     const listener = app.listen(port, (error) => {
         if (error) {
             if ("code" in error && error.code === "EADDRINUSE") {
-                console.error("Port in use, exiting");
+                log("Port in use, exiting");
                 process.exit(1);
             }
-            console.error("Error when starting to listen:", error);
+            log("Error when starting to listen:", error);
             process.exit(1);
         }
-        console.log(`Server is available at http://${baseURL}`);
+        log(`Server is available at http://${baseURL}`);
     });
 
     emitter.on("cleanup", () => {

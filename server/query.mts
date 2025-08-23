@@ -13,6 +13,8 @@ import {
   type ParameterValue,
 } from "./engine.mts";
 import { listAllDirectoryContents, readFile } from "./filesystem.mts";
+import debug from "debug";
+const log = debug("server:query");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -110,7 +112,7 @@ export const queryEngine =
           contentPath: stringParameterValue(subParameters.contentPath),
         });
 
-        console.log(
+        log(
           `Applying in-query templating for ${stringParameterValue(parameters.contentPath)} original query ${JSON.stringify(parameters)} and content query ${JSON.stringify(subParameters)}`,
         );
         if (maybeStringParameterValue(subParameters.raw)) {
@@ -175,7 +177,7 @@ export const expressQueryToRecord = (
 
     const value = reqQuery[key];
     if (typeof value != "string") {
-      console.error(`req.query['${key}'] was not a string: ${reqQuery[key]}`);
+      log(`req.query['${key}'] was not a string: ${reqQuery[key]}`);
       throw new Error(`req.query['${key}'] was not a string. See log`);
     }
     // When a query string has no value, e.g. `?raw`, its value is an empty string

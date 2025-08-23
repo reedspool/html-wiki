@@ -12,13 +12,15 @@ import {
     setAllParameterWithSource,
     setParameterWithSource,
 } from "./engine.mts";
+import debug from "debug";
+const log = debug("cli:main");
 
 let server: ReturnType<typeof createServer>;
 
 // So I can kill from local terminal with Ctrl-c
 // From https://github.com/strongloop/node-foreman/issues/118#issuecomment-475902308
 process.on("SIGINT", (signal) => {
-    console.log(`Signal ${signal} received, shutting down`);
+    log(`Signal ${signal} received, shutting down`);
     server.cleanup();
     // Just wait some amount of time before exiting. Ideally the listener would
     // close successfully, but it seems to hang for some reason.
@@ -33,19 +35,19 @@ program
     .option("--port <number>")
     .option("--ignore-errors")
     .action((options) => {
-        console.log({ options });
+        log({ options });
         if (!options.inDirectory) {
         }
         let port: number;
         if (process.env.PORT !== undefined) {
             port = Number(process.env.PORT);
-            console.log(`Using environment variable port ${port}`);
+            log(`Using environment variable port ${port}`);
         } else if (options.port !== undefined) {
             port = Number(options.port);
-            console.log(`Using command line option port ${port}`);
+            log(`Using command line option port ${port}`);
         } else {
             port = 3001;
-            console.log(`Using default port ${port}`);
+            log(`Using default port ${port}`);
         }
         if (options.ignoreErrors) ignoreErrors();
         server = createServer({ port, baseDirectory: options.inDirectory });
@@ -58,7 +60,7 @@ program
     .option("-o, --out-directory <string>", "where to write files", "./build")
     .action(async ({ inDirectory, outDirectory }) => {
         if (normalize(inDirectory) === normalize(outDirectory)) {
-            console.error(
+            log(
                 "You probaby didn't want to write out exactly where you're reading from",
             );
             process.exit(1);
@@ -66,10 +68,7 @@ program
         const files = await listNonDirectoryFiles({
             baseDirectory: inDirectory,
         });
-        console.log(
-            `Writing files to ${outDirectory}:`,
-            "\n" + files.join("\n"),
-        );
+        log(`Writing files to ${outDirectory}:`, "\n" + files.join("\n"));
         files.forEach(async (contentPath) => {
             const readParameters: ParameterValue = {};
             setAllParameterWithSource(
@@ -121,10 +120,10 @@ program.parse();
 
 function ignoreErrors() {
     process.on("uncaughtException", function (err) {
-        console.error("Top-level uncaught exception: " + err, err);
+        log("Top-level uncaught exception: " + err, err);
     });
     process.on("unhandledRejection", function (err, promise) {
-        console.error(
+        log(
             "Top level unhandled rejection (promise: ",
             promise,
             ", reason: ",

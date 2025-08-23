@@ -8,7 +8,10 @@ import {
     recordParameterValue,
     setParameterWithSource,
 } from "./engine.mts";
+import debug from "debug";
+const log = debug("server:dom");
 export type Meta = Record<string, string | string[]>;
+
 export const applyTemplating = async (
     params: {
         parameters: ParameterValue;
@@ -122,7 +125,7 @@ export const applyTemplating = async (
                         }
                         break;
                     default:
-                        console.error(
+                        log(
                             `Failed to handle slot named '${element.attributes.name}' `,
                         );
                         break;

@@ -8,6 +8,8 @@ import {
     readFile as fsReadFile,
     readdir,
 } from "node:fs/promises";
+import debug from "debug";
+const log = debug("server:filesystem");
 
 export const filePath = ({
     contentPath,
@@ -103,8 +105,8 @@ export const updateFile = async ({
                 baseDirectory,
             });
 
-            console.log(`Logging contents of ${contentPath} before write:`);
-            console.log(fileToEditContents);
+            log(`Logging contents of ${contentPath} before write:`);
+            log(fileToEditContents);
 
             content = cleanContent({ content });
             await writeFile(filePath({ contentPath, baseDirectory }), content);
