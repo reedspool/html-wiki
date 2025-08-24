@@ -104,6 +104,16 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             if (!parameters.content) {
                 validationIssues.push("content required");
             }
+            if (
+                stringParameterValue(parameters.contentPath).charAt(0) !== "/"
+            ) {
+                setParameterWithSource(
+                    parameters,
+                    "contentPath",
+                    "/" + stringParameterValue(parameters.contentPath),
+                    "derived",
+                );
+            }
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
 
