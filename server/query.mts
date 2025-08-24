@@ -84,19 +84,7 @@ export const queryEngine =
         });
       case "q/Now.plainDateTimeISO()":
         return Temporal.Now.plainDateTimeISO().toString();
-      case "q/query/content/filename": {
-        if (
-          typeof parameters.contentParameters !== "object" ||
-          recordParameterValue(parameters.contentParameters).contentPath ===
-            undefined
-        )
-          return "";
-        return stringParameterValue(
-          recordParameterValue(parameters.contentParameters).contentPath,
-        );
-      }
-
-      case "q/query/content": {
+      case "q/render/content": {
         const subParameters = maybeRecordParameterValue(
           parameters.contentParameters,
         );
@@ -129,12 +117,16 @@ export const queryEngine =
           })
         ).content;
       }
-      case "topLevelParameters":
-        return topLevelParameters;
+      case "q/query/contentParameters/contentPath":
       case "q/params/currentListItem/contentPath":
       case "q/params/currentListItem/title":
-        const field = input.split("/")[3]!;
-        return recordParameterValue(parameters.current)[field];
+        const field = input.split("/")[2]!;
+        const subField = input.split("/")[3]!;
+        const record = maybeRecordParameterValue(parameters[field])?.[subField];
+        if (!record) {
+          throw new Error("Oops");
+        }
+        return maybeStringParameterValue(record);
       default:
         // TODO: This shouldn't just be a random server crashing error
         throw new QueryError(500, `No value matcher for '${input}'`);

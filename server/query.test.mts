@@ -1,7 +1,19 @@
 import test from "node:test";
 import assert from "node:assert";
 import { pathToEntryFilename, queryEngine } from "./query.mts";
-import { type ParameterValue, setAllParameterWithSource } from "./engine.mts";
+import {
+    type ParameterValue,
+    setAllParameterWithSource,
+    setParameterWithSource,
+} from "./engine.mts";
+import { Temporal } from "temporal-polyfill";
+import { wait } from "./utilities.mts";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const baseDirectory = `${__dirname}/../entries`;
 
 test("pathToEntryFilename", { concurrency: true }, (context) => {
     context.test(
@@ -68,6 +80,103 @@ test("queryEngine", { concurrency: true }, (context) => {
                 input: "q/query/title",
             });
             assert.equal(result, "test title");
+        },
+    );
+    context.test("Can get current time", { concurrency: true }, async () => {
+        const before = Temporal.Now.plainDateTimeISO();
+        await wait(1);
+        const { result } = await query({
+            record: {},
+            input: "q/Now.plainDateTimeISO()",
+        });
+        if (typeof result !== "string") {
+            assert.fail("expected string result");
+        }
+        await wait(1);
+        const resultParsed = Temporal.PlainDateTime.from(result);
+        const after = Temporal.Now.plainDateTimeISO();
+        assert.equal(Temporal.PlainDateTime.compare(resultParsed, before), 1);
+        assert.equal(Temporal.PlainDateTime.compare(resultParsed, after), -1);
+    });
+    context.test(
+        "Can get contentParameters.contentPath",
+        { concurrency: true },
+        async () => {
+            const parameters: ParameterValue = {};
+            parameters.contentParameters = {
+                children: {
+                    contentPath: {
+                        value: "test content path",
+                        source: "query param",
+                    },
+                },
+                source: "query param",
+            };
+            const result = await queryEngine({
+                parameters,
+                topLevelParameters: parameters,
+            })("q/query/contentParameters/contentPath");
+            if (typeof result !== "string") {
+                assert.fail("expected string result");
+            }
+            assert.equal(result, "test content path");
+        },
+    );
+    context.test("Can render content", { concurrency: true }, async () => {
+        const parameters: ParameterValue = {};
+        parameters.contentParameters = {
+            children: {
+                contentPath: {
+                    value: "/index.html",
+                    source: "query param",
+                },
+            },
+            source: "query param",
+        };
+        setParameterWithSource(
+            parameters,
+            "baseDirectory",
+            baseDirectory,
+            "query param",
+        );
+        setParameterWithSource(
+            parameters,
+            "contentPath",
+            "/index.html",
+            "query param",
+        );
+        const result = await queryEngine({
+            parameters,
+            topLevelParameters: parameters,
+        })("q/render/content");
+        if (typeof result !== "string") {
+            assert.fail("expected string result");
+        }
+        assert.match(result, /<h1>HTML Wiki<\/h1>/);
+    });
+
+    context.test(
+        "Can get title of current list item",
+        { concurrency: true },
+        async () => {
+            const parameters: ParameterValue = {};
+            parameters.currentListItem = {
+                children: {
+                    title: {
+                        value: "test title of list item",
+                        source: "query param",
+                    },
+                },
+                source: "query param",
+            };
+            const result = await queryEngine({
+                parameters,
+                topLevelParameters: parameters,
+            })("q/params/currentListItem/title");
+            if (typeof result !== "string") {
+                assert.fail("expected string result");
+            }
+            assert.equal(result, "test title of list item");
         },
     );
 });

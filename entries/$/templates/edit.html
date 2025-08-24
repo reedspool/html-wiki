@@ -47,15 +47,17 @@
   <body>
     <h1>
       Editing
-      <keep-if truthy="q/query/content/filename">
+      <keep-if truthy="q/query/contentParameters/contentPath">
         <replace-with
           a
-          x-href="q/query/content/filename"
-          x-content="q/query/content/filename"
+          x-href="q/query/contentParameters/contentPath"
+          x-content="q/query/contentParameters/contentPath"
           >[filename] :-/</replace-with
         >
       </keep-if>
-      <remove-if truthy="q/query/content/filename"> template </remove-if>
+      <remove-if truthy="q/query/contentParameters/contentPath">
+        template
+      </remove-if>
     </h1>
     <slot name="remove">
       <p><a href="?edit">Edit this page</a></p>
@@ -71,20 +73,20 @@
     </slot>
     <form method="POST">
       <textarea name="content">
-<query-content q="q/query/content">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
+<query-content q="q/param/content">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
       >
       <slot name="keep" if="raw">
         <button type="submit" formaction="?raw">Save</button>
         <p>
           This isn't implemented correctly. Need to add <code>?raw</code> to
-          query <code>q/query/content/filename</code>
+          query <code>q/query/contentParameters/contentPath</code>
         </p></slot
       >
       <slot name="remove" if="raw">
         <replace-with
           button
           type="submit"
-          x-formaction="q/query/content/filename"
+          x-formaction="q/query/contentParameters/contentPath"
           >Save</replace-with
         >
       </slot>
