@@ -1,6 +1,8 @@
-# About this project
+# About This Project
 
 ## Logbook
+
+Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
 ### Sat Aug 23 10:46:53 PDT 2025
 
@@ -8,7 +10,7 @@ Future: Henderson shared [Pollen in Racket](https://docs.racket-lang.org/pollen/
 
 Up to now I had succeeded with a "flat" query solution. That is, it wasn't a dynamic programming language in any way, there was just a list of string commands which kind of looked like a programming language.
 
-I ran into a problem for which that "flat" solution became annoying. To make a sitemap, I had to template a list of things. Each list item needed to access a certain item. So the contents of a list was essentially a separate template, reparameterized for each list item, which accessed fields on that list item. It was simple enough to write custom "flat" query commands for each field accessed, but it was also overly-specific. 
+I ran into a problem for which that "flat" solution became annoying. To make a sitemap, I had to template a list of things. Each list item needed to access a certain item. So the contents of a list was essentially a separate template, reparameterized for each list item, which accessed fields on that list item. It was simple enough to write custom "flat" query commands for each field accessed, but it was also overly-specific.
 
 I wanted a more general solution so that I wouldn't have to touch the query engine every time I accessed a differenlty-named property. My solution to that would be to properly write a dynamic query command, where the specific field accessed would be a parameter to the command.
 
@@ -24,7 +26,7 @@ Future: If I were to use the same query language as I hoped template authors wou
 
 ### Mon Aug 18 09:16:04 PM PDT 2025
 
-Quickly made a static site generation CLI. 
+Quickly made a static site generation CLI.
 
 Future: If I had a markdown input file with a `.md` extension, and I was going to generate `.html`, I probably would want the output filename to be `.html` as well. And I'd probably want any links which directly referenced the `.md` file input then I'd want to rewrite those links to point to the `.html` version. This was disheartening because it suggested I'd need to visit the same file multiple times, first to generate a list of links and then to go back and rewrite any (if I discover rewrites needed later). Maybe a possible solution was to discover all the rewrites up front?
 
@@ -36,7 +38,7 @@ Future: I wanted to pass in a template value as a child of my new `map-list` ele
 
 ### Sun Aug 17 11:21:46 PM PDT 2025
 
-Finally got the engine extracted and all my tests passing except for the one which had been failing before that. 
+Finally got the engine extracted and all my tests passing except for the one which had been failing before that.
 
 ### Fri Aug 15 07:33:20 PM PDT 2025
 

@@ -115,7 +115,7 @@ test(
 
         assert.strictEqual(response.status, 200);
         assert.match($1("h1").innerHTML, /Editing/);
-        assert.match($1("h1").innerHTML, /template/);
+        assert.match($1("h1").innerHTML, /template/i);
 
         assert.match($1("textarea").innerHTML, /something went wrong/i);
 
@@ -197,6 +197,7 @@ test("Can get edit page for index", { concurrency: true }, async () => {
 
     assert.strictEqual(response.status, 200);
     assert.match($1("h1").innerHTML, /Edit/);
+    assert.doesNotMatch($1("h1").innerHTML, /template/i);
 
     await validateAssertAndReport(responseText, url);
 });

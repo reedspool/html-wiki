@@ -8,19 +8,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <style>
+      :root {
+        --bg: hsl(33.79deg 56.86% 80%); /* "burlywood" light brown */
+        --bg-darker: hsl(33.79deg 40.86% 71%); /* darker */
+        --bg-lighter: hsl(33.79deg 40.86% 90%); /* darker */
+        --fg: hsl(0 0% 17%); /* dark, dark gray */
+        --fg-lighter: hsl(0 0% 27%); /* dark, dark gray */
+        --space: 1rem;
+        --space-2: calc(var(--space) * 2);
+        --space-half: calc(var(--space) * 0.5);
+        --space-quarter: calc(var(--space) * 0.25);
+        --fancy: monospace;
+        --prose: "Times New Roman";
+      }
+      html,
+      body {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        background-color: var(--bg);
+        color: var(--fg);
+        font-family: var(--prose);
+        line-height: 1.4;
+        font-size: 20px;
+      }
+      body {
+        height: fit-content; /* Body height affects sticky header behavior */
+        min-height: 100vh;
+      }
+      header,
+      footer {
+        padding-block: var(--space-half);
+        padding-inline: var(--space);
+        background-color: var(--bg-darker);
+        display: flex;
+        flex-direction: row;
+        gap: var(--space-2);
+        align-items: center;
+        flex-wrap: balance;
+        & nav ul {
+          flex-wrap: balance;
+          list-style: none;
+          display: flex;
+          flex-direction: row;
+          gap: var(--space);
+          padding-inline-start: 0;
+        }
+      }
       header {
-        background-color: blue;
+        position: sticky;
+        top: 0;
+        box-shadow: 0px 0px 12px -1px rgba(0, 0, 0, 0.48);
+      }
+      footer {
+        box-shadow: 0px 0px 12px -1px rgba(0, 0, 0, 0.48) inset;
+      }
+      main {
+        padding-block: var(--space-half);
+        padding-inline: var(--space);
+        max-width: 100%;
+      }
+
+      pre code {
+        overflow-x: auto;
+        display: block;
+        padding-block: var(--space-half);
+        padding-inline: var(--space);
+      }
+      a {
+        color: steelblue;
+        &:visited {
+          color: rebeccapurple;
+        }
+        &[href^="http"]::after {
+          content: " 🌐";
+          font-size: 0.8em;
+          padding-block-end: 0.1em;
+          vertical-align: text-top;
+        }
+
+        &[logo] {
+          text-decoration: none;
+          color: var(--fg);
+          font-size: 2rem;
+          font-family: var(--fancy);
+        }
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-family: var(--fancy);
+        font-weight: normal;
+      }
+
+      h3 {
+        font-size: 1.4em;
+        color: var(--fg-lighter);
+      }
+
+      p {
+        margin-block: 1.4em;
       }
     </style>
   </head>
 
   <body>
     <header>
-      <a href="/">HTML Wiki</a>
+      <a logo href="/">HTML Wiki</a>
       <nav aria-label="Main navigation">
         <ul>
           <li><a href="/">Home</a></li>
           <li><a href="/sitemap">Sitemap</a></li>
+          <li><a href="?edit">Edit this page</a></li>
         </ul>
       </nav>
     </header>
@@ -36,7 +139,7 @@
       </p>
     </replace-with>
     <footer>
-      <a href="/">HTML Wiki</a>
+      <a logo href="/">HTML Wiki</a>
       <nav aria-label="Secondary navigation">
         <ul>
           <li><a href="/">Home</a></li>
