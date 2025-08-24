@@ -6,13 +6,13 @@ import { applyTemplating } from "./dom.mts";
 import { escapeHtml, renderMarkdown } from "./utilities.mts";
 import { QueryError } from "./error.mts";
 import {
+  listNonDirectoryFiles,
   maybeRecordParameterValue,
   maybeStringParameterValue,
-  recordParameterValue,
   stringParameterValue,
   type ParameterValue,
 } from "./engine.mts";
-import { listAllDirectoryContents, readFile } from "./filesystem.mts";
+import { readFile } from "./filesystem.mts";
 import debug from "debug";
 const log = debug("server:query");
 
@@ -66,25 +66,26 @@ export const queryEngine =
       case "q/query/title":
       case "q/query/select":
       case "q/query/contentPath":
-      // TODO: I'm conflating the idea of `q/query` even within my own stuff.
-      // This should just be q/query/contentPath if it's supposed to find the
-      // exact value of parameters (and should it be q/parameters instead to
-      // target the unified parameters?)
-      // And this bit me already because I was using it to refer to the
-      // file name
-      case "q/query/filename":
       case "q/query/escape":
       case "q/query/raw": {
         const field = input.split("/")[2]!;
         return maybeStringParameterValue(parameters[field]) || "";
       }
+      // Working on this concept that "params" refers to the original query?
+      // This isn't consistent, and it's surprising. Probably need a concept of scope and
+      // shadowing
+      case "q/param/filename": {
+        const field = input.split("/")[2]!;
+        return maybeStringParameterValue(topLevelParameters[field]) || "";
+      }
       case "q/site/allFiles":
-        return await listAllDirectoryContents({
+        return await listNonDirectoryFiles({
           baseDirectory: stringParameterValue(topLevelParameters.baseDirectory),
         });
       case "q/Now.plainDateTimeISO()":
         return Temporal.Now.plainDateTimeISO().toString();
       case "q/render/content": {
+        if (!parameters.contentParameters) return "";
         const subParameters = maybeRecordParameterValue(
           parameters.contentParameters,
         );
@@ -119,14 +120,15 @@ export const queryEngine =
       }
       case "q/query/contentParameters/contentPath":
       case "q/params/currentListItem/contentPath":
-      case "q/params/currentListItem/title":
+      case "q/params/currentListItem/name": {
         const field = input.split("/")[2]!;
         const subField = input.split("/")[3]!;
-        const record = maybeRecordParameterValue(parameters[field])?.[subField];
-        if (!record) {
-          throw new Error("Oops");
-        }
+        const param = parameters[field];
+        if (!param) return "";
+        const record = maybeRecordParameterValue(param)?.[subField];
+        if (!record) return "";
         return maybeStringParameterValue(record);
+      }
       default:
         // TODO: This shouldn't just be a random server crashing error
         throw new QueryError(500, `No value matcher for '${input}'`);

@@ -17,8 +17,8 @@ import {
     execute,
     maybeStringParameterValue,
     narrowStringToCommand,
-    recordParameterValue,
-    setAllParameterWithSource,
+    setEachParameterWithSource,
+    setParameterChildrenWithSource,
     setParameterWithSource,
     stringParameterValue,
     type ParameterValue,
@@ -51,8 +51,8 @@ export const createServer = ({
         // Req.query is immutable
         let query = expressQueryToRecord(req.query);
         const parameters: ParameterValue = {};
-        setAllParameterWithSource(parameters, query, "query param");
-        setAllParameterWithSource(parameters, req.body ?? {}, "request body");
+        setEachParameterWithSource(parameters, query, "query param");
+        setEachParameterWithSource(parameters, req.body ?? {}, "request body");
 
         let command = narrowStringToCommand(query.command);
 
@@ -111,7 +111,7 @@ export const createServer = ({
             const decodedContent = decodeToContentParameters(
                 stringParameterValue(parameters.content),
             );
-            setParameterWithSource(
+            setParameterChildrenWithSource(
                 parameters,
                 "contentParameters",
                 decodedContent,
@@ -137,43 +137,45 @@ export const createServer = ({
             stringParameterValue(parameters.command) == "read" &&
             maybeStringParameterValue(parameters.edit)
         ) {
-            const contentPathToEdit = parameters.contentPath ?? {
-                value: "/" + pathToEntryFilename(req.path),
-                source: "derived",
-            };
+            const toEditContentPath =
+                maybeStringParameterValue(parameters.contentPath) ||
+                "/" + pathToEntryFilename(req.path);
             setParameterWithSource(
                 parameters,
                 "contentPath",
                 "/$/templates/global-page.html",
                 "derived",
             );
-            setParameterWithSource(
+            const editContentParameters: ParameterValue = {};
+            const whatToEditContentParameters: ParameterValue = {};
+            setEachParameterWithSource(
+                whatToEditContentParameters,
+                {
+                    raw: "raw",
+                    escape: "escape",
+                    contentPath: toEditContentPath,
+                },
+                "derived",
+            );
+            setParameterChildrenWithSource(
+                editContentParameters,
+                "contentParameters",
+                whatToEditContentParameters,
+                "derived",
+            );
+            setEachParameterWithSource(
+                editContentParameters,
+                {
+                    contentPath: `/$/templates/edit.html`,
+                    select: "body",
+                },
+                "derived",
+            );
+
+            setParameterChildrenWithSource(
                 parameters,
                 "contentParameters",
-                {
-                    contentPath: {
-                        value: `/$/templates/edit.html`,
-                        source: "derived",
-                    },
-                    select: {
-                        value: "body",
-                        source: "derived",
-                    },
-                    contentParameters: {
-                        value: {
-                            raw: {
-                                value: "raw",
-                                source: "derived",
-                            },
-                            escape: {
-                                value: "escape",
-                                source: "derived",
-                            },
-                            contentPath: contentPathToEdit,
-                        },
-                        source: "derived",
-                    },
-                },
+                editContentParameters,
                 "derived",
             );
         }
@@ -201,22 +203,24 @@ export const createServer = ({
                 "derived",
             );
 
-            parameters.contentParameters = {
-                value: {
-                    select: {
-                        value: "body",
-                        source: "derived",
-                    },
-                    contentPath: {
-                        value: "/" + pathToEntryFilename(req.path),
-                        source: "derived",
-                    },
+            const contentParameters: ParameterValue = {};
+            setEachParameterWithSource(
+                contentParameters,
+                {
+                    select: "body",
+                    contentPath: "/" + pathToEntryFilename(req.path),
                 },
-                source: "derived",
-            };
+                "derived",
+            );
+            setParameterChildrenWithSource(
+                parameters,
+                "contentParameters",
+                contentParameters,
+                "derived",
+            );
             if (/\.md$/.test(req.path)) {
                 setParameterWithSource(
-                    recordParameterValue(parameters.contentParameters),
+                    contentParameters,
                     "renderMarkdown",
                     "true",
                     "derived",
@@ -297,7 +301,7 @@ export const decodeToContentParameters = (
     }
     const parameters: ParameterValue = {};
     const fromParams = urlSearchParamsToRecord(urlParsed.searchParams);
-    setAllParameterWithSource(parameters, fromParams, "query param");
+    setEachParameterWithSource(parameters, fromParams, "query param");
     setParameterWithSource(
         parameters,
         "contentPath",
@@ -312,7 +316,7 @@ export const decodeToContentParameters = (
             throw new Error(`Couldn't parse sub parameters ${content}`);
         }
 
-        setParameterWithSource(
+        setParameterChildrenWithSource(
             parameters,
             "contentParameters",
             decodedSubParameters,

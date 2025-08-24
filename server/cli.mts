@@ -9,7 +9,7 @@ import {
     listNonDirectoryFiles,
     type ParameterValue,
     recordParameterValue,
-    setAllParameterWithSource,
+    setEachParameterWithSource,
     setParameterWithSource,
 } from "./engine.mts";
 import debug from "debug";
@@ -65,13 +65,16 @@ program
             );
             process.exit(1);
         }
-        const files = await listNonDirectoryFiles({
-            baseDirectory: inDirectory,
-        });
+        const files = (
+            await listNonDirectoryFiles({
+                baseDirectory: inDirectory,
+            })
+        ).map(({ contentPath }) => contentPath);
+
         log(`Writing files to ${outDirectory}:`, "\n" + files.join("\n"));
         files.forEach(async (contentPath) => {
             const readParameters: ParameterValue = {};
-            setAllParameterWithSource(
+            setEachParameterWithSource(
                 readParameters,
                 {
                     baseDirectory: inDirectory,
@@ -102,7 +105,7 @@ program
             const readResult = await execute(readParameters);
 
             const writeParameters: ParameterValue = {};
-            setAllParameterWithSource(
+            setEachParameterWithSource(
                 writeParameters,
                 {
                     baseDirectory: outDirectory,

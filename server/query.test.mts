@@ -3,7 +3,8 @@ import assert from "node:assert";
 import { pathToEntryFilename, queryEngine } from "./query.mts";
 import {
     type ParameterValue,
-    setAllParameterWithSource,
+    setEachParameterWithSource,
+    setParameterChildrenWithSource,
     setParameterWithSource,
 } from "./engine.mts";
 import { Temporal } from "temporal-polyfill";
@@ -60,7 +61,7 @@ async function query({
     input: string;
 }) {
     const parameters: ParameterValue = {};
-    setAllParameterWithSource(parameters, record, "query param");
+    setEachParameterWithSource(parameters, record, "query param");
     const result = await queryEngine({
         parameters,
         topLevelParameters: parameters,
@@ -80,6 +81,17 @@ test("queryEngine", { concurrency: true }, (context) => {
                 input: "q/query/title",
             });
             assert.equal(result, "test title");
+        },
+    );
+    context.test(
+        "A missing parameter is falsy",
+        { concurrency: true },
+        async () => {
+            const { result } = await query({
+                record: {},
+                input: "q/query/title",
+            });
+            assert.ok(!result);
         },
     );
     context.test("Can get current time", { concurrency: true }, async () => {
@@ -124,15 +136,17 @@ test("queryEngine", { concurrency: true }, (context) => {
     );
     context.test("Can render content", { concurrency: true }, async () => {
         const parameters: ParameterValue = {};
-        parameters.contentParameters = {
-            children: {
+        setParameterChildrenWithSource(
+            parameters,
+            "contentParameters",
+            {
                 contentPath: {
                     value: "/index.html",
                     source: "query param",
                 },
             },
-            source: "query param",
-        };
+            "query param",
+        );
         setParameterWithSource(
             parameters,
             "baseDirectory",

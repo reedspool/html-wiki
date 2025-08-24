@@ -230,7 +230,7 @@ export const setParameterWithSource = (
     key: keyof ParameterValue,
     value: ParameterValue[string]["value"],
     source: ParameterSources,
-) => {
+): ParameterValue => {
     if (typeof parameters === "string")
         throw new Error(`Can't set parameter on ${parameters}`);
     const original = parameters[key];
@@ -241,16 +241,37 @@ export const setParameterWithSource = (
     }
 
     parameters[key] = { value, source };
+    return parameters;
 };
 
-export const setAllParameterWithSource = (
+export const setEachParameterWithSource = (
     parameters: ParameterValue,
     record: Record<string, string>,
     source: ParameterSources,
-) => {
+): ParameterValue => {
     Object.entries(record).forEach(([key, value]) => {
         setParameterWithSource(parameters, key, value, source);
     });
+    return parameters;
+};
+
+export const setParameterChildrenWithSource = (
+    parameters: ParameterValue | string,
+    key: keyof ParameterValue,
+    value: ParameterValue,
+    source: ParameterSources,
+): ParameterValue => {
+    if (typeof parameters === "string")
+        throw new Error(`Can't set parameter on ${parameters}`);
+    const original = parameters[key];
+    if (original) {
+        log(
+            `Overwriting parameter '${String(key)}' to '${value}' (${source}) from '${original.value}' (original.source)`,
+        );
+    }
+
+    parameters[key] = { children: value, source };
+    return parameters;
 };
 
 export const stringParameterValue = (
@@ -287,7 +308,5 @@ export const listNonDirectoryFiles = async ({
     baseDirectory: string;
 }) => {
     const allDirents = await listAllDirectoryContents({ baseDirectory });
-    return allDirents
-        .filter(({ type }) => type === "file")
-        .map(({ contentPath }) => contentPath);
+    return allDirents.filter(({ type }) => type === "file");
 };

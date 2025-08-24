@@ -12,6 +12,8 @@ I ran into a problem for which that "flat" solution became annoying. To make a s
 
 I wanted a more general solution so that I wouldn't have to touch the query engine every time I accessed a differenlty-named property. My solution to that would be to properly write a dynamic query command, where the specific field accessed would be a parameter to the command.
 
+It turned out to not be annoying enough, however, to keep going and successfully get my sitemap working! So it would have to wait.
+
 ### Thu Aug 21 11:40:49 PM PDT 2025
 
 I looked over my usage of my simple "query language engine" so far and I found two primary usecases. One was to query for dynamic data in the text of the templating language. The other was me as the programmer using the same query engine to query dynamic data about the current run of the templating engine. Perhaps that was just convenience. Or perhaps it represented a cohesive approach, the fact that this concept was useful to me the programmer and to the users who I hoped would have some feeling of efficacy like the feeling I had as the system's programmer.

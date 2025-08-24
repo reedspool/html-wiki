@@ -5,7 +5,8 @@ import { QueryError } from "./error.mts";
 import { queryEngine } from "./query.mts";
 import {
     type ParameterValue,
-    recordParameterValue,
+    setEachParameterWithSource,
+    setParameterChildrenWithSource,
     setParameterWithSource,
 } from "./engine.mts";
 import debug from "debug";
@@ -41,10 +42,10 @@ export const applyTemplating = async (
     }
     const treeWalker = new TreeWalker(root, NodeFilter.SHOW_ELEMENT);
 
-    let alreadySetForNextIteration = false;
+    let alreadySetForNextIteration: Node | null = null;
     let stopAtElement: HTMLElement | null = null;
     do {
-        alreadySetForNextIteration = false;
+        alreadySetForNextIteration = null;
         if (treeWalker.currentNode.nodeType !== NodeType.ELEMENT_NODE) {
             throw new Error(
                 `Treewalker showed a non-HTMLElement Node '${treeWalker.currentNode}'`,
@@ -111,12 +112,12 @@ export const applyTemplating = async (
                                     break;
                             }
                             if (shouldRemove) {
-                                treeWalker.nextNodeNotChildren();
-                                alreadySetForNextIteration = true;
+                                alreadySetForNextIteration =
+                                    treeWalker.nextNodeNotChildren();
                                 element.remove();
                             } else {
-                                treeWalker.nextNode();
-                                alreadySetForNextIteration = true;
+                                alreadySetForNextIteration =
+                                    treeWalker.nextNode();
                                 element.childNodes.forEach((node) => {
                                     element.after(node);
                                 });
@@ -156,21 +157,11 @@ export const applyTemplating = async (
                     if (!Array.isArray(queryValue)) {
                         throw new Error("Expected an array value for map-list");
                     }
-                    const text = new TextNode(
-                        escapeHtml(
-                            queryValue
-                                .map(({ contentPath }) => contentPath)
-                                .join(", "),
-                        ),
-                    );
-                    treeWalker.nextNodeNotChildren();
-                    alreadySetForNextIteration = true;
+                    alreadySetForNextIteration =
+                        treeWalker.nextNodeNotChildren();
                     // TODO: apply templating here to children
-                    element.childNodes.forEach(async (node, index) => {
-                        if (!(node instanceof HTMLElement)) {
-                            element.after(node);
-                            return;
-                        }
+                    for (const index in queryValue) {
+                        const current = queryValue[index];
                         const parameters: ParameterValue = {};
                         setParameterWithSource(
                             parameters,
@@ -184,22 +175,41 @@ export const applyTemplating = async (
                             index,
                             "query param",
                         );
-                        setParameterWithSource(
+                        setParameterChildrenWithSource(
                             parameters,
-                            "current",
-                            queryValue[index],
+                            "currentListItem",
+                            setEachParameterWithSource(
+                                {},
+                                current,
+                                "query param",
+                            ),
                             "query param",
                         );
-                        const { content } = await applyTemplating({
-                            element: node,
-                            parameters: parameters,
-                            topLevelParameters,
-                        });
-                        element.after(content);
-                    });
-                    element.replaceWith(text);
-                    // TODO Above is for debugging, below is really what we want
-                    // element.remove()
+                        for (const childElement of element.children) {
+                            // This needs to be a clone for two reasons.
+                            // First it needs to be detached from the parent
+                            // so that it doesn't continue to try to
+                            // traverse outside. Thsi could be achieved
+                            // alternatively by implementing "stopAt"
+                            // parameter for applyTemplate, which might be
+                            // useful for other reasons. But since this also
+                            // needs t obe a clone for the second reason (as
+                            // the nth copy to fill in with the nth list
+                            // item's data), it works.
+                            const childElementClone =
+                                childElement.clone() as HTMLElement;
+                            // This typing is just wrong. Null is perfectly valid
+                            //@ts-expect-error
+                            childElementClone.parentNode = null;
+                            const { content } = await applyTemplating({
+                                element: childElementClone,
+                                parameters: parameters,
+                                topLevelParameters,
+                            });
+                            element.after(content);
+                        }
+                    }
+                    element.remove();
                 }
                 break;
             case "REPLACE-WITH":
@@ -247,8 +257,8 @@ export const applyTemplating = async (
                             replacementElement.setAttribute(key, value);
                         }
                     }
-                    treeWalker.nextNodeNotChildren();
-                    alreadySetForNextIteration = true;
+                    alreadySetForNextIteration =
+                        treeWalker.nextNodeNotChildren();
                     element.replaceWith(replacementElement);
                 }
                 break;
@@ -277,8 +287,8 @@ export const applyTemplating = async (
                         throw new Error("query value expected string");
                     }
                     const text = new TextNode(escapeHtml(queryValue));
-                    treeWalker.nextNodeNotChildren();
-                    alreadySetForNextIteration = true;
+                    alreadySetForNextIteration =
+                        treeWalker.nextNodeNotChildren();
                     element.replaceWith(text);
                 }
                 break;
@@ -313,8 +323,8 @@ export const applyTemplating = async (
 
                     if (!conditional) shouldDrop = !shouldDrop;
                     if (shouldDrop) {
-                        treeWalker.nextNodeNotChildren();
-                        alreadySetForNextIteration = true;
+                        alreadySetForNextIteration =
+                            treeWalker.nextNodeNotChildren();
                         element.innerHTML = "";
                     }
                 }

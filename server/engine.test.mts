@@ -4,7 +4,9 @@ import {
     execute,
     listNonDirectoryFiles,
     type ParameterValue,
-    setAllParameterWithSource,
+    setEachParameterWithSource,
+    setParameterChildrenWithSource,
+    setParameterWithSource,
 } from "./engine.mts";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
@@ -16,10 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const baseDirectory = `${__dirname}/../entries`;
 
-async function executeAndParse(record: Record<string, string>) {
-    const parameters: ParameterValue = {};
-    setAllParameterWithSource(parameters, record, "query param");
-
+async function executeAndParse(parameters: ParameterValue) {
     const { content, status } = await execute(parameters);
     const dom = parse(content);
     return {
@@ -33,7 +32,7 @@ async function executeAndParse(record: Record<string, string>) {
 
 test("Render a file which doens't exist", { concurrency: true }, async () => {
     const parameters: ParameterValue = {};
-    setAllParameterWithSource(
+    setEachParameterWithSource(
         parameters,
         {
             command: "read",
@@ -71,11 +70,17 @@ test(
     "Render an HTML template file as an HTML file",
     { concurrency: true },
     async () => {
-        const { dom } = await executeAndParse({
-            command: "read",
-            contentPath: "/index.html",
-            baseDirectory,
-        });
+        const { dom } = await executeAndParse(
+            setEachParameterWithSource(
+                {},
+                {
+                    command: "read",
+                    contentPath: "/index.html",
+                    baseDirectory,
+                },
+                "query param",
+            ),
+        );
 
         // They're the same minus whitespace changes caused from parsing
         // and re-stringifying
@@ -91,28 +96,82 @@ test(
     },
 );
 
+test(
+    "Render an HTML template file with rendered template content",
+    { concurrency: true },
+    async () => {
+        const parameters: ParameterValue = {};
+        setEachParameterWithSource(
+            parameters,
+            {
+                command: "read",
+                contentPath: "/$/templates/global-page.html",
+                baseDirectory,
+            },
+            "query param",
+        );
+
+        const contentParameters: ParameterValue = {};
+        setEachParameterWithSource(
+            contentParameters,
+            {
+                select: "body",
+                contentPath: "/index.html",
+            },
+            "derived",
+        );
+        setParameterChildrenWithSource(
+            parameters,
+            "contentParameters",
+            contentParameters,
+            "derived",
+        );
+
+        const { dom, $1 } = await executeAndParse(parameters);
+
+        // All the global page stuff is there
+        assert.match($1("header>a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('header nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1('header nav a[href="/sitemap"]').innerHTML, /Sitemap/);
+
+        assert.match($1("footer > a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('footer nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
+
+        // And the content is there
+        assert.match($1("h1").innerHTML, /HTML Wiki/);
+    },
+);
+
 test("Render sitemap", { concurrency: true }, async () => {
-    const { $ } = await executeAndParse({
-        command: "read",
-        contentPath: "/sitemap.html",
-        baseDirectory,
-    });
+    const { $, $1 } = await executeAndParse(
+        setEachParameterWithSource(
+            {},
+            {
+                command: "read",
+                contentPath: "/sitemap.html",
+                baseDirectory,
+            },
+            "query param",
+        ),
+    );
 
     const listElements = $("li");
     assert.ok(
         listElements.length >= 7,
         `${listElements.length} was less than 7`,
     );
-    listElements.forEach((li) => {
-        assert.match(li.querySelector("a")?.attributes.href!, /^\//);
-    });
+    assert.match($1("li a[href=/index.html]").innerHTML, /Homepage/);
+    assert.match($1("li a[href=/sitemap.html]").innerHTML, /Sitemap/);
 });
 
 test(
     "Generate list of files in baseDirectory",
     { concurrency: true },
     async () => {
-        const allFiles = await listNonDirectoryFiles({ baseDirectory });
+        const allFiles = (await listNonDirectoryFiles({ baseDirectory })).map(
+            ({ contentPath }) => contentPath,
+        );
         [
             "/index.html",
             "/project/logbook.md",

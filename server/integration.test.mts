@@ -369,7 +369,7 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
 });
 
 const tmpFileName = (extension: string = ".html") =>
-    `/$/test/tmp/file${Temporal.Now.plainDateTimeISO()}${extension}`;
+    `/$/test/tmp/tmpfile${Temporal.Now.plainDateTimeISO()}${extension}`;
 
 //TODO: Instead of doing all these things at once, could use node filesystem commands to set up and clean up. With separate tests, it would be easier to tell if one thing was failing or everything was failing, and I'd have setups for more indepth testing of certain cases.
 test(

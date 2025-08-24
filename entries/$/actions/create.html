@@ -59,7 +59,7 @@
       </p>
     </slot>
     <form method="POST">
-      <drop-if truthy="q/query/filename">
+      <drop-if truthy="q/param/filename">
         <replace-with
           input
           type="text"
@@ -68,12 +68,12 @@
           placeholder="posts/New Page"
         ></replace-with>
       </drop-if>
-      <keep-if truthy="q/query/filename">
+      <keep-if truthy="q/param/filename">
         <replace-with
           input
           type="text"
           name="contentPath"
-          x-value="q/query/filename"
+          x-value="q/param/filename"
           placeholder="posts/New Page"
         ></replace-with>
       </keep-if>
