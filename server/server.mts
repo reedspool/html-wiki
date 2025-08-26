@@ -231,14 +231,12 @@ export const createServer = ({
         const result = await execute(parameters);
         if (command === "read") {
             res.send(result.content);
-        } else if (
-            command == "update" ||
-            command == "create" ||
-            command == "delete"
-        ) {
+        } else if (command == "update" || command == "create") {
             res.redirect(
                 `${stringParameterValue(parameters.contentPath)}?statusMessage=${result.content}`,
             );
+        } else if (command == "delete") {
+            res.redirect(`/?statusMessage=${result.content}`);
         } else {
             log(
                 "Didn't determine what to do with result %o from parameters %O",
