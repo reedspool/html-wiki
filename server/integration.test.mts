@@ -57,10 +57,16 @@ async function postPath(
     if (path[0] !== "/")
         throw new Error("Paths must all start with a leading slash");
     const url = `http://localhost:${port}${path}`;
-    const response = await fetch(url, {
-        method: "post",
-        body: new URLSearchParams(body),
-    });
+    let response;
+    try {
+        response = await fetch(url, {
+            method: "post",
+            body: new URLSearchParams(body),
+        });
+    } catch (error) {
+        console.log(`Fetch failed for URL ${url}: ${error}`);
+        throw error;
+    }
     const responseText = await response.text();
     const dom = parseHtml(responseText);
 
@@ -311,7 +317,7 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
     await validateAssertAndReport(responseText, url);
 
     // The page should be exactly the same as if we call the expanded version
-    const expandedUrl = `http://localhost:${port}/$/templates/global-page.html?content=${encodeURIComponent("/$/templates/edit.html?select=body&content=/$/test/fixtures/test.md?raw")}`;
+    const expandedUrl = `http://localhost:${port}/$/templates/global-page.html?content=${encodeURIComponent(`/$/templates/edit.html?select=body&content=${encodeURIComponent("/$/test/fixtures/test.md?raw&escape")}`)}`;
     const responseForExpandedUrl = await fetch(expandedUrl);
     const responseTextForExpandedUrl = await responseForExpandedUrl.text();
 
@@ -549,12 +555,12 @@ test(
     async () => {
         const { url, responseText, $1 } = await getPath("/");
 
-        assert.match($1("header>a:nth-child(1)").innerHTML, /HTML Wiki/);
-        assert.match($1('header nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/);
         assert.match($1('header nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
-        assert.match($1("footer > a:nth-child(1)").innerHTML, /HTML Wiki/);
-        assert.match($1('footer nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/);
         assert.match($1('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
         await validateAssertAndReport(responseText, url);
@@ -567,12 +573,12 @@ test(
     async () => {
         const { url, responseText, $1 } = await getPath(`/index?edit`);
 
-        assert.match($1("header>a:nth-child(1)").innerHTML, /HTML Wiki/);
-        assert.match($1('header nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/);
         assert.match($1('header nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
-        assert.match($1("footer > a:nth-child(1)").innerHTML, /HTML Wiki/);
-        assert.match($1('footer nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/);
         assert.match($1('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
         await validateAssertAndReport(responseText, url);

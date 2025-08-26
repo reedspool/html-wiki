@@ -1,7 +1,7 @@
 import { HtmlValidate, type RuleConfig, type Report } from "html-validate";
 import assert from "node:assert";
 import debug from "debug";
-const log = debug("server:test-utilities");
+const log = debug("server:testutilities");
 // TODO: Maybe try using node-html-parser's valid method (already
 // installed for server) to get rid of one dependency
 const htmlvalidate = new HtmlValidate({

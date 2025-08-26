@@ -8,6 +8,7 @@ import {
 } from "./filesystem.mts";
 import { queryEngine } from "./query.mts";
 import debug from "debug";
+import { escapeHtml } from "./utilities.mts";
 const log = debug("server:engine");
 
 // Parameters come in tagged with a source to enable specific diagnostic reports
@@ -140,7 +141,9 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
                 contentPath: stringParameterValue(parameters.contentPath),
             });
             const content = (await getQueryValue("q/query/raw"))
-                ? fileContents
+                ? (await getQueryValue("q/query/escape"))
+                    ? escapeHtml(fileContents)
+                    : fileContents
                 : (
                       await applyTemplating({
                           content: fileContents,

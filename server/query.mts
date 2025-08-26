@@ -105,7 +105,14 @@ export const queryEngine =
         log(
           `Applying in-query templating for ${stringParameterValue(parameters.contentPath)} original query ${JSON.stringify(parameters)} and content query ${JSON.stringify(subParameters)}`,
         );
+        // TODO: I think "noApply" is more accurate than "raw", however can
+        // probably come up with a better name. The point is "raw" implies too
+        // much, or could mean several things, so I should pick some more narrow
+        // concepts, even if they have to be mixed and matched
         if (maybeStringParameterValue(subParameters.raw)) {
+          if (subParameters.escape) {
+            return escapeHtml(contentFileContents);
+          }
           return contentFileContents;
         }
         if (maybeStringParameterValue(subParameters.renderMarkdown)) {

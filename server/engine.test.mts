@@ -129,12 +129,12 @@ test(
         const { dom, $1 } = await executeAndParse(parameters);
 
         // All the global page stuff is there
-        assert.match($1("header>a:nth-child(1)").innerHTML, /HTML Wiki/);
-        assert.match($1('header nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/);
         assert.match($1('header nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
-        assert.match($1("footer > a:nth-child(1)").innerHTML, /HTML Wiki/);
-        assert.match($1('footer nav a[href="/"]').innerHTML, /Home/);
+        assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/);
+        assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/);
         assert.match($1('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
         // And the content is there
@@ -160,6 +160,9 @@ test("Render sitemap", { concurrency: true }, async () => {
         listElements.length >= 7,
         `${listElements.length} was less than 7`,
     );
+    assert.match($1("li a[href=/index.html]").innerHTML, /index\.html/);
+    assert.match($1("li a[href=/sitemap.html]").innerHTML, /sitemap.html/);
+    assert.fail("Not yet acquiring titles from pages");
     assert.match($1("li a[href=/index.html]").innerHTML, /Homepage/);
     assert.match($1("li a[href=/sitemap.html]").innerHTML, /Sitemap/);
 });

@@ -173,6 +173,9 @@ test("queryEngine", { concurrency: true }, (context) => {
         "Can get title of current list item",
         { concurrency: true },
         async () => {
+            assert.fail(
+                "Not getting meta data (like <title> vs filename) out from list items yet",
+            );
             const parameters: ParameterValue = {};
             parameters.currentListItem = {
                 children: {
