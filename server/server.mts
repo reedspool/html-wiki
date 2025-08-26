@@ -120,7 +120,7 @@ export const createServer = ({
             setParameterWithSource(
                 parameters,
                 "contentPath",
-                query.contentPath ?? "/" + pathToEntryFilename(req.path),
+                query.contentPath ?? pathToEntryFilename(req.path),
                 "derived",
             );
         }
@@ -139,7 +139,7 @@ export const createServer = ({
         ) {
             const toEditContentPath =
                 maybeStringParameterValue(parameters.contentPath) ||
-                "/" + pathToEntryFilename(req.path);
+                pathToEntryFilename(req.path);
             setParameterWithSource(
                 parameters,
                 "contentPath",
@@ -189,7 +189,7 @@ export const createServer = ({
             setParameterWithSource(
                 parameters,
                 "contentPath",
-                "/" + pathToEntryFilename(req.path),
+                pathToEntryFilename(req.path),
                 "derived",
             );
         }
@@ -208,7 +208,7 @@ export const createServer = ({
                 contentParameters,
                 {
                     select: "body",
-                    contentPath: "/" + pathToEntryFilename(req.path),
+                    contentPath: pathToEntryFilename(req.path),
                 },
                 "derived",
             );

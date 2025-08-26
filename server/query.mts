@@ -1,5 +1,3 @@
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 import { type Request } from "express";
 import { Temporal } from "temporal-polyfill";
 import { applyTemplating } from "./dom.mts";
@@ -16,33 +14,20 @@ import { readFile } from "./filesystem.mts";
 import debug from "debug";
 const log = debug("server:query");
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 export const pathToEntryFilename = (path: string) => {
+  path = decodeURIComponent(path);
   if (!/^\//.test(path)) {
     throw new Error("Path must start with a leading slash");
   }
-  let entryFileName =
-    path === "/"
-      ? "index"
-      : // Special case to allow someone to target index.html
-        // TODO: Probably don't want this to be a special case, and should
-        // automatically deal with the inclusion of a proper file extension
-        path === "/index.html"
-        ? "index"
-        : path.slice(1); // Remove leading slash
+  if (path === "/") return "/index.html";
 
   // Only if there's no extension at all
-  if (!/\.[a-zA-Z0-9]+$/.test(entryFileName)) {
-    entryFileName = entryFileName + ".html";
+  if (!/\.[a-zA-Z0-9]+$/.test(path)) {
+    path = path + ".html";
   }
 
-  return decodeURIComponent(entryFileName);
+  return path;
 };
-
-export const fullyQualifiedEntryName = (entryFileName: string) =>
-  `${__dirname}/../entries/${entryFileName}`;
 
 export const urlSearchParamsToRecord = (
   params: URLSearchParams,
@@ -142,32 +127,6 @@ export const queryEngine =
         throw new QueryError(500, `No value matcher for '${input}'`);
     }
   };
-
-export const caughtToQueryError = (
-  error: unknown,
-  details: { readingFileName: string },
-) => {
-  if (error instanceof Error) {
-    if ("code" in error && error.code === "ENOENT") {
-      return new QueryError(
-        404,
-        `Couldn't find a file named ${escapeHtml(details.readingFileName)}`,
-        error,
-      );
-    }
-  }
-
-  throw new QueryError(500, "Unknown error", error);
-};
-
-export const getEntryContents = async (_filename: string) => {
-  return "";
-};
-
-export const encodedEntryPathRequest = (
-  entryFileName: string,
-  query: Record<string, string>,
-) => encodeURIComponent(`${entryFileName}?${new URLSearchParams(query)}`);
 
 export const expressQueryToRecord = (
   reqQuery: Request["query"],

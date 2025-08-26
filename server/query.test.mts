@@ -37,9 +37,9 @@ test("pathToEntryFilename", { concurrency: true }, (context) => {
         "All the different ways to get index.html",
         { concurrency: true },
         () => {
-            assert.equal(pathToEntryFilename("/"), "index.html");
-            assert.equal(pathToEntryFilename("/index"), "index.html");
-            assert.equal(pathToEntryFilename("/index.html"), "index.html");
+            assert.equal(pathToEntryFilename("/"), "/index.html");
+            assert.equal(pathToEntryFilename("/index"), "/index.html");
+            assert.equal(pathToEntryFilename("/index.html"), "/index.html");
         },
     );
 
@@ -48,7 +48,7 @@ test("pathToEntryFilename", { concurrency: true }, (context) => {
             pathToEntryFilename(
                 `/${encodeURIComponent(" Name with spaces")}/${encodeURIComponent("and")}/${encodeURIComponent("unencoded slashes")}`,
             ),
-            " Name with spaces/and/unencoded slashes.html",
+            "/ Name with spaces/and/unencoded slashes.html",
         );
     });
 });

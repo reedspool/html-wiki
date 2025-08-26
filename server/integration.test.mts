@@ -533,7 +533,7 @@ test(
 
         assert.match(createResponse.responseText, /success/i);
         const deleteConfirmResponse = await postPath(
-            `${filename.replaceAll(/\$/g, "\\$")}?delete&delete-confirm`,
+            `${filename}?delete&delete-confirm`,
         );
 
         assert.match(
