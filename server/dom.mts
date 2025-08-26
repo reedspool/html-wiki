@@ -139,13 +139,13 @@ export const applyTemplating = async (
                     if (attributeEntries[0][0] !== "q") {
                         throw new QueryError(
                             500,
-                            "query-content only supports a single attribute, `q` whose value is the query to use to replace ",
+                            "map-list only supports a single attribute, `q` whose value is the query to use to replace ",
                         );
                     }
                     if (typeof attributeEntries[0][1] !== "string") {
                         throw new QueryError(
                             500,
-                            `query-content first attribute must be 'q' with a query as value, got value ${attributeEntries[0][1]}`,
+                            `map-list first attribute must be 'q' with a query as value, got value ${attributeEntries[0][1]}`,
                         );
                     }
                     const query = attributeEntries[0][1];
@@ -286,10 +286,10 @@ export const applyTemplating = async (
                     if (typeof queryValue !== "string") {
                         throw new Error("query value expected string");
                     }
-                    const text = new TextNode(escapeHtml(queryValue));
                     alreadySetForNextIteration =
                         treeWalker.nextNodeNotChildren();
-                    element.replaceWith(text);
+                    element.after(queryValue);
+                    element.remove();
                 }
                 break;
             case "DROP-IF":
@@ -325,8 +325,13 @@ export const applyTemplating = async (
                     if (shouldDrop) {
                         alreadySetForNextIteration =
                             treeWalker.nextNodeNotChildren();
-                        element.innerHTML = "";
+                    } else {
+                        alreadySetForNextIteration = treeWalker.nextNode();
+                        for (const childNode of element.childNodes) {
+                            element.after(childNode);
+                        }
                     }
+                    element.remove();
                 }
                 break;
             default:

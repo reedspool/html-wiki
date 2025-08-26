@@ -229,7 +229,24 @@ export const createServer = ({
         }
 
         const result = await execute(parameters);
-        res.send(result.content);
+        if (command === "read") {
+            res.send(result.content);
+        } else if (
+            command == "update" ||
+            command == "create" ||
+            command == "delete"
+        ) {
+            res.redirect(
+                `${stringParameterValue(parameters.contentPath)}?statusMessage=${result.content}`,
+            );
+        } else {
+            log(
+                "Didn't determine what to do with result %o from parameters %O",
+                result,
+                parameters,
+            );
+            throw new Error("Unexpected state");
+        }
     });
 
     //

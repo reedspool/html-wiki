@@ -31,28 +31,36 @@
         font-family: var(--prose);
         line-height: 1.4;
         font-size: 20px;
+        scrollbar-color: var(--fg-lighter) var(--bg-darker);
       }
       body {
         height: fit-content; /* Body height affects sticky header behavior */
         min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
       }
       header,
       footer {
-        padding-block: var(--space-half);
-        padding-inline: var(--space);
         background-color: var(--bg-darker);
-        display: flex;
-        flex-direction: row;
-        gap: var(--space-2);
-        align-items: center;
-        flex-wrap: balance;
-        & nav ul {
-          flex-wrap: balance;
-          list-style: none;
+        & nav {
+          width: 100%;
+          padding-block: var(--space-half);
           display: flex;
           flex-direction: row;
-          gap: var(--space);
-          padding-inline-start: 0;
+          column-gap: var(--space-2);
+          align-items: center;
+          flex-wrap: balance;
+          & ul {
+            margin: 0;
+            max-width: 100%;
+            flex-wrap: balance;
+            list-style: none;
+            display: flex;
+            flex-wrap: balance;
+            flex-direction: row;
+            column-gap: var(--space);
+            padding-inline-start: 0;
+          }
         }
       }
       header {
@@ -65,8 +73,14 @@
       }
       main {
         padding-block: var(--space-half);
+      }
+
+      center-column-layout {
+        display: block;
         padding-inline: var(--space);
-        max-width: 100%;
+        width: 100%;
+        max-width: 60ch;
+        margin-inline: auto;
       }
 
       pre code {
@@ -74,6 +88,9 @@
         display: block;
         padding-block: var(--space-half);
         padding-inline: var(--space);
+      }
+      code {
+        font-size: 0.9em;
       }
       a {
         color: steelblue;
@@ -113,40 +130,92 @@
       p {
         margin-block: 1.4em;
       }
+
+      blockquote {
+        font-style: italic;
+      }
+
+      toast-message {
+        margin-top: calc(-1 * var(--space-half));
+        width: 100%;
+        padding: var(--space);
+        background-color: darkkhaki;
+        color: var(--fg-lighter);
+        box-shadow: 0px 0px 12px -1px rgba(0, 0, 0, 0.48);
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+      }
+
+      button[clean] {
+        background: inherit;
+        border: none;
+        padding-inline: var(--space);
+        padding-block: var(--space-quarter);
+        cursor: pointer;
+
+        & hover {
+          opacity: 0.9;
+        }
+      }
     </style>
   </head>
 
   <body>
     <header>
-      <a logo href="/">HTML Wiki</a>
-      <nav aria-label="Main navigation">
-        <ul>
-          <li><a href="/">Home</a></li>
-          <li><a href="/sitemap">Sitemap</a></li>
-          <li><a href="?edit">Edit this page</a></li>
-        </ul>
-      </nav>
+      <center-column-layout>
+        <nav aria-label="Main navigation">
+          <a logo href="/">HTML Wiki</a>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/sitemap">Sitemap</a></li>
+            <li><a href="?edit">Edit this page</a></li>
+          </ul>
+        </nav>
+      </center-column-layout>
     </header>
-    <replace-with main x-content="q/render/content">
-      <p>
-        This is the global page template. Usually, this text would be replaced
-        with the HTML content of another entry in the wiki. But I guess not
-        today!
-      </p>
-      <p>
-        You can <a href="?edit">Edit this page</a> to change the styling and
-        layout for most of the site.
-      </p>
-    </replace-with>
+    <main>
+      <center-column-layout>
+        <keep-if truthy="q/params/statusMessage">
+          <toast-message role="status">
+            <replace-with
+              span
+              x-content="q/params/statusMessage"
+            ></replace-with>
+            <button
+              clean
+              type="button"
+              onclick="this.closest('toast-message').remove()"
+              title="Dismiss"
+            >
+              Ⓧ
+            </button>
+          </toast-message>
+        </keep-if>
+        <query-content q="q/render/content">
+          <p>
+            This is the global page template. Usually, this text would be
+            replaced with the HTML content of another entry in the wiki. But I
+            guess not today!
+          </p>
+          <p>
+            You can <a href="?edit">Edit this page</a> to change the styling and
+            layout for most of the site.
+          </p>
+        </query-content>
+      </center-column-layout>
+    </main>
     <footer>
-      <a logo href="/">HTML Wiki</a>
-      <nav aria-label="Secondary navigation">
-        <ul>
-          <li><a href="/">Home</a></li>
-          <li><a href="/sitemap">Sitemap</a></li>
-          <li><a href="#">Top of page</a></li>
-        </ul>
-      </nav>
+      <center-column-layout>
+        <nav aria-label="Secondary navigation">
+          <a logo href="/">HTML Wiki</a>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/sitemap">Sitemap</a></li>
+            <li><a href="#">⇱ Top of page ⇱</a></li>
+          </ul>
+        </nav>
+      </center-column-layout>
     </footer>
   </body>
 </html>

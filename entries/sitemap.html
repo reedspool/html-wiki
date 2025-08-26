@@ -9,16 +9,41 @@
   </head>
 
   <body>
-    <ul>
-      <map-list q="q/site/allFiles">
+    <style>
+      site-map {
+        ul {
+          list-style-position: inside;
+          list-style-type: none;
+          line-height: 1.2em; /* Empirically largest w no gap */
+          padding-inline-start: 0;
+          & ul {
+            list-style-type: "├─";
+            & li {
+              &:last-child {
+                list-style-type: "└─";
+              }
+            }
+          }
+        }
+      }
+    </style>
+    <site-map>
+      <ul>
         <li>
-          <replace-with
-            a
-            x-href="q/params/currentListItem/contentPath"
-            x-content="q/params/currentListItem/name"
-          ></replace-with>
+          <a href="/">/</a>
+          <ul>
+            <map-list q="q/site/allFiles">
+              <li>
+                <replace-with
+                  a
+                  x-href="q/params/currentListItem/contentPath"
+                  x-content="q/params/currentListItem/name"
+                ></replace-with>
+              </li>
+            </map-list>
+          </ul>
         </li>
-      </map-list>
-    </ul>
+      </ul>
+    </site-map>
   </body>
 </html>

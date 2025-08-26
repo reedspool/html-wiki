@@ -4,9 +4,30 @@
 
 Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
+### Sun Aug 24 03:30:15 PM PDT 2025
+
+I spent some time fiddling with styles. I also removed a bunch of random thoughts, some out of date, some extraneous, from the home page. I moved some of that information here, below.
+
+> This project [started as] an experiment to make a wiki or CMS (content management system) where the wiki entries or content are stored in HTML files on disk. But those HTML files are not the final desired presentation; those original, raw content HTML files hold their content in their <code>&lt;body&gt;</code> and metadata in their <code>&lt;head&gt;</code>. To present the content, processes extract and transform that body content into more complete HTML using the given metadata.
+
+While this is still true to some degree, I realized I do like having files dedicated to non-HTML formats, for example this very Markdown file.
+
+
+> Contrast with most (so far as I understand) wikis, CMS's, and static site generators which store the content of their entries in a database and transmute them into HTML pages using templating languages. I've always felt templating languages were awkward. So this concept is based on subjective intuition more than any conceptual, theoretically strong basis.
+
+Still true, but I realized that I am building _yet another templating language_. The difference is that this templating language is HTML-based, with [Custom Elements](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements) for structure and a separate query language for dynamism.
+
+> At first I thought it would be cool if you could add "commands" onto the end of the path, e.g. to use the edit command on <code>/posts/my-first-post.html</code>, you'd append <code>/edit</code> to make it <code>/posts/my-first-post.html/edit</code>. But I soon saw a conflict if someone named a file the same as those commands. In that example, what makes a file named <code>/posts/my-first-post.html/edit</code> an invalid filepath, other than the arbitrary rule I'd made up? So I moved those commands into query parameters instead, which made the above example work like <code>/posts/my-first-post.html?edit</code> instead. I was super glad I had automated tests for all my expecations when I decided to make this change.
+
+Yup.
+
+Future: My first attempt at a sitemap was a flat list of all the files, but I wanted a more complex tree representation.
+
 ### Sat Aug 23 10:46:53 PDT 2025
 
-Future: Henderson shared [Pollen in Racket](https://docs.racket-lang.org/pollen/) which seemed to have a lot of similar goals. The biggest difference from his description to me (before I did my own research) sounded like it had a custom Markdown format, instead of using HTML. Definitely wanted to check it out to see the similarities.
+Henderson shared [Pollen in Racket](https://docs.racket-lang.org/pollen/) which seemed to have a lot of similar goals. The biggest difference from his description to me (before I did my own research) sounded like it had a custom Markdown format, instead of using HTML. Definitely wanted to check it out to see the similarities. Later I did check it out and it had a [great FAQ section ](https://docs.racket-lang.org/pollen/quick-tour.html#(part._.The_end_of_the_beginning)) which expressed similar thoughts to my own though a little more pointed.
+
+Pollen's argument helped me understand my theoretical two-pronged approach. One theoretical prong was a HTML-based templating language. The second prong was a query language which was equally at home in a URL as well as in attributes of the HTML templating language. Contrast this with Pollen's templating language and Racket Lisp-as-a-data-language.
 
 Up to now I had succeeded with a "flat" query solution. That is, it wasn't a dynamic programming language in any way, there was just a list of string commands which kind of looked like a programming language.
 
@@ -26,7 +47,7 @@ Future: If I were to use the same query language as I hoped template authors wou
 
 ### Mon Aug 18 09:16:04 PM PDT 2025
 
-Quickly made a static site generation CLI.
+Quickly made a static site generation CLI to generate a static site out of all the dynamic pages. This process used the same engine as the HTTP server, but it didn't need to start the server and make an HTTP request, it just called that engine directly. It essentially scanned the whole directory structure of the "entries" directory, and for each page, sent a command to the engine to do what it would do if it got a request to view that page, including applying any templating, and then write out the results into a similar directory structure which could be packaged or served statically. I was proud that the idea I formed in my head about how this would work did just work, even if I learned a lot about the details in the process.
 
 Future: If I had a markdown input file with a `.md` extension, and I was going to generate `.html`, I probably would want the output filename to be `.html` as well. And I'd probably want any links which directly referenced the `.md` file input then I'd want to rewrite those links to point to the `.html` version. This was disheartening because it suggested I'd need to visit the same file multiple times, first to generate a list of links and then to go back and rewrite any (if I discover rewrites needed later). Maybe a possible solution was to discover all the rewrites up front?
 
@@ -69,8 +90,6 @@ I had peppered in so much direct references and assumptions to files ending with
 Future: All around I had peppered `/${filename}` because some places I was storing filenames with no leading slash and other places I was storing it with a leading slash. I wanted to unify on one expectation, leading slash or no. I felt I was going to head towards yes, always including the leading slash. I couldn't think of anywhere in the codebase I was removing the leading slash, only adding it. From the URL spec, it looked like I was talking about ["path absolute URL strings"](https://url.spec.whatwg.org/#path-absolute-url-string) as opposed to ["path relative URL strings"](https://url.spec.whatwg.org/#path-relative-url-string), which maybe I'd find use for later. For now, I was always referring to a full path from some root so absolute made sense. I refactored everything around this. I considered using TypeScript's string template types to help, but I worried that might be too finicky for any possible gain.
 
 Future: I thought about how the bulk of the work was building an engine which comprised both the templating engine and the query language together. And this engine was a distinct component from the server. It so happened that the engine did a lot of things we consider a server to do. But the server part which dealt with HTTP requests was distinct. When the server received an HTTP request, it used all the information in that request to configure a call to this engine, and then it handled the response of that engine to the HTTP response most of the time. But the engine was a well-delineated compoonent, so I thought it was a good idea to extract and separate that from the server. I imagined other uses for the engine as well, for example:
-
-Future: I made a CLI command to generate a static site out of all the dynamic pages. This process used the same engine as the HTTP server, but it didn't need to start the server and make an HTTP request, it just called that engine directly. It essentially scanned the whole directory structure of the "entries" directory, and for each page, sent a command to the engine to do what it would do if it got a request to view that page, including applying any templating, and then write out the results into a similar directory structure which could be packaged or served statically.
 
 ### Sat Aug  9 09:57:24 PM PDT 2025
 

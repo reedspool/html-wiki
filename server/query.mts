@@ -74,6 +74,7 @@ export const queryEngine =
       // Working on this concept that "params" refers to the original query?
       // This isn't consistent, and it's surprising. Probably need a concept of scope and
       // shadowing
+      case "q/params/statusMessage":
       case "q/param/filename": {
         const field = input.split("/")[2]!;
         return maybeStringParameterValue(topLevelParameters[field]) || "";

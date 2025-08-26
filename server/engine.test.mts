@@ -6,7 +6,6 @@ import {
     type ParameterValue,
     setEachParameterWithSource,
     setParameterChildrenWithSource,
-    setParameterWithSource,
 } from "./engine.mts";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
@@ -70,7 +69,7 @@ test(
     "Render an HTML template file as an HTML file",
     { concurrency: true },
     async () => {
-        const { dom } = await executeAndParse(
+        const { content } = await executeAndParse(
             setEachParameterWithSource(
                 {},
                 {
@@ -85,7 +84,7 @@ test(
         // They're the same minus whitespace changes caused from parsing
         // and re-stringifying
         assert.equal(
-            dom.toString(),
+            content,
             parse(
                 await readFile({
                     baseDirectory,
