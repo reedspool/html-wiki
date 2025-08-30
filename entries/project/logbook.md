@@ -4,6 +4,20 @@
 
 Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
+### Fri Aug 29 10:55:31 PM PDT 2025
+
+My experiments over the past week were successful. I had a new query language which seemed effective. I started by getting parity with my previous initial flat query engine in tests.
+
+Future: I reimplemented all my uses of my previous query language in my HTML templates into the new language. Then I deleted the old one.
+
+Future: I linked Nystrom's article here "what color is your function?" as I was thinking about it as I made my query language. A core goal of the language was to make async code straightforward to use alongside synchronous code in a linear pipeline style.
+
+### Mon Aug 25 11:15:01 PM PDT 2025
+
+Future: I wanted my query language to work well in a URL. I realized that would mean picking a language which minimized spaces. For a counter example, Lisps usually separate tokens with spaces. However I could write a lisp with `,` commas for separators instead.
+
+I also thought that spreadsheet formula languages with their very straightforward syntax might work very well conceptually.
+
 ### Sun Aug 24 03:30:15 PM PDT 2025
 
 I spent some time fiddling with styles. I also removed a bunch of random thoughts, some out of date, some extraneous, from the home page. I moved some of that information here, below.

@@ -259,7 +259,7 @@ export const setParameterWithSource = (
 
 export const setEachParameterWithSource = (
     parameters: ParameterValue,
-    record: Record<string, string>,
+    record: Record<string, ParameterValue[string]["value"]>,
     source: ParameterSources,
 ): ParameterValue => {
     Object.entries(record).forEach(([key, value]) => {

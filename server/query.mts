@@ -77,9 +77,8 @@ export const queryEngine =
         );
         if (
           !subParameters ||
-          typeof subParameters.contentPath.value !== "string"
+          !maybeStringParameterValue(subParameters.contentPath)
         )
-          // TODO: This should just be blank, or maybe another falsy value
           return "";
 
         const contentFileContents = await readFile({
@@ -101,6 +100,7 @@ export const queryEngine =
           return contentFileContents;
         }
         if (maybeStringParameterValue(subParameters.renderMarkdown)) {
+          // TODO if this set contents instead of returning that would seem to enable template values in markdown
           return renderMarkdown(contentFileContents);
         }
         return (
