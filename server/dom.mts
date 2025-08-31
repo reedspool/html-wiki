@@ -1,7 +1,7 @@
 import { type Node, NodeType, HTMLElement } from "node-html-parser";
 import { parse as parseHtml } from "node-html-parser";
 import { QueryError } from "./error.mts";
-import { queryEngine } from "./query.mts";
+import { pString } from "./queryLanguage.mts";
 import {
     type ParameterValue,
     setEachParameterWithSource,
@@ -29,7 +29,10 @@ export const applyTemplating = async (
     meta: Meta;
 }> => {
     const { parameters, topLevelParameters } = params;
-    const getQueryValue = queryEngine({ parameters, topLevelParameters });
+    const getQueryValue = (query: string) => {
+        log("getQueryValue: %s", query);
+        return pString(query, { parameters, topLevelParameters });
+    };
     const meta: Meta = {};
     let root: HTMLElement;
     if ("content" in params) {
@@ -101,7 +104,9 @@ export const applyTemplating = async (
                                 element.attributes.name === "remove";
                             switch (element.attributes.if) {
                                 case "raw":
-                                    if (!(await getQueryValue("q/query/raw"))) {
+                                    if (
+                                        !(await getQueryValue("parameters.raw"))
+                                    ) {
                                         shouldRemove = !shouldRemove;
                                     }
                                     break;
@@ -241,14 +246,11 @@ export const applyTemplating = async (
                                     replacementElement.innerHTML = queryValue;
                                     break;
                                 default:
-                                    if (typeof queryValue !== "string") {
-                                        throw new Error(
-                                            "query value expected string",
-                                        );
-                                    }
                                     replacementElement.setAttribute(
                                         realKey,
-                                        queryValue,
+                                        typeof queryValue === "string"
+                                            ? queryValue
+                                            : String(queryValue),
                                     );
                                     break;
                             }
@@ -338,7 +340,7 @@ export const applyTemplating = async (
         }
     } while (alreadySetForNextIteration || treeWalker.nextNode());
 
-    const selector = await getQueryValue("q/query/select");
+    const selector = await getQueryValue("parameters.select");
     if (selector) {
         if (typeof selector !== "string") {
             throw new Error("query value expected string");

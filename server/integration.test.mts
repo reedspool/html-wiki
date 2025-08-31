@@ -316,14 +316,14 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
 
     await validateAssertAndReport(responseText, url);
 
-    // The page should be exactly the same as if we call the expanded version
-    const expandedUrl = `http://localhost:${port}/$/templates/global-page.html?content=${encodeURIComponent(`/$/templates/edit.html?select=body&content=${encodeURIComponent("/$/test/fixtures/test.md?raw&escape")}`)}`;
-    const responseForExpandedUrl = await fetch(expandedUrl);
-    const responseTextForExpandedUrl = await responseForExpandedUrl.text();
-
-    assert.strictEqual(response.status, 200);
     assert.fail("Have to debug why one of these doesn't escape");
-    assert.strictEqual(responseText, responseTextForExpandedUrl);
+    // The page should be exactly the same as if we call the expanded version
+    // const expandedUrl = `http://localhost:${port}/$/templates/global-page.html?content=${encodeURIComponent(`/$/templates/edit.html?select=body&content=${encodeURIComponent("/$/test/fixtures/test.md?raw&escape")}`)}`;
+    // const responseForExpandedUrl = await fetch(expandedUrl);
+    // const responseTextForExpandedUrl = await responseForExpandedUrl.text();
+
+    // assert.strictEqual(responseForExpandedUrl.status, 200);
+    // assert.strictEqual(responseText, responseTextForExpandedUrl);
 });
 
 test("Can get create page", { concurrency: true }, async () => {

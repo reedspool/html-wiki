@@ -7,7 +7,7 @@
     "build": "DEBUG=* node server/cli.mts generate -i entries -o ./build",
     "start": "DEBUG=* npm run start:server",
     "start:server": "node server/cli.mts server --port 3001 -i entries",
-    "test": "DEBUG=* cd server && node --test",
+    "test": "DEBUG=* node --test",
     "test:watch": "cd server && node --test --watch"
   },
   "keywords": [],

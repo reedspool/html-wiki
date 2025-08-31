@@ -3,7 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title><query-content q="q/query/title"> HTML Wiki </query-content></title>
+    <title>
+      <query-content q="parameters.title"> HTML Wiki </query-content>
+    </title>
     <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -176,11 +178,11 @@
     </header>
     <main>
       <center-column-layout>
-        <keep-if truthy="q/params/statusMessage">
+        <keep-if truthy="topLevelParameters.statusMessage">
           <toast-message role="status">
             <replace-with
               span
-              x-content="q/params/statusMessage"
+              x-content="topLevelParameters.statusMessage"
             ></replace-with>
             <button
               clean
@@ -192,7 +194,9 @@
             </button>
           </toast-message>
         </keep-if>
-        <query-content q="q/render/content">
+        <query-content
+          q="render(parameters.contentParameters.contentPath,parameters.contentParameters)"
+        >
           <p>
             This is the global page template. Usually, this text would be
             replaced with the HTML content of another entry in the wiki. But I

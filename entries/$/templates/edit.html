@@ -41,15 +41,15 @@
     </style>
     <h1>
       Editing
-      <keep-if truthy="q/query/contentParameters/contentPath">
+      <keep-if truthy="parameters.contentParameters.contentPath">
         <replace-with
           a
-          x-href="q/query/contentParameters/contentPath"
-          x-content="q/query/contentParameters/contentPath"
+          x-href="parameters.contentParameters.contentPath"
+          x-content="parameters.contentParameters.contentPath"
           >[filename] :-/</replace-with
         >
       </keep-if>
-      <drop-if truthy="q/query/contentParameters/contentPath">
+      <drop-if truthy="parameters.contentParameters.contentPath">
         (Template)
       </drop-if>
     </h1>
@@ -67,7 +67,7 @@
     </slot>
     <form method="POST">
       <textarea name="content" spellcheck="false">
-<query-content q="q/render/content">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
+<query-content q="parameters.contentParameters&&render(parameters.contentParameters.contentPath,parameters.contentParameters)">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
       >
       <slot name="keep" if="raw">
         <button type="submit" formaction="?raw">Save</button>
@@ -80,7 +80,7 @@
         <replace-with
           button
           type="submit"
-          x-formaction="q/query/contentParameters/contentPath"
+          x-formaction="parameters.contentParameters.contentPath"
           >Save</replace-with
         >
       </slot>

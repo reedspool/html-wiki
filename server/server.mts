@@ -11,7 +11,7 @@ import {
     expressQueryToRecord,
     pathToEntryFilename,
     urlSearchParamsToRecord,
-} from "./query.mts";
+} from "./serverUtilities.mts";
 import { QueryError } from "./error.mts";
 import {
     execute,

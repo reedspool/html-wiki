@@ -68,7 +68,7 @@ test(
     { concurrency: true },
     async () => {
         const input = html`
-            <keep-if truthy="q/query/title"
+            <keep-if truthy="parameters.title"
                 ><replace-with h1>Keep me!</replace-with></keep-if
             >
         `;
@@ -94,7 +94,7 @@ test(
     { concurrency: true },
     async () => {
         const input = html`
-            <keep-if truthy="q/query/title"><h1>Keep me!</h1></keep-if>
+            <keep-if truthy="parameters.title"><h1>Keep me!</h1></keep-if>
         `;
         const { $1 } = await applyTemplatingAndParse({}, input);
         assert.equal($1("h1"), undefined, "The content is removed");

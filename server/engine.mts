@@ -6,9 +6,9 @@ import {
     removeFile,
     updateFile,
 } from "./filesystem.mts";
-import { queryEngine } from "./query.mts";
 import debug from "debug";
 import { escapeHtml } from "./utilities.mts";
+import { pString } from "./queryLanguage.mts";
 const log = debug("server:engine");
 
 // Parameters come in tagged with a source to enable specific diagnostic reports
@@ -129,10 +129,11 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             validateReadParameters(validationIssues, parameters);
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
-            const getQueryValue = queryEngine({
-                parameters: parameters,
-                topLevelParameters: parameters,
-            });
+            const getQueryValue = (query: string) =>
+                pString(query, {
+                    parameters: parameters,
+                    topLevelParameters: parameters,
+                });
             const fileContents = await readFile({
                 baseDirectory: stringParameterValue(
                     parameters,
@@ -140,8 +141,8 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
                 ),
                 contentPath: stringParameterValue(parameters, "contentPath"),
             });
-            const content = (await getQueryValue("q/query/raw"))
-                ? (await getQueryValue("q/query/escape"))
+            const content = (await getQueryValue("parameters.raw"))
+                ? (await getQueryValue("parameters.escape"))
                     ? escapeHtml(fileContents)
                     : fileContents
                 : (

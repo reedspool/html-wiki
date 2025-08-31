@@ -59,21 +59,21 @@
       </p>
     </slot>
     <form method="POST">
-      <drop-if truthy="q/param/filename">
+      <drop-if truthy="topLevelParameters.filename">
         <replace-with
           input
           type="text"
           name="contentPath"
-          x-value="q/Now.plainDateTimeISO()"
+          x-value="Temporal.Now.plainDateTimeISO()"
           placeholder="posts/New Page"
         ></replace-with>
       </drop-if>
-      <keep-if truthy="q/param/filename">
+      <keep-if truthy="topLevelParameters.filename">
         <replace-with
           input
           type="text"
           name="contentPath"
-          x-value="q/param/filename"
+          x-value="topLevelParameters.filename"
           placeholder="posts/New Page"
         ></replace-with>
       </keep-if>
