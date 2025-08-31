@@ -53,37 +53,33 @@
         (Template)
       </drop-if>
     </h1>
-    <slot name="remove">
-      <p><a href="?edit">Edit this page</a></p>
-      <p>
-        You are looking at the <em>template</em> of the global edit page. This
-        template is what you see when you edit a page (hint: add
-        <code>?edit</code> to the end of any page's URL to edit it, this is all
-        the "Edit this page" link does). Note that if you remove or break the
-        <code>&lt;slot name="content"&gt;</code> element within the
-        <code>&lt;textarea&gt;</code> below, you'll break the editing feature of
-        the site. Try not to do that.
-      </p>
-    </slot>
-    <form method="POST">
-      <textarea name="content" spellcheck="false">
-<query-content q="parameters.contentParameters&&render(parameters.contentParameters.contentPath,parameters.contentParameters)">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
-      >
-      <slot name="keep" if="raw">
-        <button type="submit" formaction="?raw">Save</button>
-        <p>
-          This isn't implemented correctly. Need to add <code>?raw</code> to
-          query <code>q/query/contentParameters/contentPath</code>
-        </p></slot
-      >
-      <slot name="remove" if="raw">
-        <replace-with
-          button
-          type="submit"
-          x-formaction="parameters.contentParameters.contentPath"
-          >Save</replace-with
+    <drop-if truthy="parameters.contentParameters.contentPath">
+      You are viewing the edit page directly. Maybe you meant to
+      <a href="?edit">edit this page</a>
+      (edit the edit page)? Or if you wanted to edit another page, go to that
+      page and add <code>?edit</code> to the end of the URL.
+    </drop-if>
+    <keep-if truthy="parameters.contentParameters.contentPath">
+      <form method="POST">
+        <textarea name="content" spellcheck="false">
+    <query-content q="render(parameters.contentParameters.contentPath,parameters.contentParameters)">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
         >
-      </slot>
-    </form>
+        <slot name="keep" if="raw">
+          <button type="submit" formaction="?raw">Save</button>
+          <p>
+            This isn't implemented correctly. Need to add <code>?raw</code> to
+            query <code>q/query/contentParameters/contentPath</code>
+          </p>
+        </slot>
+        <slot name="remove" if="raw">
+          <replace-with
+            button
+            type="submit"
+            x-formaction="parameters.contentParameters.contentPath"
+            >Save</replace-with
+          >
+        </slot>
+      </form>
+    </keep-if>
   </body>
 </html>

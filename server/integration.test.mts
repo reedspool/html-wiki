@@ -123,7 +123,7 @@ test(
         assert.match($1("h1").innerHTML, /Editing/);
         assert.match($1("h1").innerHTML, /template/i);
 
-        assert.match($1("textarea").innerHTML, /something went wrong/i);
+        assert.match(responseText, /edit page directly/i);
 
         await validateAssertAndReport(responseText, url);
 

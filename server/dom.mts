@@ -131,7 +131,7 @@ export const applyTemplating = async (
                             } else {
                                 alreadySetForNextIteration =
                                     treeWalker.nextNode();
-                                element.childNodes.forEach((node) => {
+                                element.childNodes.reverse().forEach((node) => {
                                     element.after(node);
                                 });
                                 element.remove();
@@ -198,7 +198,7 @@ export const applyTemplating = async (
                             ),
                             "query param",
                         );
-                        for (const childElement of element.children) {
+                        for (const childElement of element.children.reverse()) {
                             // This needs to be a clone for two reasons.
                             // First it needs to be detached from the parent
                             // so that it doesn't continue to try to
@@ -337,7 +337,7 @@ export const applyTemplating = async (
                             treeWalker.nextNodeNotChildren();
                     } else {
                         alreadySetForNextIteration = treeWalker.nextNode();
-                        for (const childNode of element.childNodes) {
+                        for (const childNode of element.childNodes.reverse()) {
                             element.after(childNode);
                         }
                     }
