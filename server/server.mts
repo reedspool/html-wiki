@@ -67,7 +67,12 @@ export const createServer = ({
                 if (query.edit !== undefined) {
                     command = "update";
                 } else if (query.delete !== undefined) {
-                    command = "delete";
+                    if (query["delete-confirm"]) {
+                        command = "delete";
+                    } else {
+                        command = "read";
+                        res.status(400);
+                    }
                 } else if (query.create !== undefined) {
                     command = "create";
                 } else {
@@ -77,7 +82,12 @@ export const createServer = ({
             } else if (req.method === "PUT") {
                 command = "create";
             } else if (req.method === "DELETE") {
-                command = "delete";
+                if (query["delete-confirm"]) {
+                    command = "delete";
+                } else {
+                    command = "read";
+                    res.status(400);
+                }
             }
         }
 
@@ -167,6 +177,49 @@ export const createServer = ({
                 editContentParameters,
                 {
                     contentPath: `/$/templates/edit.html`,
+                    select: "body",
+                },
+                "derived",
+            );
+
+            setParameterChildrenWithSource(
+                parameters,
+                "contentParameters",
+                editContentParameters,
+                "derived",
+            );
+        } else if (
+            stringParameterValue(parameters, "command") == "read" &&
+            maybeStringParameterValue(parameters, "delete")
+        ) {
+            const toDeleteContentPath =
+                maybeStringParameterValue(parameters, "contentPath") ||
+                pathToEntryFilename(req.path);
+            setParameterWithSource(
+                parameters,
+                "contentPath",
+                "/$/templates/global-page.html",
+                "derived",
+            );
+            const editContentParameters: ParameterValue = {};
+            const whatToEditContentParameters: ParameterValue = {};
+            setEachParameterWithSource(
+                whatToEditContentParameters,
+                {
+                    contentPath: toDeleteContentPath,
+                },
+                "derived",
+            );
+            setParameterChildrenWithSource(
+                editContentParameters,
+                "contentParameters",
+                whatToEditContentParameters,
+                "derived",
+            );
+            setEachParameterWithSource(
+                editContentParameters,
+                {
+                    contentPath: `/$/templates/delete.html`,
                     select: "body",
                 },
                 "derived",

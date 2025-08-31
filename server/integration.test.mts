@@ -464,46 +464,46 @@ test(
 
         assert.match(getAfterEditResponse.$1("h1").innerHTML, /edited/i);
 
-        // const deleteResponse = await postPath(filename + "?delete", {}, 400);
+        const deleteResponse = await postPath(filename + "?delete", {}, 400);
 
-        assert.fail(
-            "Replacements in deletion are not implemented because they require string concatenation in the values supplied by the query",
+        assert.match(
+            deleteResponse.responseText,
+            new RegExp(filename.replaceAll(/\$/g, "\\$")),
         );
-        // assert.match(
-        //     deleteResponse.responseText,
-        //     new RegExp(filename.replaceAll(/\$/g, "\\$")),
-        // );
-        // assert.match(deleteResponse.responseText, /are you sure/i);
-        // assert.match(deleteResponse.responseText, /cannot be undone/i);
-        // assert.match(
-        //     deleteResponse.$1(`button[type="submit"]`).innerHTML,
-        //     /confirm and delete/i,
-        // );
-        // assert.ok(
-        //     deleteResponse.$1(
-        //         `form[action="/${filename}?delete&delete-confirm"][method="POST"]`,
-        //     ),
-        // );
-        // assert.match(
-        //     deleteResponse.$1(`a[href=/${filename}]`).innerHTML,
-        //     /cancel/,
-        // );
-        // assert.match(
-        //     deleteResponse.$1(`a[href=/${filename}]`).innerHTML,
-        //     /go back/,
-        // );
+        assert.match(deleteResponse.responseText, /are you sure/i);
+        assert.match(deleteResponse.responseText, /cannot be undone/i);
+        assert.match(
+            deleteResponse.$1(`button[type="submit"]`).innerHTML,
+            /confirm and delete/i,
+        );
+        assert.ok(
+            deleteResponse.$1(
+                `form[action="${filename}?delete&delete-confirm"][method="POST"]`,
+            ),
+        );
+        assert.match(
+            deleteResponse.$1(`a[href=${filename}]`).innerHTML,
+            /cancel/,
+        );
+        assert.match(
+            deleteResponse.$1(`a[href=${filename}]`).innerHTML,
+            /go back/,
+        );
 
-        // const deleteConfirmResponse = await postPath(
-        //     `${filename}?delete&delete-confirm`,
-        // );
+        const deleteConfirmResponse = await postPath(
+            `${filename}?delete&delete-confirm`,
+        );
 
-        // assert.match(deleteConfirmResponse.responseText, new RegExp(filename));
-        // assert.match(
-        //     deleteConfirmResponse.responseText,
-        //     /successfully deleted/i,
-        // );
+        assert.match(
+            deleteConfirmResponse.responseText,
+            new RegExp(filename.replaceAll(/\$/g, "\\$")),
+        );
+        assert.match(
+            deleteConfirmResponse.responseText,
+            /deleted successfully/i,
+        );
 
-        // await getPath(filename, 404);
+        await getPath(filename, 404);
     },
 );
 

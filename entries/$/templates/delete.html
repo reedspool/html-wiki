@@ -5,23 +5,23 @@
   </head>
   <body>
     <h1>
-      Really delete /<query-content q="parameters.contentPath"
+      Really delete /<query-content q="parameters.contentParameters.contentPath"
         >[file name missing]</query-content
       >?
     </h1>
     <replace-with
       form
-      x-action="parameters.contentPath,(p)=>`${p}?delete&delete-confirm`"
+      x-action="parameters.contentParameters.contentPath,(p)=>`${p}?delete&delete-confirm`"
       method="POST"
     >
       <p>
         Are you sure you want to delete
-        <query-content q="parameters.contentPath"
+        <query-content q="parameters.contentParameters.contentPath"
           >[file name missing]</query-content
         >? This action cannot be undone.
       </p>
       <button type="submit">Confirm and delete</button>
-      <replace-with a x-href="parameters.contentPath"
+      <replace-with a x-href="parameters.contentParameters.contentPath"
         >cancel deletion and go back</replace-with
       >
     </replace-with>
