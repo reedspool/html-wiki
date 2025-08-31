@@ -66,8 +66,6 @@
         }
       }
       header {
-        position: sticky;
-        top: 0;
         box-shadow: 0px 0px 12px -1px rgba(0, 0, 0, 0.48);
       }
       footer {
@@ -79,6 +77,7 @@
 
       center-column-layout {
         display: block;
+        box-sizing: border-box;
         padding-inline: var(--space);
         width: 100%;
         max-width: 60ch;
@@ -138,8 +137,6 @@
       }
 
       toast-message {
-        margin-top: calc(-1 * var(--space-half));
-        width: 100%;
         padding: var(--space);
         background-color: darkkhaki;
         color: var(--fg-lighter);
@@ -160,24 +157,33 @@
           opacity: 0.9;
         }
       }
+
+      .sticky-top {
+        position: sticky;
+        top: 0;
+      }
+      .lower {
+        position: relative;
+        z-index: -1;
+      }
     </style>
   </head>
 
   <body>
-    <header>
-      <center-column-layout>
-        <nav aria-label="Main navigation">
-          <a logo href="/">HTML Wiki</a>
-          <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/sitemap">Sitemap</a></li>
-            <li><a href="?edit">Edit this page</a></li>
-          </ul>
-        </nav>
-      </center-column-layout>
-    </header>
-    <main>
-      <center-column-layout>
+    <div class="sticky-top">
+      <header>
+        <center-column-layout>
+          <nav aria-label="Main navigation">
+            <a logo href="/">HTML Wiki</a>
+            <ul>
+              <li><a href="/">Home</a></li>
+              <li><a href="/sitemap">Sitemap</a></li>
+              <li><a href="?edit">Edit this page</a></li>
+            </ul>
+          </nav>
+        </center-column-layout>
+      </header>
+      <center-column-layout class="lower">
         <keep-if truthy="topLevelParameters.statusMessage">
           <toast-message role="status">
             <replace-with
@@ -194,6 +200,10 @@
             </button>
           </toast-message>
         </keep-if>
+      </center-column-layout>
+    </div>
+    <main>
+      <center-column-layout>
         <query-content
           q="render(parameters.contentParameters.contentPath,parameters.contentParameters)"
         >
