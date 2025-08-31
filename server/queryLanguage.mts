@@ -106,6 +106,9 @@ export const renderer =
         ).content;
     };
 
+export const or = (...args: unknown[]) => args.reduce((a, b) => a || b);
+export const and = (...args: unknown[]) => args.reduce((a, b) => a && b);
+
 export const pString: (
     pArgList: string,
     params?: {
@@ -135,6 +138,8 @@ export const pString: (
         render: renderer({
             topLevelParameters: params?.topLevelParameters ?? {},
         }),
+        or,
+        and,
     } as const;
     return new Function(
         "paramObject",

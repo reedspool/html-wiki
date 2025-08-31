@@ -339,11 +339,52 @@ export const maybeRecordParameterValue = (
     return parameter;
 };
 
+export const getMeta = async ({
+    contentPath,
+    baseDirectory,
+}: {
+    contentPath: string;
+    baseDirectory: string;
+}) => {
+    if (!/\.html$/.test(contentPath)) return {};
+    const fileContents = await readFile({
+        baseDirectory,
+        contentPath,
+    });
+    try {
+        return (
+            await applyTemplating({
+                content: fileContents,
+                parameters: {},
+                topLevelParameters: {},
+                stopAtSelector: "body",
+            })
+        ).meta;
+    } catch (error) {
+        log(fileContents);
+        throw new Error(
+            `Couldn't apply templating for '${contentPath}': ${error}`,
+        );
+    }
+};
+
 export const listNonDirectoryFiles = async ({
     baseDirectory,
 }: {
     baseDirectory: string;
 }) => {
     const allDirents = await listAllDirectoryContents({ baseDirectory });
-    return allDirents.filter(({ type }) => type === "file");
+    return Promise.all(
+        allDirents
+            .filter(({ type }) => type === "file")
+            .map(async (dirent) => {
+                return {
+                    ...dirent,
+                    meta: await getMeta({
+                        contentPath: dirent.contentPath,
+                        baseDirectory,
+                    }),
+                };
+            }),
+    );
 };

@@ -37,7 +37,7 @@
                 <replace-with
                   a
                   x-href="parameters.currentListItem.contentPath"
-                  x-content="parameters.currentListItem.name"
+                  x-content="or(parameters.currentListItem.meta.title,parameters.currentListItem.name)"
                 ></replace-with>
               </li>
             </map-list>

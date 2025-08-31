@@ -160,11 +160,10 @@ test("Render sitemap", { concurrency: true }, async () => {
         listElements.length >= 7,
         `${listElements.length} was less than 7`,
     );
-    assert.match($1("li a[href=/index.html]").innerHTML, /index\.html/);
-    assert.match($1("li a[href=/sitemap.html]").innerHTML, /sitemap.html/);
-    assert.fail("Not yet acquiring titles from pages");
     assert.match($1("li a[href=/index.html]").innerHTML, /Homepage/);
     assert.match($1("li a[href=/sitemap.html]").innerHTML, /Sitemap/);
+    // Falls back to filename
+    assert.match($1("li a[href=/project/logbook.md]").innerHTML, /logbook\.md/);
 });
 
 test(

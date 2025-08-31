@@ -182,7 +182,16 @@ test("site.allFiles gets all the files", o, async () => {
     });
     assert.ok(Array.isArray(result));
     assert.ok(result.length > 3);
-    assert.ok(result.find((file) => file.contentPath === "/index.html"));
+    const index = result.find((file) => file.contentPath === "/index.html");
+    assert.ok(index);
+    assert.equal(index.name, "index.html");
+    assert.equal(index.contentPath, "/index.html");
+    assert.equal(index.meta.title, "HTML Wiki Homepage");
+    const edit = result.find((file) => file.contentPath.includes("/edit.html"));
+    assert.ok(edit);
+    assert.equal(edit.name, "edit.html");
+    assert.equal(edit.contentPath, "/$/templates/edit.html");
+    assert.equal(edit.meta.title, "Edit Page");
 });
 
 test("site.allFiles with no base directory is an error", o, async () => {

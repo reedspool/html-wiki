@@ -16,6 +16,7 @@ export const applyTemplating = async (
     params: {
         parameters: ParameterValue;
         topLevelParameters: ParameterValue;
+        stopAtSelector?: string;
     } & (
         | {
               content: string;
@@ -28,7 +29,7 @@ export const applyTemplating = async (
     content: string;
     meta: Meta;
 }> => {
-    const { parameters, topLevelParameters } = params;
+    const { parameters, topLevelParameters, stopAtSelector } = params;
     const getQueryValue = (query: string) => {
         log("getQueryValue: %s", query);
         return pString(query, { parameters, topLevelParameters });
@@ -46,6 +47,14 @@ export const applyTemplating = async (
 
     let alreadySetForNextIteration: Node | null = null;
     let stopAtElement: HTMLElement | null = null;
+
+    if (stopAtSelector) {
+        stopAtElement = root.querySelector(stopAtSelector);
+        if (!stopAtElement)
+            throw new Error(
+                `Could not find stopAtSelector '${stopAtSelector}'`,
+            );
+    }
     do {
         alreadySetForNextIteration = null;
         if (treeWalker.currentNode.nodeType !== NodeType.ELEMENT_NODE) {
