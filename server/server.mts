@@ -90,8 +90,8 @@ export const createServer = ({
         setParameterWithSource(parameters, "command", command, "derived");
 
         if (
-            maybeStringParameterValue(parameters.contentPath) &&
-            /\.md$/.test(stringParameterValue(parameters.contentPath))
+            maybeStringParameterValue(parameters, "contentPath") &&
+            /\.md$/.test(stringParameterValue(parameters, "contentPath"))
         ) {
             setParameterWithSource(
                 parameters,
@@ -103,13 +103,13 @@ export const createServer = ({
 
         if (
             command === "read" &&
-            maybeStringParameterValue(parameters.content)
+            maybeStringParameterValue(parameters, "content")
         ) {
             // TODO: Seems silly that `content` is special and has this
             // capability. Seems like I should be able to make this happen for
             // any given parameter as a client
             const decodedContent = decodeToContentParameters(
-                stringParameterValue(parameters.content),
+                stringParameterValue(parameters, "content"),
             );
             setParameterChildrenWithSource(
                 parameters,
@@ -134,11 +134,11 @@ export const createServer = ({
         );
 
         if (
-            stringParameterValue(parameters.command) == "read" &&
-            maybeStringParameterValue(parameters.edit)
+            stringParameterValue(parameters, "command") == "read" &&
+            maybeStringParameterValue(parameters, "edit")
         ) {
             const toEditContentPath =
-                maybeStringParameterValue(parameters.contentPath) ||
+                maybeStringParameterValue(parameters, "contentPath") ||
                 pathToEntryFilename(req.path);
             setParameterWithSource(
                 parameters,
@@ -184,7 +184,7 @@ export const createServer = ({
             (command == "update" ||
                 command == "create" ||
                 command == "delete") &&
-            !maybeStringParameterValue(parameters.contentPath)
+            !maybeStringParameterValue(parameters, "contentPath")
         ) {
             setParameterWithSource(
                 parameters,
@@ -195,7 +195,7 @@ export const createServer = ({
         }
 
         // If the request didn't specify a contentPath explicitly, and we didn't derive one already (e.g. `?edit`)
-        if (!maybeStringParameterValue(parameters.contentPath)) {
+        if (!maybeStringParameterValue(parameters, "contentPath")) {
             setParameterWithSource(
                 parameters,
                 "contentPath",
@@ -233,7 +233,7 @@ export const createServer = ({
             res.send(result.content);
         } else if (command == "update" || command == "create") {
             res.redirect(
-                `${stringParameterValue(parameters.contentPath)}?statusMessage=${result.content}`,
+                `${stringParameterValue(parameters, "contentPath")}?statusMessage=${result.content}`,
             );
         } else if (command == "delete") {
             res.redirect(`/?statusMessage=${result.content}`);
@@ -325,7 +325,7 @@ export const decodeToContentParameters = (
     );
     if (parameters.content) {
         const decodedSubParameters = decodeToContentParameters(
-            stringParameterValue(parameters.content),
+            stringParameterValue(parameters, "content"),
         );
         if (typeof decodedSubParameters == "string") {
             throw new Error(`Couldn't parse sub parameters ${content}`);

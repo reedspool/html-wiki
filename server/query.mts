@@ -54,7 +54,7 @@ export const queryEngine =
       case "q/query/escape":
       case "q/query/raw": {
         const field = input.split("/")[2]!;
-        return maybeStringParameterValue(parameters[field]) || "";
+        return maybeStringParameterValue(parameters, field) || "";
       }
       // Working on this concept that "params" refers to the original query?
       // This isn't consistent, and it's surprising. Probably need a concept of scope and
@@ -62,11 +62,14 @@ export const queryEngine =
       case "q/params/statusMessage":
       case "q/param/filename": {
         const field = input.split("/")[2]!;
-        return maybeStringParameterValue(topLevelParameters[field]) || "";
+        return maybeStringParameterValue(topLevelParameters, field) || "";
       }
       case "q/site/allFiles":
         return await listNonDirectoryFiles({
-          baseDirectory: stringParameterValue(topLevelParameters.baseDirectory),
+          baseDirectory: stringParameterValue(
+            topLevelParameters,
+            "baseDirectory",
+          ),
         });
       case "q/Now.plainDateTimeISO()":
         return Temporal.Now.plainDateTimeISO().toString();
@@ -77,36 +80,39 @@ export const queryEngine =
         );
         if (
           !subParameters ||
-          !maybeStringParameterValue(subParameters.contentPath)
+          !maybeStringParameterValue(subParameters, "contentPath")
         )
           return "";
 
         const contentFileContents = await readFile({
-          baseDirectory: stringParameterValue(topLevelParameters.baseDirectory),
-          contentPath: stringParameterValue(subParameters.contentPath),
+          baseDirectory: stringParameterValue(
+            topLevelParameters,
+            "baseDirectory",
+          ),
+          contentPath: stringParameterValue(subParameters, "contentPath"),
         });
 
         log(
-          `Applying in-query templating for ${stringParameterValue(parameters.contentPath)} original query ${JSON.stringify(parameters)} and content query ${JSON.stringify(subParameters)}`,
+          `Applying in-query templating for ${stringParameterValue(parameters, "contentPath")} original query ${JSON.stringify(parameters)} and content query ${JSON.stringify(subParameters)}`,
         );
         // TODO: I think "noApply" is more accurate than "raw", however can
         // probably come up with a better name. The point is "raw" implies too
         // much, or could mean several things, so I should pick some more narrow
         // concepts, even if they have to be mixed and matched
-        if (maybeStringParameterValue(subParameters.raw)) {
-          if (subParameters.escape) {
+        if (maybeStringParameterValue(subParameters, "raw")) {
+          if (maybeStringParameterValue(subParameters, "escape")) {
             return escapeHtml(contentFileContents);
           }
           return contentFileContents;
         }
-        if (maybeStringParameterValue(subParameters.renderMarkdown)) {
+        if (maybeStringParameterValue(subParameters, "renderMarkdown")) {
           // TODO if this set contents instead of returning that would seem to enable template values in markdown
           return renderMarkdown(contentFileContents);
         }
         return (
           await applyTemplating({
             content: contentFileContents,
-            parameters: subParameters,
+            parameters: subParameters as ParameterValue,
             topLevelParameters,
           })
         ).content;
@@ -118,9 +124,7 @@ export const queryEngine =
         const subField = input.split("/")[3]!;
         const param = parameters[field];
         if (!param) return "";
-        const record = maybeRecordParameterValue(param)?.[subField];
-        if (!record) return "";
-        return maybeStringParameterValue(record);
+        return maybeStringParameterValue(param, subField);
       }
       default:
         // TODO: This shouldn't just be a random server crashing error

@@ -4,6 +4,20 @@
 
 Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
+### Sat Aug 30 01:32:37 PM PDT 2025
+
+A while back in this project (Fri Aug 15 entry), I installed a system for tracking the category of the source of parameters. That is, I required each parameter value to have a source string set. That source could be "derived" if it was something the server added based on other configuration, or "query param" if it was part of the user's original query.
+
+This system was very cumbersome, but I put up with it because I hoped it would be really valuable later to be able to unpack if the server overrode a user's parameter. And I would have left it in, until I found a real problem with it.
+
+I never thought this system would leak into external callers. They could provide query paramters as a JS object (map/dictionary), or a URLSearchParams object, or something simple, and then the server would map into the more complex structure.
+
+The problem was that the structure was ambiguous around nested values. Sometimes it was worthwhile for a nested value to be structured as a "source & value". But other times that made no sense at all.
+
+This lack of sense became apparent when I started making my JavaScript based query language. JavaScript functions can return arbitrarily complex objects, and other functions can take arbitrarily complex objects as parameters. If I kept doing this transparent transformation into my complex structure, I'd need to also give a way for users to transparently use those values, and I couldn't think of any nice way to allow transparent use of my complex structure and any random object at the same time. 
+
+Whew that was all a mouthful. It felt good to talk about a system a bit before I ripped it out, like mourning a choice as if it had a life.
+
 ### Fri Aug 29 10:55:31 PM PDT 2025
 
 My experiments over the past week were successful. I had a new query language which seemed effective. I started by getting parity with my previous initial flat query engine in tests.

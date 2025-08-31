@@ -322,6 +322,7 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
     const responseTextForExpandedUrl = await responseForExpandedUrl.text();
 
     assert.strictEqual(response.status, 200);
+    assert.fail("Have to debug why one of these doesn't escape");
     assert.strictEqual(responseText, responseTextForExpandedUrl);
 });
 

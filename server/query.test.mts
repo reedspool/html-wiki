@@ -116,13 +116,7 @@ test("queryEngine", { concurrency: true }, (context) => {
         async () => {
             const parameters: ParameterValue = {};
             parameters.contentParameters = {
-                children: {
-                    contentPath: {
-                        value: "test content path",
-                        source: "query param",
-                    },
-                },
-                source: "query param",
+                contentPath: "test content path",
             };
             const result = await queryEngine({
                 parameters,
@@ -140,10 +134,7 @@ test("queryEngine", { concurrency: true }, (context) => {
             parameters,
             "contentParameters",
             {
-                contentPath: {
-                    value: "/index.html",
-                    source: "query param",
-                },
+                contentPath: "/index.html",
             },
             "query param",
         );
@@ -178,13 +169,7 @@ test("queryEngine", { concurrency: true }, (context) => {
             );
             const parameters: ParameterValue = {};
             parameters.currentListItem = {
-                children: {
-                    title: {
-                        value: "test title of list item",
-                        source: "query param",
-                    },
-                },
-                source: "query param",
+                title: "test title of list item",
             };
             const result = await queryEngine({
                 parameters,

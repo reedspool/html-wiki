@@ -1,6 +1,5 @@
-import { type Node, NodeType, HTMLElement, TextNode } from "node-html-parser";
+import { type Node, NodeType, HTMLElement } from "node-html-parser";
 import { parse as parseHtml } from "node-html-parser";
-import { escapeHtml } from "./utilities.mts";
 import { QueryError } from "./error.mts";
 import { queryEngine } from "./query.mts";
 import {

@@ -30,9 +30,12 @@ export const parameterProxy = (parameters: ParameterValue) =>
         get(target: ParameterValue, prop: keyof ParameterValue) {
             const value = target[prop];
             if (!value) return "";
-            if (value.value) return value.value.toString();
-            if (value.children) return parameterProxy(value.children);
-            throw new Error("Unexpected parameter with no value or children");
+            if (typeof value != "object") return value.toString();
+            // TODO: This whole proxy thing needs tobe reconsidered, this
+            // doesn't make any sense, but I'm focusing on stripping out the
+            // weird parameter shape now and I'll have to come back to this with
+            // more test cases
+            return parameterProxy(value as ParameterValue);
         },
     });
 
@@ -63,7 +66,8 @@ export const renderer =
     ({ topLevelParameters }: { topLevelParameters: ParameterValue }) =>
     async (contentPath: string, contentParameters?: ParameterValue) => {
         const baseDirectory = maybeStringParameterValue(
-            topLevelParameters.baseDirectory,
+            topLevelParameters,
+            "baseDirectory",
         );
         if (!baseDirectory) throw new Error("Required baseDirectory");
 
@@ -116,7 +120,10 @@ export const pString: (
     // TODO: The concept of a parameterProxy doesn't work for my own internal stuff.
     const site = siteProxy({
         baseDirectory: params
-            ? maybeStringParameterValue(params.topLevelParameters.baseDirectory)
+            ? maybeStringParameterValue(
+                  params.topLevelParameters,
+                  "baseDirectory",
+              )
             : null,
     });
     const paramObject = {

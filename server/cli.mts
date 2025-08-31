@@ -8,7 +8,6 @@ import {
     execute,
     listNonDirectoryFiles,
     type ParameterValue,
-    recordParameterValue,
     setEachParameterWithSource,
     setParameterWithSource,
 } from "./engine.mts";
@@ -96,7 +95,7 @@ program
             if (/\.md$/.test(contentPath)) {
                 outputPath = contentPath.replace(/\.md$/, ".html");
                 setParameterWithSource(
-                    recordParameterValue(readParameters.contentParameters),
+                    readParameters.contentParameters as ParameterValue,
                     "renderMarkdown",
                     "true",
                     "query param",
@@ -115,7 +114,7 @@ program
                 },
                 "query param",
             );
-            const writeResult = await execute(writeParameters);
+            await execute(writeParameters);
         });
     });
 

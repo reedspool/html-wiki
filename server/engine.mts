@@ -14,14 +14,7 @@ const log = debug("server:engine");
 // Parameters come in tagged with a source to enable specific diagnostic reports
 // on where certain values came from. Parameters are validated to turn into a
 // much more specifically typed Request
-export type ParameterValue = Record<
-    string | number | symbol,
-    {
-        value?: unknown;
-        children?: ParameterValue;
-        source: ParameterSources;
-    }
->;
+export type ParameterValue = Record<string | number | symbol, unknown>;
 export type ParametersWithSource = [string, ParameterValue];
 
 // The high level operation to perform
@@ -94,7 +87,7 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
         validationIssues.push("contentPath required");
     }
     let command: Command | undefined = narrowStringToCommand(
-        stringParameterValue(parameters.command),
+        stringParameterValue(parameters, "command"),
     );
     if (!command) {
         validationIssues.push(`command must be one of ${commands}`);
@@ -106,12 +99,13 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
                 validationIssues.push("content required");
             }
             if (
-                stringParameterValue(parameters.contentPath).charAt(0) !== "/"
+                stringParameterValue(parameters, "contentPath").charAt(0) !==
+                "/"
             ) {
                 setParameterWithSource(
                     parameters,
                     "contentPath",
-                    "/" + stringParameterValue(parameters.contentPath),
+                    "/" + stringParameterValue(parameters, "contentPath"),
                     "derived",
                 );
             }
@@ -119,13 +113,16 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
                 return validationErrorResponse(validationIssues);
 
             await createFileAndDirectories({
-                baseDirectory: stringParameterValue(parameters.baseDirectory),
-                contentPath: stringParameterValue(parameters.contentPath),
-                content: stringParameterValue(parameters.content),
+                baseDirectory: stringParameterValue(
+                    parameters,
+                    "baseDirectory",
+                ),
+                contentPath: stringParameterValue(parameters, "contentPath"),
+                content: stringParameterValue(parameters, "content"),
             });
             return {
                 status: Status.OK,
-                content: `File ${stringParameterValue(parameters.contentPath)} created successfully`,
+                content: `File ${stringParameterValue(parameters, "contentPath")} created successfully`,
             };
         }
         case "read": {
@@ -137,8 +134,11 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
                 topLevelParameters: parameters,
             });
             const fileContents = await readFile({
-                baseDirectory: stringParameterValue(parameters.baseDirectory),
-                contentPath: stringParameterValue(parameters.contentPath),
+                baseDirectory: stringParameterValue(
+                    parameters,
+                    "baseDirectory",
+                ),
+                contentPath: stringParameterValue(parameters, "contentPath"),
             });
             const content = (await getQueryValue("q/query/raw"))
                 ? (await getQueryValue("q/query/escape"))
@@ -163,30 +163,36 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
             await updateFile({
-                baseDirectory: stringParameterValue(parameters.baseDirectory),
-                contentPath: stringParameterValue(parameters.contentPath),
-                content: stringParameterValue(parameters.content),
+                baseDirectory: stringParameterValue(
+                    parameters,
+                    "baseDirectory",
+                ),
+                contentPath: stringParameterValue(parameters, "contentPath"),
+                content: stringParameterValue(parameters, "content"),
             });
             return {
                 status: Status.OK,
-                content: `File ${stringParameterValue(parameters.contentPath)} updated successfully`,
+                content: `File ${stringParameterValue(parameters, "contentPath")} updated successfully`,
             };
         }
         case "delete": {
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
             await removeFile({
-                baseDirectory: stringParameterValue(parameters.baseDirectory),
-                contentPath: stringParameterValue(parameters.contentPath),
+                baseDirectory: stringParameterValue(
+                    parameters,
+                    "baseDirectory",
+                ),
+                contentPath: stringParameterValue(parameters, "contentPath"),
             });
             return {
                 status: Status.OK,
-                content: `File ${stringParameterValue(parameters.contentPath)} deleted successfully`,
+                content: `File ${stringParameterValue(parameters, "contentPath")} deleted successfully`,
             };
         }
         default:
             throw new Error(
-                `Unhandled command '${stringParameterValue(parameters.command)}'`,
+                `Unhandled command '${stringParameterValue(parameters, "command")}'`,
             );
     }
 };
@@ -214,7 +220,11 @@ export const validateReadParameters = (
         } else {
             validateReadParameters(
                 validationIssues,
-                recordParameterValue(parameters.contentParameters),
+                // Casting because the hope is we're safely validating. Could
+                // probably use more tests
+                recordParameterValue(
+                    parameters.contentParameters,
+                ) as ParameterValue,
             );
         }
     }
@@ -241,7 +251,7 @@ export type ParameterSources =
 export const setParameterWithSource = (
     parameters: ParameterValue | string,
     key: keyof ParameterValue,
-    value: ParameterValue[string]["value"],
+    value: ParameterValue[string],
     source: ParameterSources,
 ): ParameterValue => {
     if (typeof parameters === "string")
@@ -249,17 +259,17 @@ export const setParameterWithSource = (
     const original = parameters[key];
     if (original) {
         log(
-            `Overwriting parameter '${String(key)}' to '${value}' (${source}) from '${original.value}' (original.source)`,
+            `Overwriting parameter '${String(key)}' to '${value}' (${source}) from '${original}' (original.source)`,
         );
     }
 
-    parameters[key] = { value, source };
+    parameters[key] = value;
     return parameters;
 };
 
 export const setEachParameterWithSource = (
     parameters: ParameterValue,
-    record: Record<string, ParameterValue[string]["value"]>,
+    record: Record<string, ParameterValue[string]>,
     source: ParameterSources,
 ): ParameterValue => {
     Object.entries(record).forEach(([key, value]) => {
@@ -279,40 +289,53 @@ export const setParameterChildrenWithSource = (
     const original = parameters[key];
     if (original) {
         log(
-            `Overwriting parameter '${String(key)}' to '${value}' (${source}) from '${original.value}' (original.source)`,
+            `Overwriting parameter '${String(key)}' to '${value}' (${source}) from '${original}' (original.source)`,
         );
     }
 
-    parameters[key] = { children: value, source };
+    // TODO: I think this is no longer any different at all
+    parameters[key] = value;
     return parameters;
 };
 
 export const stringParameterValue = (
-    parameter: ParameterValue["string"],
+    parameterV: unknown,
+    property: string,
 ): string => {
-    if (typeof parameter.value !== "string") throw new Error("String required");
-    return parameter.value;
+    // Temporarily and carefully cast
+    const parameterVCasted = parameterV as ParameterValue;
+    const parameter =
+        property in parameterVCasted && parameterVCasted[property];
+    if (typeof parameter !== "string") throw new Error("String required");
+    return parameter;
 };
 
 export const maybeStringParameterValue = (
-    parameter: ParameterValue["string"],
+    parameterV: unknown,
+    property: string,
 ): string | null => {
-    if (!parameter || typeof parameter.value !== "string") return null;
-    return parameter.value;
+    // Temporarily and carefully cast
+    const parameterVCasted = parameterV as ParameterValue;
+    const parameter =
+        property in parameterVCasted && parameterVCasted[property];
+    if (!parameter || typeof parameter !== "string") return null;
+    return parameter;
 };
 
+// TODO: I don't think this has any value anymore... since anything can be an
+// object in JavaScript.
 export const recordParameterValue = (
     parameter: ParameterValue["string"],
-): ParameterValue => {
-    if (!parameter.children) throw new Error("Object required");
-    return parameter.children;
+): unknown => {
+    if (!parameter) throw new Error("Object required");
+    return parameter;
 };
 
 export const maybeRecordParameterValue = (
     parameter: ParameterValue["string"],
-): ParameterValue | null => {
-    if (!parameter.children) return null;
-    return parameter.children;
+): unknown | null => {
+    if (!parameter) return null;
+    return parameter;
 };
 
 export const listNonDirectoryFiles = async ({
