@@ -357,11 +357,7 @@ export const createServer = ({
     return { cleanup: () => emitter.emit("cleanup") };
 };
 
-export const decodeToContentParameters = (
-    queryParam: string,
-): ParameterValue => {
-    const content = decodeURIComponent(queryParam);
-
+export const decodeToContentParameters = (content: string): ParameterValue => {
     const url = `http://0.0.0.0${content}`;
     const urlParsed = URL.parse(url);
     if (urlParsed == null) {
@@ -377,8 +373,9 @@ export const decodeToContentParameters = (
         "query param",
     );
     if (parameters.content) {
+        // Only decode the second layer, since Express decodes `req.query` once automatically
         const decodedSubParameters = decodeToContentParameters(
-            stringParameterValue(parameters, "content"),
+            decodeURIComponent(stringParameterValue(parameters, "content")),
         );
         if (typeof decodedSubParameters == "string") {
             throw new Error(`Couldn't parse sub parameters ${content}`);
