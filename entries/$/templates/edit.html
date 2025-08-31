@@ -61,8 +61,8 @@
     </drop-if>
     <keep-if truthy="parameters.contentParameters.contentPath">
       <form method="POST">
-        <textarea name="content" spellcheck="false">
-    <query-content q="render(parameters.contentParameters.contentPath,parameters.contentParameters)">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
+        <!-- prettier-ignore -->
+        <textarea name="content" spellcheck="false"><query-content q="render(parameters.contentParameters.contentPath,parameters.contentParameters)">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
         >
         <slot name="keep" if="raw">
           <button type="submit" formaction="?raw">Save</button>
