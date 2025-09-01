@@ -21,6 +21,7 @@
         --space-2: calc(var(--space) * 2);
         --space-half: calc(var(--space) * 0.5);
         --space-quarter: calc(var(--space) * 0.25);
+        --space-eigth: calc(var(--space) * 0.125);
         --fancy: monospace;
         --prose: "Times New Roman";
       }
@@ -153,6 +154,17 @@
         }
       }
 
+      input {
+        padding: var(--space-half);
+        font-size: 0.8rem;
+        background-color: var(--bg);
+        border: none;
+        box-shadow: 0px 0px 8px -3px rgba(0, 0, 0, 0.89) inset;
+        &:focus {
+          outline: none;
+        }
+      }
+
       toast-message {
         padding: var(--space);
         background-color: darkkhaki;
@@ -163,21 +175,32 @@
         justify-content: space-between;
       }
 
-      button:not([disabled]) {
-        cursor: pointer;
-      }
-      button[clean] {
-        background: inherit;
+      button {
+        border-radius: 0.4rem;
+        background-color: var(--bg);
         border: none;
-        padding-inline: var(--space);
-        padding-block: var(--space-quarter);
-        cursor: pointer;
+        box-shadow: 0px 0px 12px -1px rgba(0, 0, 0, 0.89);
+        padding-inline: var(--space-half);
+        padding-block: var(--space-eigth);
+        &:hover {
+          box-shadow: 0px 0px 12px 1px rgba(0, 0, 0, 0.89);
+        }
+        &:not([disabled]) {
+          cursor: pointer;
+        }
+        &[clean] {
+          background: inherit;
+          border: none;
+          padding-inline: var(--space);
+          padding-block: var(--space-quarter);
+          cursor: pointer;
+          box-shadow: none;
 
-        & hover {
-          opacity: 0.9;
+          &:hover {
+            filter: brightness(1.1);
+          }
         }
       }
-
       .sticky-top {
         position: sticky;
         top: 0;
