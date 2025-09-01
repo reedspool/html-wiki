@@ -157,7 +157,9 @@ export const applyTemplating = async (
 
                     let queryValue = await getQueryValue(query);
                     if (!Array.isArray(queryValue)) {
-                        if (element.hasAttribute("allow-one")) {
+                        if (queryValue === undefined || queryValue === null) {
+                            queryValue = [];
+                        } else if (element.hasAttribute("allow-one")) {
                             queryValue = [queryValue];
                         } else {
                             throw new Error(
@@ -252,7 +254,7 @@ export const applyTemplating = async (
                                             ).toString();
                                         } else {
                                             replacementElement.innerHTML =
-                                                "&lt;unstringable value&gt;";
+                                                "&lt;no textual representation&gt;";
                                         }
                                     } else {
                                         replacementElement.innerHTML =

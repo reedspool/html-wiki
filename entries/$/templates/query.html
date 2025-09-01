@@ -56,17 +56,30 @@
         >Go</replace-with
       >
     </form>
-    <ul>
-      <map-list q="query(topLevelParameters.query)" allow-one>
-        <li copy-target-container>
-          <replace-with
-            span
-            copy-target
-            x-content="parameters.currentListItem"
-          ></replace-with>
-          <button type="button" copy>Copy</button>
-        </li>
-      </map-list>
-    </ul>
+    <set- result="query(topLevelParameters.query)"> </set->
+    <h2>Complete result</h2>
+    <div copy-target-container>
+      <replace-with
+        pre
+        x-content="topLevelParameters.result,(p)=>JSON.stringify(p,null,2),(p)=>`<code
+        copy-target>${p}</code>`"
+      ></replace-with>
+      <button type="button" copy>Copy</button>
+    </div>
+    <keep-if truthy="Array.isArray(topLevelParameters.result)">
+      <h2>List view</h2>
+      <ul>
+        <map-list q="topLevelParameters.result" allow-one>
+          <li copy-target-container>
+            <replace-with
+              span
+              copy-target
+              x-content="parameters.currentListItem"
+            ></replace-with>
+            <button type="button" copy>Copy</button>
+          </li>
+        </map-list>
+      </ul>
+    </keep-if>
   </body>
 </html>
