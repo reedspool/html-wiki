@@ -307,6 +307,24 @@ export const applyTemplating = async (
                     element.remove();
                 }
                 break;
+            case "SET-":
+                {
+                    const attributeEntries = Object.entries(element.attributes);
+                    const [parameterName, query] = attributeEntries[0];
+
+                    let queryValue = await getQueryValue(query);
+                    // TODO: This sets the parameter for everything after this,
+                    // but it would be cool if parameters were a scope concept
+                    // and this could createa new scope only for the processing
+                    // of the contents of this tag
+                    setParameterWithSource(
+                        topLevelParameters,
+                        parameterName,
+                        queryValue,
+                        "query param",
+                    );
+                }
+                break;
             case "DROP-IF":
             case "KEEP-IF":
                 {
