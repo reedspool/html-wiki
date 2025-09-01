@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import { Temporal } from "temporal-polyfill";
 import { html } from "./utilities.mts";
+import stylelint from "stylelint";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -109,6 +110,29 @@ test("Can get homepage", { concurrency: true }, async () => {
 
     assert.strictEqual(response.status, 200);
     assert.strictEqual(responseText, responseTextSlashIndexNoExtension);
+});
+
+test("Can get /$/global.css", { concurrency: true }, async () => {
+    const path = "/$/global.css";
+    const url = `http://localhost:${port}${path}`;
+    const response = await fetch(url);
+    const responseText = await response.text();
+
+    assert.strictEqual(
+        response.headers.get("content-type"),
+        "text/css; charset=utf-8",
+    );
+    assert.strictEqual(response.status, 200);
+    // Find something basic which should be there
+    assert.match(responseText, /:root\s+\{/);
+
+    const stylelintResults = await stylelint.lint({
+        config: { extends: ["stylelint-config-standard"] },
+        code: responseText,
+    });
+    if (stylelintResults.errored) {
+        assert.fail(stylelintResults.report);
+    }
 });
 
 test(
@@ -293,7 +317,7 @@ test(
 );
 
 test("Can get edit page for markdown file", { concurrency: true }, async () => {
-    const { url, response, responseText, $1 } = await getPath(
+    const { url, responseText, $1 } = await getPath(
         `/$/test/fixtures/test.md?edit`,
     );
 

@@ -7,6 +7,7 @@
 import express from "express";
 import EventEmitter from "node:events";
 import { escapeHtml } from "./utilities.mts";
+import { contentType } from "mime-types";
 import {
     expressQueryToRecord,
     pathToEntryFilename,
@@ -24,6 +25,7 @@ import {
     type ParameterValue,
 } from "./engine.mts";
 import debug from "debug";
+import { readFile } from "./filesystem.mts";
 const log = debug("server:server");
 
 export const createServer = ({
@@ -56,7 +58,7 @@ export const createServer = ({
 
         let command = narrowStringToCommand(query.command);
 
-        // Next, try to derive the query from the method
+        // Next, try to derive the command from the method or query parameters
         if (command === undefined) {
             if (req.method === "GET") {
                 command = "read";
@@ -99,9 +101,11 @@ export const createServer = ({
 
         setParameterWithSource(parameters, "command", command, "derived");
 
+        // TODO: This should be placed somewhere it can act consistently at all levels
         if (
             maybeStringParameterValue(parameters, "contentPath") &&
-            /\.md$/.test(stringParameterValue(parameters, "contentPath"))
+            /\.md$/.test(stringParameterValue(parameters, "contentPath")) &&
+            !maybeStringParameterValue(parameters, "renderMarkdown")
         ) {
             setParameterWithSource(
                 parameters,
@@ -248,6 +252,28 @@ export const createServer = ({
         }
 
         // If the request didn't specify a contentPath explicitly, and we didn't derive one already (e.g. `?edit`)
+        if (
+            !maybeStringParameterValue(parameters, "contentPath") &&
+            command === "read" &&
+            // Any file which isn't template-able by the engine (HTML or MD)
+            // just gets sent back statically
+            !/\.(html|md)$/.test(pathToEntryFilename(req.path))
+        ) {
+            log("Serving static file %s", pathToEntryFilename(req.path));
+            const content = await readFile({
+                baseDirectory,
+                contentPath: pathToEntryFilename(req.path),
+            });
+            res.setHeader(
+                "Content-Type",
+                contentType(
+                    pathToEntryFilename(req.path).match(/\.[^.]+$/)![0],
+                ) || "application/octet-stream",
+            );
+            res.send(content);
+            return;
+        }
+
         if (!maybeStringParameterValue(parameters, "contentPath")) {
             setParameterWithSource(
                 parameters,
@@ -283,6 +309,14 @@ export const createServer = ({
 
         const result = await execute(parameters);
         if (command === "read") {
+            res.setHeader(
+                "Content-Type",
+                (typeof parameters.contentPath === "string" &&
+                    contentType(
+                        parameters.contentPath.match(/\.[^.]+$/)![0],
+                    )) ||
+                    "application/octet-stream",
+            );
             res.send(result.content);
         } else if (command == "update" || command == "create") {
             res.redirect(
