@@ -31,7 +31,6 @@ export const applyTemplating = async (
 }> => {
     const { parameters, topLevelParameters, stopAtSelector } = params;
     const getQueryValue = (query: string) => {
-        log("getQueryValue: %s", query);
         return pString(query, { parameters, topLevelParameters });
     };
     const meta: Meta = {};
@@ -148,32 +147,31 @@ export const applyTemplating = async (
                 break;
             case "MAP-LIST":
                 {
-                    const attributeEntries = Object.entries(element.attributes);
-                    if (attributeEntries[0][0] !== "q") {
+                    const query = element.getAttribute("q");
+                    if (!query) {
                         throw new QueryError(
                             500,
-                            "map-list only supports a single attribute, `q` whose value is the query to use to replace ",
+                            `map-list must have 'q' with a query as value, got value ${query}`,
                         );
                     }
-                    if (typeof attributeEntries[0][1] !== "string") {
-                        throw new QueryError(
-                            500,
-                            `map-list first attribute must be 'q' with a query as value, got value ${attributeEntries[0][1]}`,
-                        );
-                    }
-                    const query = attributeEntries[0][1];
 
                     let queryValue = await getQueryValue(query);
-                    if (typeof queryValue == "string") {
-                        throw new Error("query value got unexpected string");
+                    if (!Array.isArray(queryValue)) {
+                        if (element.hasAttribute("allow-one")) {
+                            queryValue = [queryValue];
+                        } else {
+                            throw new Error(
+                                "Expected an array value for map-list",
+                            );
+                        }
                     }
                     if (!Array.isArray(queryValue)) {
-                        throw new Error("Expected an array value for map-list");
+                        throw new Error("Shouldn't have gotten here");
                     }
                     alreadySetForNextIteration =
                         treeWalker.nextNodeNotChildren();
                     // TODO: apply templating here to children
-                    for (const index in queryValue) {
+                    for (const index in queryValue.reverse()) {
                         const current = queryValue[index];
                         const parameters: ParameterValue = {};
                         setParameterWithSource(
@@ -188,14 +186,10 @@ export const applyTemplating = async (
                             index,
                             "query param",
                         );
-                        setParameterChildrenWithSource(
+                        setParameterWithSource(
                             parameters,
                             "currentListItem",
-                            setEachParameterWithSource(
-                                {},
-                                current,
-                                "query param",
-                            ),
+                            current,
                             "query param",
                         );
                         for (const childElement of element.children.reverse()) {
@@ -248,11 +242,22 @@ export const applyTemplating = async (
                             switch (realKey) {
                                 case "content":
                                     if (typeof queryValue !== "string") {
-                                        throw new Error(
-                                            "query value expected string",
-                                        );
+                                        if (
+                                            typeof (queryValue as object)?.[
+                                                "toString"
+                                            ] === "function"
+                                        ) {
+                                            replacementElement.innerHTML = (
+                                                queryValue as object
+                                            ).toString();
+                                        } else {
+                                            replacementElement.innerHTML =
+                                                "&lt;unstringable value&gt;";
+                                        }
+                                    } else {
+                                        replacementElement.innerHTML =
+                                            queryValue;
                                     }
-                                    replacementElement.innerHTML = queryValue;
                                     break;
                                 default:
                                     replacementElement.setAttribute(
