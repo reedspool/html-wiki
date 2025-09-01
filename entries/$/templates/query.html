@@ -13,7 +13,36 @@
       textarea {
         height: 3rem;
       }
+
+      [copy-target-container]:has([copy]:hover) {
+        [copy-target] {
+          background-color: var(--bg-lighter);
+        }
+      }
     </style>
+    <script>
+      const wait = (millis) =>
+        new Promise((resolve) => setTimeout(resolve, millis));
+
+      document.body.addEventListener("click", async ({ target }) => {
+        if (target.tagName !== "BUTTON" || !target.hasAttribute("copy")) return;
+        try {
+          target.setAttribute("disabled", "true");
+          const text = target
+            .closest("[copy-target-container]")
+            .querySelector("[copy-target]").innerText;
+          await navigator.clipboard.writeText(text);
+          const originalText = target.innerHTML;
+          target.innerHTML = "Copied!";
+          await wait(1750);
+          target.innerHTML = originalText;
+          target.removeAttribute("disabled");
+        } catch (error) {
+          console.error("Error copying", error);
+          target.innerHTML = "Error :-/";
+        }
+      });
+    </script>
     <form method="GET">
       <replace-with
         textarea
@@ -29,11 +58,13 @@
     </form>
     <ul>
       <map-list q="query(topLevelParameters.query)" allow-one>
-        <li>
+        <li copy-target-container>
           <replace-with
             span
+            copy-target
             x-content="parameters.currentListItem"
           ></replace-with>
+          <button type="button" copy>Copy</button>
         </li>
       </map-list>
     </ul>
