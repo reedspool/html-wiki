@@ -17,7 +17,9 @@
         --bg-lighter: hsl(33.79deg 40.86% 90%); /* darker */
         --fg: hsl(0 0% 17%); /* dark, dark gray */
         --fg-lighter: hsl(0 0% 27%); /* dark, dark gray */
+        --phi: 1.61803398874;
         --space: 1rem;
+        --space-phi: calc(var(--space) * var(--phi));
         --space-2: calc(var(--space) * 2);
         --space-half: calc(var(--space) * 0.5);
         --space-quarter: calc(var(--space) * 0.25);
@@ -205,15 +207,20 @@
         position: sticky;
         top: 0;
       }
-      .lower {
+      .relative {
         position: relative;
+      }
+      .lower {
         z-index: -1;
+      }
+      .higher {
+        z-index: 1;
       }
     </style>
   </head>
 
   <body>
-    <div class="sticky-top">
+    <div class="sticky-top higher">
       <header>
         <center-column-layout>
           <nav aria-label="Main navigation">
@@ -226,7 +233,7 @@
           </nav>
         </center-column-layout>
       </header>
-      <center-column-layout class="lower">
+      <center-column-layout class="relative lower">
         <keep-if truthy="topLevelParameters.statusMessage">
           <toast-message role="status">
             <replace-with

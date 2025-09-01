@@ -18,7 +18,7 @@
       }
 
       form {
-        display: contents;
+        position: relative;
       }
 
       button {
@@ -27,6 +27,22 @@
 
       h1 {
         font-size: 1rem;
+      }
+
+      dialog {
+        padding: 0;
+        position: absolute;
+        inset: unset; /* reset preset offset, upset */
+        right: var(--space-phi);
+        margin-top: var(--space-half);
+        border: none;
+
+        background-color: var(--bg);
+        box-shadow: 0px 0px 12px -1px rgba(0, 0, 0, 0.48);
+      }
+      iframe {
+        border: none;
+        display: block; /* maybe this should be called a bframe, amiright? */
       }
     </style>
     <h1>
@@ -51,6 +67,25 @@
     </drop-if>
     <keep-if truthy="parameters.contentParameters?.contentPath">
       <form method="POST">
+        <div>
+          Toolbox
+
+          <button
+            type="button"
+            title="Show Query Playground"
+            onclick="{const d=document.querySelector('[query-playground]');d.open ? d.close() : d.show()}"
+          >
+            ?q=
+          </button>
+          <dialog query-playground closedby="none">
+            <iframe
+              title="Query Playground Widget"
+              loading="lazy"
+              src="/?contentPath=/$/templates/query.html&select=body"
+            ></iframe>
+          </dialog>
+        </div>
+
         <!-- prettier-ignore -->
         <textarea name="content" spellcheck="false"><query-content q="render(parameters.contentParameters.contentPath,parameters.contentParameters)">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
         >

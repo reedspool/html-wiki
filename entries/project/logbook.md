@@ -4,6 +4,12 @@
 
 Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
+### Mon Sep  1 11:32:49 AM PDT 2025
+
+I made a query playground page as a separate page first which was a really nice way to experiment with the interaction loop, write a query, run it, see the results, copy the results. Then I separately began to work on the popover/dialog version of the tool as a widget within the edit page.
+
+I tried to use the built-in `popover` and `dialog` APIs, but I found them very frustating to use. Neither of these seemed to do the job as I envisioned it. Of course, caveat emptor, I could be using them wrong or I could be trying to do the wrong thing with them. These APIs and their variations, via different attribute values like `popover="manual"` or different functions like `showModal()`, seemed to focus on particular usecases that did not match what I wanted. So I ended up using `<dialog closedby="none">` and `dialog.show()`, which felt like I was doing it all manually via JavaScript and CSS as if I'd used `div`s. Since I wasn't focused on accessibility, I didn't check if using the `dialog` actually made anything better.
+
 ### Mon Sep  1 12:41:41 AM PDT 2025
 
 I previously wrapped parameters in a proxy as I passed them into the query language. This turned out to be hard to make sensible. I stripped it out when it made a very confusing bug where `.reverse()` on an array parameter was a string, not a function. Facepalm.
