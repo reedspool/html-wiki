@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Query Playground</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+
+  <body>
+    <style>
+      textarea {
+        height: 3rem;
+      }
+    </style>
+    <form method="GET">
+      <replace-with
+        textarea
+        autofocus
+        name="query"
+        x-content="or(topLevelParameters.query,'')"
+        placeholder="Temporal.Now.plainDateTimeISO()"
+      >
+      </replace-with>
+      <replace-with button type="submit" x-formaction="parameters.contentPath"
+        >Go</replace-with
+      >
+    </form>
+    <ul>
+      <map-list q="query(topLevelParameters.query)" allow-one>
+        <li>
+          <replace-with
+            span
+            x-content="parameters.currentListItem"
+          ></replace-with>
+        </li>
+      </map-list>
+    </ul>
+  </body>
+</html>

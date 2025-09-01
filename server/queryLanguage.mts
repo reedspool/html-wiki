@@ -140,8 +140,9 @@ export const pString: (
         }),
         or,
         and,
+        query: (input: string) => pString(input, params),
     } as const;
-    return new Function(
+    const fn = new Function(
         "paramObject",
         [
             `const {`,
@@ -155,5 +156,10 @@ export const pString: (
             `} = paramObject;`,
             `return p(${pArgList});`,
         ].join("\n"),
-    )(paramObject);
+    );
+
+    Object.defineProperty(fn, "name", {
+        value: "pString anonymous function",
+    });
+    return fn(paramObject);
 };

@@ -4,6 +4,16 @@
 
 Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
+### Sun Aug 31
+
+The format I had used in this logbook for timestamp titles up to now `Sat Aug 30 01:32:37 PM PDT 2025` came from the default output for the `date` command in bash on my machine. Now that my project was moving along, I wanted to use it more. So I came here to make an entry. But lo, how could I get such a timestamp here? I could go to bash and copy and paste, but that's no fun. What would be more fun is if I had a way to run arbitrary query commands and insert their values here simply.
+
+Future: I made a button which opened a popover dialog. In that dialog, one could type a query, and get the result, and then either copy it to a clipboard or automatically insert it into the text where you were previously editing.
+
+Usually I avoided popovers in my work, but this seemed appropriate since it was a transient interaction which relied on the context of the outer interaction. That is, the dialog was a short interaction (inserting a query, getting the result) which supported the larger interaction (editing the page) and relied on the context of that larger interaction (placing the result of the query at the specific spot of the cursor).
+
+Future: This dialog also set the groundwork for other such utilities, like one I'd been aiming at for a while, inserting a link quickly by searching the titles and contents of all the entries.
+
 ### Sat Aug 30 01:32:37 PM PDT 2025
 
 A while back in this project (Fri Aug 15 entry), I installed a system for tracking the category of the source of parameters. That is, I required each parameter value to have a source string set. That source could be "derived" if it was something the server added based on other configuration, or "query param" if it was part of the user's original query.
@@ -14,7 +24,7 @@ I never thought this system would leak into external callers. They could provide
 
 The problem was that the structure was ambiguous around nested values. Sometimes it was worthwhile for a nested value to be structured as a "source & value". But other times that made no sense at all.
 
-This lack of sense became apparent when I started making my JavaScript based query language. JavaScript functions can return arbitrarily complex objects, and other functions can take arbitrarily complex objects as parameters. If I kept doing this transparent transformation into my complex structure, I'd need to also give a way for users to transparently use those values, and I couldn't think of any nice way to allow transparent use of my complex structure and any random object at the same time. 
+This lack of sense became apparent when I started making my JavaScript based query language. JavaScript functions can return arbitrarily complex objects, and other functions can take arbitrarily complex objects as parameters. If I kept doing this transparent transformation into my complex structure, I'd need to also give a way for users to transparently use those values, and I couldn't think of any nice way to allow transparent use of my complex structure and any random object at the same time.
 
 Whew that was all a mouthful. It felt good to talk about a system a bit before I ripped it out, like mourning a choice as if it had a life.
 
