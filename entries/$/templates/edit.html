@@ -31,7 +31,7 @@
     </style>
     <h1>
       Editing
-      <keep-if truthy="parameters.contentParameters.contentPath">
+      <keep-if truthy="parameters.contentParameters?.contentPath">
         <replace-with
           a
           x-href="parameters.contentParameters.contentPath"
@@ -39,17 +39,17 @@
           >[filename] :-/</replace-with
         >
       </keep-if>
-      <drop-if truthy="parameters.contentParameters.contentPath">
+      <drop-if truthy="parameters.contentParameters?.contentPath">
         (Template)
       </drop-if>
     </h1>
-    <drop-if truthy="parameters.contentParameters.contentPath">
+    <drop-if truthy="parameters.contentParameters?.contentPath">
       You are viewing the edit page directly. Maybe you meant to
       <a href="?edit">edit this page</a>
       (edit the edit page)? Or if you wanted to edit another page, go to that
       page and add <code>?edit</code> to the end of the URL.
     </drop-if>
-    <keep-if truthy="parameters.contentParameters.contentPath">
+    <keep-if truthy="parameters.contentParameters?.contentPath">
       <form method="POST">
         <!-- prettier-ignore -->
         <textarea name="content" spellcheck="false"><query-content q="render(parameters.contentParameters.contentPath,parameters.contentParameters)">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea

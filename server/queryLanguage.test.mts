@@ -154,7 +154,7 @@ test("pString() can get a deeper parameter", o, async () => {
 });
 
 test(
-    "pString() with a non-existent parameter returns empty string",
+    "pString() with a non-existent parameter returns undefined",
     o,
     async () => {
         const topLevelParameters = setEachParameterWithSource(
@@ -166,7 +166,7 @@ test(
             parameters: topLevelParameters,
             topLevelParameters,
         });
-        assert.equal(result, "");
+        assert.equal(result, undefined);
     },
 );
 

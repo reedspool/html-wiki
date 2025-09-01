@@ -25,20 +25,6 @@ export const p: (...args: unknown[]) => Promise<unknown> = async (...args) => {
     return lastValue;
 };
 
-export const parameterProxy = (parameters: ParameterValue) =>
-    new Proxy(parameters, {
-        get(target: ParameterValue, prop: keyof ParameterValue) {
-            const value = target[prop];
-            if (!value) return "";
-            if (typeof value != "object") return value.toString();
-            // TODO: This whole proxy thing needs tobe reconsidered, this
-            // doesn't make any sense, but I'm focusing on stripping out the
-            // weird parameter shape now and I'll have to come back to this with
-            // more test cases
-            return parameterProxy(value as ParameterValue);
-        },
-    });
-
 export const siteProxy = ({
     baseDirectory,
 }: {
@@ -117,10 +103,9 @@ export const pString: (
     },
 ) => ReturnType<typeof p> = async (pArgList, params) => {
     const { parameters, topLevelParameters } = {
-        parameters: parameterProxy(params?.parameters ?? {}),
-        topLevelParameters: parameterProxy(params?.topLevelParameters ?? {}),
+        parameters: params?.parameters ?? {},
+        topLevelParameters: params?.topLevelParameters ?? {},
     };
-    // TODO: The concept of a parameterProxy doesn't work for my own internal stuff.
     const site = siteProxy({
         baseDirectory: params
             ? maybeStringParameterValue(

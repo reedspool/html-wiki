@@ -4,6 +4,10 @@
 
 Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
+### Mon Sep  1 12:41:41 AM PDT 2025
+
+I previously wrapped parameters in a proxy as I passed them into the query language. This turned out to be hard to make sensible. I stripped it out when it made a very confusing bug where `.reverse()` on an array parameter was a string, not a function. Facepalm.
+
 ### Sun Aug 31
 
 The format I had used in this logbook for timestamp titles up to now `Sat Aug 30 01:32:37 PM PDT 2025` came from the default output for the `date` command in bash on my machine. Now that my project was moving along, I wanted to use it more. So I came here to make an entry. But lo, how could I get such a timestamp here? I could go to bash and copy and paste, but that's no fun. What would be more fun is if I had a way to run arbitrary query commands and insert their values here simply.
