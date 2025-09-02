@@ -58,16 +58,32 @@
         new Promise((resolve) => setTimeout(resolve, millis));
       document.addEventListener("DOMContentLoaded", () => {
         document.body.addEventListener("click", async ({ target }) => {
-          if (target.tagName !== "BUTTON" || !target.hasAttribute("copy"))
-            return;
+          if (target.tagName !== "BUTTON") return;
+          const isCopyButton = target.hasAttribute("copy");
+          const isInsertButton = target.hasAttribute("insert");
+          if (isCopyButton && isInsertButton)
+            throw new Error(
+              "Buttons should only have copy or insert attributes",
+            );
+          if (!isCopyButton && !isInsertButton) return;
           try {
             target.setAttribute("disabled", "true");
             const text = target
               .closest("[copy-target-container]")
               .querySelector("[copy-target]").innerText;
-            await navigator.clipboard.writeText(text);
+            if (isCopyButton) {
+              await navigator.clipboard.writeText(text);
+            } else {
+              // Send message to parent frame
+              var event = new CustomEvent("insertText", { detail: { text } });
+              if (!window.parent)
+                throw new Error(
+                  "Can't insert without access to parent document ",
+                );
+              window.parent.document.dispatchEvent(event);
+            }
             const originalText = target.innerHTML;
-            target.innerHTML = "Copied!";
+            target.innerHTML = isCopyButton ? "Copied!" : "Inserted!";
             await wait(1750);
             target.innerHTML = originalText;
             target.removeAttribute("disabled");
@@ -110,7 +126,10 @@
           x-content="topLevelParameters.result,(p)=>JSON.stringify(p,null,2),(p)=>`<code
             copy-target>${p}</code>`"
         ></replace-with>
-        <button type="button" copy>Copy</button>
+        <div>
+          <button type="button" copy>Copy</button>
+          <button type="button" insert>Insert</button>
+        </div>
       </div>
       <keep-if truthy="Array.isArray(topLevelParameters.result)">
         <h2>List view</h2>
@@ -123,7 +142,10 @@
                   copy-target
                   x-content="parameters.currentListItem"
                 ></replace-with>
-                <button type="button" copy>Copy</button>
+                <div>
+                  <button type="button" copy>Copy</button>
+                  <button type="button" insert>Insert</button>
+                </div>
               </div>
             </li>
           </map-list>

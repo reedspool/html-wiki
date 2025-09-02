@@ -87,6 +87,23 @@
           </dialog>
         </div>
 
+        <script type="application/javascript">
+          document.addEventListener("DOMContentLoaded", () => {
+            const textarea = document.querySelector("textarea");
+            // This comes from iframes
+            window.document.addEventListener("insertText", (event) => {
+              const { text } = event.detail;
+              const selectionStart = textarea.selectionStart;
+              textarea.value =
+                textarea.value.slice(0, selectionStart) +
+                text +
+                textarea.value.slice(textarea.selectionEnd);
+              // Set selection start and end to the inserted
+              textarea.selectionStart = selectionStart;
+              textarea.selectionEnd = selectionStart + text.length;
+            });
+          });
+        </script>
         <!-- prettier-ignore -->
         <textarea name="content" spellcheck="false"><query-content q="render(parameters.contentParameters.contentPath,parameters.contentParameters)">Something went wrong :-/ the content you are attempting to edit should have apeared here</query-content></textarea
         >
