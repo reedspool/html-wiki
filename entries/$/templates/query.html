@@ -9,6 +9,35 @@
   </head>
 
   <body>
+    <keep-if truthy="topLevelParameters.dialog">
+      <link
+        rel="stylesheet"
+        href="/$/global.css"
+        type="text/css"
+        media="screen"
+      />
+
+      <style>
+        :root {
+          font-size: 14px;
+        }
+        body {
+          padding: var(--space-half);
+          box-sizing: border-box;
+        }
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+          margin-block: var(--space-half);
+          font-size: 1rem;
+          font-weight: bold;
+        }
+      </style>
+    </keep-if>
+
     <style>
       textarea {
         height: 3rem;
@@ -19,31 +48,47 @@
           background-color: var(--bg-lighter);
         }
       }
+
+      li:not(:last-child) {
+        margin-bottom: var(--space-half);
+      }
     </style>
-    <script>
+    <script type="application/javascript">
       const wait = (millis) =>
         new Promise((resolve) => setTimeout(resolve, millis));
-
-      document.body.addEventListener("click", async ({ target }) => {
-        if (target.tagName !== "BUTTON" || !target.hasAttribute("copy")) return;
-        try {
-          target.setAttribute("disabled", "true");
-          const text = target
-            .closest("[copy-target-container]")
-            .querySelector("[copy-target]").innerText;
-          await navigator.clipboard.writeText(text);
-          const originalText = target.innerHTML;
-          target.innerHTML = "Copied!";
-          await wait(1750);
-          target.innerHTML = originalText;
-          target.removeAttribute("disabled");
-        } catch (error) {
-          console.error("Error copying", error);
-          target.innerHTML = "Error :-/";
-        }
+      document.addEventListener("DOMContentLoaded", () => {
+        document.body.addEventListener("click", async ({ target }) => {
+          if (target.tagName !== "BUTTON" || !target.hasAttribute("copy"))
+            return;
+          try {
+            target.setAttribute("disabled", "true");
+            const text = target
+              .closest("[copy-target-container]")
+              .querySelector("[copy-target]").innerText;
+            await navigator.clipboard.writeText(text);
+            const originalText = target.innerHTML;
+            target.innerHTML = "Copied!";
+            await wait(1750);
+            target.innerHTML = originalText;
+            target.removeAttribute("disabled");
+          } catch (error) {
+            console.error("Error copying", error);
+            target.innerHTML = "Error :-/";
+          }
+        });
       });
     </script>
     <form method="GET">
+      <keep-if truthy="topLevelParameters.dialog">
+        <input type="hidden" name="select" value="body" />
+        <input type="hidden" name="dialog" value="dialog" />
+        <replace-with
+          input
+          type="hidden"
+          name="contentPath"
+          x-value="parameters.contentPath"
+        />
+      </keep-if>
       <replace-with
         textarea
         autofocus
@@ -56,30 +101,37 @@
         >Go</replace-with
       >
     </form>
-    <set- result="query(topLevelParameters.query)"> </set->
-    <h2>Complete result</h2>
-    <div copy-target-container>
-      <replace-with
-        pre
-        x-content="topLevelParameters.result,(p)=>JSON.stringify(p,null,2),(p)=>`<code
-        copy-target>${p}</code>`"
-      ></replace-with>
-      <button type="button" copy>Copy</button>
-    </div>
-    <keep-if truthy="Array.isArray(topLevelParameters.result)">
-      <h2>List view</h2>
-      <ul>
-        <map-list q="topLevelParameters.result" allow-one>
-          <li copy-target-container>
-            <replace-with
-              span
-              copy-target
-              x-content="parameters.currentListItem"
-            ></replace-with>
-            <button type="button" copy>Copy</button>
-          </li>
-        </map-list>
-      </ul>
+    <keep-if truthy="topLevelParameters.query!==undefined">
+      <set- result="query(topLevelParameters.query)"> </set->
+      <h2>Complete result</h2>
+      <div copy-target-container>
+        <replace-with
+          pre
+          x-content="topLevelParameters.result,(p)=>JSON.stringify(p,null,2),(p)=>`<code
+            copy-target>${p}</code>`"
+        ></replace-with>
+        <button type="button" copy>Copy</button>
+      </div>
+      <keep-if truthy="Array.isArray(topLevelParameters.result)">
+        <h2>List view</h2>
+        <ul>
+          <map-list q="topLevelParameters.result" allow-one>
+            <li copy-target-container>
+              <div class="flex-row justify-between">
+                <replace-with
+                  span
+                  copy-target
+                  x-content="parameters.currentListItem"
+                ></replace-with>
+                <button type="button" copy>Copy</button>
+              </div>
+            </li>
+          </map-list>
+        </ul>
+      </keep-if>
     </keep-if>
+    <drop-if truthy="topLevelParameters.query!==undefined">
+      <p>Type a query and hit "Go" to see the results here</p>
+    </drop-if>
   </body>
 </html>

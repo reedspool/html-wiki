@@ -13,6 +13,7 @@
     --space-eigth: calc(var(--space) * 0.125);
     --fancy: monospace;
     --prose: "Times New Roman";
+    font-size: 20px;
 }
 
 html,
@@ -24,16 +25,7 @@ body {
     color: var(--fg);
     font-family: var(--prose);
     line-height: 1.4;
-    font-size: 20px;
     scrollbar-color: var(--fg-lighter) var(--bg-darker);
-}
-
-body {
-    height: fit-content; /* Body height affects sticky header behavior */
-    min-height: 100vh;
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    width: 100%;
 }
 
 header,
@@ -220,4 +212,11 @@ button {
 
 .higher {
     z-index: 1;
+}
+
+.flex-row {
+    display: flex;
+}
+.justify-between {
+    justify-content: space-between;
 }
