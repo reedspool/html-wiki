@@ -13,6 +13,7 @@
     --space-eigth: calc(var(--space) * 0.125);
     --fancy: monospace;
     --prose: "Times New Roman";
+
     font-size: 20px;
 }
 
@@ -26,6 +27,20 @@ body {
     font-family: var(--prose);
     line-height: 1.4;
     scrollbar-color: var(--fg-lighter) var(--bg-darker);
+}
+
+ul {
+    list-style: circle;
+    padding-inline-start: 0;
+    list-style-position: inside;
+
+    li:not(:last-child) {
+        margin-bottom: var(--space-quarter);
+    }
+
+    ::marker {
+        font-size: 0.8em;
+    }
 }
 
 header,
@@ -96,6 +111,10 @@ a {
         font-size: 0.8em;
         padding-block-end: 0.1em;
         vertical-align: text-top;
+    }
+
+    &[target="_parent"]::after {
+        content: " 🡙";
     }
 
     &[logo] {
@@ -217,6 +236,7 @@ button {
 .flex-row {
     display: flex;
 }
+
 .justify-between {
     justify-content: space-between;
 }

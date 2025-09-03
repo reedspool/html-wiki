@@ -339,27 +339,29 @@ export const maybeRecordParameterValue = (
     return parameter;
 };
 
-export const getMeta = async ({
+export const getWithTemplateApplied = async ({
     contentPath,
     baseDirectory,
 }: {
     contentPath: string;
     baseDirectory: string;
 }) => {
-    if (!/\.html$/.test(contentPath)) return {};
     const fileContents = await readFile({
         baseDirectory,
         contentPath,
     });
+    if (!/\.html$/.test(contentPath)) return { originalContent: fileContents };
     try {
-        return (
-            await applyTemplating({
-                content: fileContents,
-                parameters: {},
-                topLevelParameters: {},
-                stopAtSelector: "body",
-            })
-        ).meta;
+        const result = await applyTemplating({
+            content: fileContents,
+            parameters: {},
+            topLevelParameters: {},
+            stopAtSelector: "body",
+        });
+        return {
+            ...result,
+            originalContent: fileContents,
+        };
     } catch (error) {
         log(fileContents);
         throw new Error(
@@ -378,12 +380,14 @@ export const listNonDirectoryFiles = async ({
         allDirents
             .filter(({ type }) => type === "file")
             .map(async (dirent) => {
+                const result = await getWithTemplateApplied({
+                    contentPath: dirent.contentPath,
+                    baseDirectory,
+                });
                 return {
                     ...dirent,
-                    meta: await getMeta({
-                        contentPath: dirent.contentPath,
-                        baseDirectory,
-                    }),
+                    meta: "meta" in result ? result.meta : {},
+                    originalContent: result.originalContent,
                 };
             }),
     );

@@ -2,12 +2,7 @@ import { type Node, NodeType, HTMLElement } from "node-html-parser";
 import { parse as parseHtml } from "node-html-parser";
 import { QueryError } from "./error.mts";
 import { pString } from "./queryLanguage.mts";
-import {
-    type ParameterValue,
-    setEachParameterWithSource,
-    setParameterChildrenWithSource,
-    setParameterWithSource,
-} from "./engine.mts";
+import { type ParameterValue, setParameterWithSource } from "./engine.mts";
 import debug from "debug";
 const log = debug("server:dom");
 export type Meta = Record<string, string | string[]>;
@@ -194,7 +189,11 @@ export const applyTemplating = async (
                             current,
                             "query param",
                         );
-                        for (const childElement of element.children.reverse()) {
+                        // Even though we're going to place everything in
+                        // reverse order (with .after()), start in-order for
+                        // imperative templating logic like `set-`
+                        const toPlace = [];
+                        for (const childElement of element.children) {
                             // This needs to be a clone for two reasons.
                             // First it needs to be detached from the parent
                             // so that it doesn't continue to try to
@@ -215,8 +214,10 @@ export const applyTemplating = async (
                                 parameters: parameters,
                                 topLevelParameters,
                             });
-                            element.after(content);
+                            toPlace.push(content);
                         }
+
+                        element.after(...toPlace);
                     }
                     element.remove();
                 }

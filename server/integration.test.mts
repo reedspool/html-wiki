@@ -264,7 +264,7 @@ test(
         );
 
         // The markdown has been transformed!
-        assert.match($1("h1").innerHTML, /Test file/);
+        assert.match($1("h1").innerHTML, /Markdown File Title/);
         assert.match($1("h2").innerHTML, /Second heading/);
 
         const anchors = $("main a");
@@ -300,7 +300,7 @@ test(
         );
 
         // The markdown has not been transformed!
-        assert.match(responseText, /# Test file/);
+        assert.match(responseText, /# Markdown File Title/);
         assert.match(responseText, /## Second heading/);
         assert.equal($1("h1"), null);
         assert.equal($1("h2"), null);
@@ -323,7 +323,7 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
 
     assert.match($1("h1").innerHTML, /Edit/);
     // Markdown appears within the text area
-    assert.match($1("textarea").innerHTML, /# Test file/);
+    assert.match($1("textarea").innerHTML, /# Markdown File Title/);
     assert.match($1("textarea").innerHTML, /## Second heading/);
     // HTML doesn't appear within the text area
     assert.doesNotMatch($1("textarea").innerHTML, /<!doctype/);

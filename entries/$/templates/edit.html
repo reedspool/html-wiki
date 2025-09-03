@@ -39,10 +39,12 @@
 
         background-color: var(--bg);
         box-shadow: 0px 0px 12px -1px rgba(0, 0, 0, 0.48);
-      }
-      iframe {
-        border: none;
-        display: block; /* maybe this should be called a bframe, amiright? */
+
+        iframe {
+          border: none;
+          display: block; /* maybe this should be called a bframe, amiright? */
+          height: 10rem;
+        }
       }
     </style>
     <h1>
@@ -59,6 +61,17 @@
         (Template)
       </drop-if>
     </h1>
+    <script>
+      document.addEventListener("click", ({ target }) => {
+        const button = target.closest("button");
+        if (!button || !button.hasAttribute("toggle-dialog-selector")) return;
+        const selector = button.getAttribute("toggle-dialog-selector");
+        const dialog = document.querySelector(selector);
+        const wasOpen = dialog.open;
+        document.querySelectorAll("dialog").forEach((dialog) => dialog.close());
+        if (!wasOpen) dialog.show();
+      });
+    </script>
     <drop-if truthy="parameters.contentParameters?.contentPath">
       You are viewing the edit page directly. Maybe you meant to
       <a href="?edit">edit this page</a>
@@ -69,25 +82,38 @@
       <form method="POST">
         <div>
           Toolbox
-
           <button
             type="button"
             title="Show Query Playground"
-            onclick="{const d=document.querySelector('[query-playground]');d.open ? d.close() : d.show()}"
+            toggle-dialog-selector="[query-playground]"
           >
-            ?q=
+            <code> ?q= </code>
           </button>
           <dialog query-playground closedby="none">
             <iframe
               title="Query Playground Widget"
               loading="lazy"
-              style="height: 10rem"
-              src="/?contentPath=/$/templates/query.html&select=body&dialog"
+              src="/?contentPath=/$/templates/query.html&dialog"
+            ></iframe>
+          </dialog>
+
+          <button
+            type="button"
+            title="Show Search and Link widget"
+            toggle-dialog-selector="[search-and-link]"
+          >
+            <code> []() </code>
+          </button>
+          <dialog search-and-link closedby="none">
+            <iframe
+              title="Query Playground Widget"
+              loading="lazy"
+              src="/?contentPath=/$/actions/search-and-link.html&dialog"
             ></iframe>
           </dialog>
         </div>
 
-        <script type="application/javascript">
+        <script>
           document.addEventListener("DOMContentLoaded", () => {
             const textarea = document.querySelector("textarea");
             // This comes from iframes

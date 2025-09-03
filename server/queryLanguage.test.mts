@@ -208,6 +208,119 @@ test("site.allFiles with no base directory is an error", o, async () => {
     );
 });
 
+test("site.search(<exact title>) gets that page", o, async () => {
+    const topLevelParameters = setEachParameterWithSource(
+        {},
+        { baseDirectory },
+        "query param",
+    );
+    const result = await pString("site.search('HTML Wiki')", {
+        parameters: topLevelParameters,
+        topLevelParameters,
+    });
+    assert.ok(Array.isArray(result));
+    assert.ok(result.length > 0);
+    const index = result.find((file) => file.contentPath === "/index.html");
+    assert.ok(index);
+    assert.equal(index.name, "index.html");
+    assert.equal(index.contentPath, "/index.html");
+    assert.equal(index.meta.title, "HTML Wiki Homepage");
+    const edit = result.find((file) => file.contentPath.includes("/edit.html"));
+    assert.ok(!edit);
+});
+
+test("site.search(<fuzzy>) gets that page", o, async () => {
+    const topLevelParameters = setEachParameterWithSource(
+        {},
+        { baseDirectory },
+        "query param",
+    );
+    const result = await pString("site.search('ht wi')", {
+        parameters: topLevelParameters,
+        topLevelParameters,
+    });
+    assert.ok(Array.isArray(result));
+    assert.ok(result.length > 0);
+    const index = result.find((file) => file.contentPath === "/index.html");
+    assert.ok(index);
+    assert.equal(index.name, "index.html");
+    assert.equal(index.contentPath, "/index.html");
+    assert.equal(index.meta.title, "HTML Wiki Homepage");
+    const edit = result.find((file) => file.contentPath.includes("/edit.html"));
+    assert.ok(!edit);
+});
+
+test("site.search(<anything>) searches body of pages", o, async () => {
+    const topLevelParameters = setEachParameterWithSource(
+        {},
+        { baseDirectory },
+        "query param",
+    );
+    const result = await pString("site.search('home page')", {
+        parameters: topLevelParameters,
+        topLevelParameters,
+    });
+    assert.ok(Array.isArray(result));
+    assert.ok(result.length > 0);
+    const index = result.find((file) => file.contentPath === "/index.html");
+    assert.equal(index.contentPath, "/index.html");
+    const edit = result.find((file) => file.contentPath.includes("/edit.html"));
+    // TODO: I'm not sure why this comes in there, but it does
+    // Honestly, this Fuse fuzzy search is way overboard for what I wanted.
+    // I really want fuzzy only for space-separated tokens not for every character
+    assert.ok(edit);
+});
+
+test("site.search(<anything>) gets titles of Markdown pages", o, async () => {
+    const topLevelParameters = setEachParameterWithSource(
+        {},
+        { baseDirectory },
+        "query param",
+    );
+    const result = await pString("site.search('Markdown File Title')", {
+        parameters: topLevelParameters,
+        topLevelParameters,
+    });
+    assert.ok(Array.isArray(result));
+    assert.ok(result.length > 0);
+    const testMarkdownFile = result.find(
+        (file) => file.contentPath === "/$/test/fixtures/test.md",
+    );
+    assert.ok(testMarkdownFile);
+    assert.equal(testMarkdownFile.name, "test.md");
+    assert.equal(testMarkdownFile.contentPath, "/$/test/fixtures/test.md");
+    // assert.equal(testMarkdownFile.meta.title, "Markdown File Title");
+    const index = result.find((file) => file.contentPath === "/index.html");
+    assert.ok(!index);
+    const edit = result.find((file) => file.contentPath.includes("/edit.html"));
+    assert.ok(!edit);
+});
+
+test("site.search(<anything>) gets contents of Markdown pages", o, async () => {
+    const topLevelParameters = setEachParameterWithSource(
+        {},
+        { baseDirectory },
+        "query param",
+    );
+    const result = await pString("site.search('simple markdown file')", {
+        parameters: topLevelParameters,
+        topLevelParameters,
+    });
+    assert.ok(Array.isArray(result));
+    assert.ok(result.length > 0);
+    const testMarkdownFile = result.find(
+        (file) => file.contentPath === "/$/test/fixtures/test.md",
+    );
+    assert.ok(testMarkdownFile);
+    assert.equal(testMarkdownFile.name, "test.md");
+    assert.equal(testMarkdownFile.contentPath, "/$/test/fixtures/test.md");
+    // assert.equal(testMarkdownFile.meta.title, "Markdown File Title");
+    const index = result.find((file) => file.contentPath === "/index.html");
+    assert.ok(!index);
+    const edit = result.find((file) => file.contentPath.includes("/edit.html"));
+    assert.ok(!edit);
+});
+
 test("render(parameters.contentPath) renders a page", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},

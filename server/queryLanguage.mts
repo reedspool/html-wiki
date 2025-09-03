@@ -1,4 +1,5 @@
 import { Temporal } from "temporal-polyfill";
+import Fuse from "fuse.js";
 import { readFile } from "./filesystem.mts";
 import {
     listNonDirectoryFiles,
@@ -43,6 +44,36 @@ export const siteProxy = ({
                         return listNonDirectoryFiles({
                             baseDirectory,
                         });
+                    case "search":
+                        return async (query: string) => {
+                            const list = await listNonDirectoryFiles({
+                                baseDirectory,
+                            });
+                            // TODO: Probably want to cache this when we have an
+                            // active cache for the content of all files
+                            const fuse = new Fuse(list, {
+                                isCaseSensitive: false,
+                                // includeScore: false,
+                                // ignoreDiacritics: false,
+                                // shouldSort: true,
+                                // includeMatches: false,
+                                findAllMatches: true,
+                                minMatchCharLength: 3,
+                                // location: 0,
+                                // threshold: 0.6,
+                                // distance: 100,
+                                useExtendedSearch: false,
+                                ignoreLocation: false,
+                                ignoreFieldNorm: true,
+                                // fieldNormWeight: 1,
+                                keys: [
+                                    "contentPath",
+                                    "originalContent",
+                                    "meta.title",
+                                ],
+                            });
+                            return fuse.search(query).map(({ item }) => item);
+                        };
                 }
             },
         },

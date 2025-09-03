@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Search and Link</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+
+  <body>
+    <keep-if truthy="topLevelParameters.dialog">
+      <link
+        rel="stylesheet"
+        href="/$/global.css"
+        type="text/css"
+        media="screen"
+      />
+
+      <style>
+        :root {
+          font-size: 14px;
+        }
+        body {
+          padding: var(--space-half);
+          box-sizing: border-box;
+        }
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+          margin-block: var(--space-half);
+          font-size: 1rem;
+          font-weight: bold;
+        }
+      </style>
+    </keep-if>
+
+    <style>
+      textarea {
+        height: 3rem;
+      }
+
+      [copy-target-container]:has([copy]:hover) {
+        [copy-target] {
+          background-color: var(--bg-lighter);
+        }
+      }
+
+      li:not(:last-child) {
+        margin-bottom: var(--space-half);
+      }
+
+      ul {
+        list-style: none;
+      }
+    </style>
+    <script>
+      const wait = (millis) =>
+        new Promise((resolve) => setTimeout(resolve, millis));
+      document.addEventListener("DOMContentLoaded", () => {
+        document.body.addEventListener("click", async ({ target }) => {
+          const button = target.closest("button");
+          if (!button) return;
+          const isCopyButton = button.hasAttribute("copy");
+          const isInsertButton = button.hasAttribute("insert");
+          if (isCopyButton && isInsertButton)
+            throw new Error(
+              "Buttons should have only one of copy or insert attributes",
+            );
+          if (!isCopyButton && !isInsertButton) return;
+          const text = button.getAttribute(isCopyButton ? "copy" : "insert");
+          try {
+            button.setAttribute("disabled", "true");
+            if (isCopyButton) {
+              await navigator.clipboard.writeText(text);
+            } else {
+              // Send message to parent frame
+              var event = new CustomEvent("insertText", { detail: { text } });
+              if (!window.parent)
+                throw new Error(
+                  "Can't insert without access to parent document ",
+                );
+              window.parent.document.dispatchEvent(event);
+            }
+            const originalText = button.innerHTML;
+            button.innerHTML = isCopyButton ? "Copied!" : "Inserted!";
+            await wait(1750);
+            button.innerHTML = originalText;
+            button.removeAttribute("disabled");
+          } catch (error) {
+            console.error("Error copying", error);
+            button.innerHTML = "Error :-/";
+          }
+        });
+      });
+    </script>
+    <form method="GET">
+      <keep-if truthy="topLevelParameters.dialog">
+        <input type="hidden" name="select" value="body" />
+        <input type="hidden" name="dialog" value="dialog" />
+        <replace-with
+          input
+          type="hidden"
+          name="contentPath"
+          x-value="parameters.contentPath"
+        />
+      </keep-if>
+      <replace-with
+        textarea
+        autofocus
+        name="query"
+        x-content="or(topLevelParameters.query,'')"
+        placeholder="Search here"
+      >
+      </replace-with>
+      <replace-with button type="submit" x-formaction="parameters.contentPath"
+        >Go</replace-with
+      >
+    </form>
+    <keep-if truthy="topLevelParameters.query!==undefined">
+      <set- result="site.search(topLevelParameters.query)"> </set->
+      <h2>Results</h2>
+      <ul>
+        <map-list q="topLevelParameters.result" allow-one>
+          <set- ipath="parameters.currentListItem.contentPath"> </set->
+          <set-
+            ititle="or(parameters.currentListItem.meta.title,parameters.currentListItem.name)"
+          >
+          </set->
+          <set- iname="parameters.currentListItem.name"> </set->
+          <li copy-target-container>
+            <div class="flex-row justify-between">
+              <replace-with
+                a
+                copy-target
+                x-href="topLevelParameters.ipath"
+                x-title="topLevelParameters.iname"
+                x-content="topLevelParameters.ititle"
+                target="_parent"
+              ></replace-with>
+              <div>
+                <div>
+                  Copy
+                  <replace-with
+                    button
+                    type="button"
+                    x-copy='`<a href="${topLevelParameters.ipath}" title="${topLevelParameters.ititle}">${topLevelParameters.iname}</a>`'
+                    title="Copy HTML link"
+                  >
+                    <code>&lt;a&gt;</code>
+                  </replace-with>
+                  <replace-with
+                    button
+                    type="button"
+                    x-copy='`[${topLevelParameters.ititle}](${topLevelParameters.ipath} "${topLevelParameters.iname}")`'
+                    title="Copy Markdown link"
+                  >
+                    <code>[]()</code>
+                  </replace-with>
+                  <replace-with
+                    button
+                    type="button"
+                    x-copy="topLevelParameters.ipath"
+                    title="Copy path"
+                  >
+                    Path
+                  </replace-with>
+                </div>
+                <keep-if truthy="topLevelParameters.dialog">
+                  <div>
+                    Insert
+                    <replace-with
+                      button
+                      type="button"
+                      x-insert='`<a href="${topLevelParameters.ipath}" title="${topLevelParameters.ititle}">${topLevelParameters.iname}</a>`'
+                      title="Insert HTML link"
+                    >
+                      <code>&lt;a&gt;</code>
+                    </replace-with>
+                    <replace-with
+                      button
+                      type="button"
+                      x-insert='`[${topLevelParameters.ititle}](${topLevelParameters.ipath} "${topLevelParameters.iname}")`'
+                      title="Insert Markdown link"
+                    >
+                      <code>[]()</code>
+                    </replace-with>
+                    <replace-with
+                      button
+                      type="button"
+                      x-insert="topLevelParameters.ipath"
+                      title="Insert path"
+                    >
+                      Path
+                    </replace-with>
+                  </div>
+                </keep-if>
+              </div>
+            </div>
+          </li>
+        </map-list>
+      </ul>
+    </keep-if>
+    <drop-if truthy="topLevelParameters.query!==undefined">
+      <p>Type a query and hit "Go" to see the results here</p>
+    </drop-if>
+  </body>
+</html>

@@ -5,6 +5,7 @@
   "description": "A wiki with data stored as HTML",
   "scripts": {
     "build": "DEBUG=* node server/cli.mts generate -i entries -o ./build",
+    "fix:css": "stylelint --fix entries/$/global.css",
     "start": "DEBUG=* npm run start:server",
     "start:server": "node server/cli.mts server --port 3001 -i entries",
     "test": "DEBUG=* node --test",
@@ -25,6 +26,7 @@
     "debug": "^4.4.1",
     "express": "^5.1.0",
     "express-ws": "^5.0.2",
+    "fuse.js": "^7.1.0",
     "mime-types": "^3.0.1",
     "node-html-parser": "^7.0.1",
     "temporal-polyfill": "^0.3.0"
