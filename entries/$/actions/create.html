@@ -73,7 +73,7 @@
           placeholder="posts/New Page"
         ></replace-with>
       </keep-if>
-      <textarea name="content"> </textarea>
+      <replace-with textarea name="content" x-content="or(topLevelParameters.fileContent,'')"></replace-with>
 
       <button type="submit" formaction="/?create">Save</button>
     </form>
