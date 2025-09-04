@@ -317,6 +317,12 @@ export const createServer = ({
                     )) ||
                     "application/octet-stream",
             );
+            // TODO: This is silly because it's like the one instance where I'm not
+            // looking at the contentPath and instead looking only at the path.
+            // Suggests this is somethign the Engine should be doing instead?
+            if (req.path === "/404.html") {
+                res.status(404);
+            }
             res.send(result.content);
         } else if (command == "update" || command == "create") {
             res.redirect(
@@ -348,6 +354,10 @@ export const createServer = ({
         if (error instanceof QueryError) {
             if (error.status === 404) {
                 log(`404: Req ${req.path}, ${error.message}`);
+
+                res.status(error.status);
+                res.redirect(`/404.html?originalPath=${req.path}`);
+                return;
             } else {
                 log(`QueryError on ${req.path}:`, error);
             }
@@ -363,13 +373,19 @@ export const createServer = ({
 
     app.use(function (req, res) {
         res.status(404);
-        res.write(
-            `Couldn't find a file named ${escapeHtml(
-                decodeURIComponent(req.path).slice(1), // Remove leading slash
-            )}`,
-        );
-        res.end();
-        return;
+        // If the path is already the 404 page, then don't redirect as that would be infinite
+        if (req.path === "/404.html") {
+            res.write(
+                `Couldn't find a file named ${escapeHtml(
+                    decodeURIComponent(req.path).slice(1), // Remove leading slash
+                )}`,
+            );
+            res.end();
+            return;
+        }
+
+        // Otherwise, redirect to the 404 page but given this
+        res.redirect(`/404.html?originalPath=${req.path}`);
     });
 
     const listener = app.listen(port, (error) => {
