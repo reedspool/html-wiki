@@ -31,7 +31,7 @@ test("Render a file which doens't exist", { concurrency: true }, async () => {
         {
             command: "read",
             contentPath: "/This file certainly doesn't exist",
-            baseDirectory: configuredFiles.baseDirectory,
+            coreDirectory: configuredFiles.coreDirectory,
         },
         "query param",
     );
@@ -48,7 +48,7 @@ test("Render a file which doens't exist", { concurrency: true }, async () => {
             assert.match(error.toString(), /Couldn't find/);
             // The name of the file
             assert.match(error.toString(), /\/.*file.*doesn't.*exist/);
-            // Never show the baseDirectory path
+            // Never show the coreDirectory path
             assert.doesNotMatch(error.toString(), /entries/);
         }
 
@@ -70,7 +70,7 @@ test(
                 {
                     command: "read",
                     contentPath: "/index.html",
-                    baseDirectory: configuredFiles.baseDirectory,
+                    coreDirectory: configuredFiles.coreDirectory,
                 },
                 "query param",
             ),
@@ -82,7 +82,7 @@ test(
             content,
             parse(
                 await readFile({
-                    baseDirectory: configuredFiles.baseDirectory,
+                    coreDirectory: configuredFiles.coreDirectory,
                     contentPath: "/index.html",
                 }),
             ).toString(),
@@ -100,7 +100,7 @@ test(
             {
                 command: "read",
                 contentPath: configuredFiles.defaultPageTemplate,
-                baseDirectory: configuredFiles.baseDirectory,
+                coreDirectory: configuredFiles.coreDirectory,
             },
             "query param",
         );
@@ -144,7 +144,7 @@ test("Render sitemap", { concurrency: true }, async () => {
             {
                 command: "read",
                 contentPath: "/sitemap.html",
-                baseDirectory: configuredFiles.baseDirectory,
+                coreDirectory: configuredFiles.coreDirectory,
             },
             "query param",
         ),
@@ -162,12 +162,12 @@ test("Render sitemap", { concurrency: true }, async () => {
 });
 
 test(
-    "Generate list of files in baseDirectory",
+    "Generate list of files in coreDirectory",
     { concurrency: true },
     async () => {
         const allFiles = (
             await listNonDirectoryFiles({
-                baseDirectory: configuredFiles.baseDirectory,
+                coreDirectory: configuredFiles.coreDirectory,
             })
         ).map(({ contentPath }) => contentPath);
         [

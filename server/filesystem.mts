@@ -13,31 +13,31 @@ const log = debug("server:filesystem");
 
 export const filePath = ({
     contentPath,
-    baseDirectory,
+    coreDirectory,
 }: {
     contentPath: string;
-    baseDirectory: string;
+    coreDirectory: string;
 }) =>
     // TODO: Find a good library to establish this is a real valid path
-    `${baseDirectory}${contentPath}`;
+    `${coreDirectory}${contentPath}`;
 
 export const createFileAndDirectories = async ({
     contentPath,
-    baseDirectory,
+    coreDirectory,
     content,
 }: {
     contentPath: string;
-    baseDirectory: string;
+    coreDirectory: string;
     content: string;
 }) => {
     try {
         await mkdir(
-            filePath({ contentPath: dirname(contentPath), baseDirectory }),
+            filePath({ contentPath: dirname(contentPath), coreDirectory }),
             {
                 recursive: true,
             },
         );
-        const fd = await open(filePath({ contentPath, baseDirectory }), "wx");
+        const fd = await open(filePath({ contentPath, coreDirectory }), "wx");
         content = cleanContent({ content });
         await writeFile(fd, content);
         return content;
@@ -55,12 +55,12 @@ export const createFileAndDirectories = async ({
 
 export const readFile = async ({
     contentPath,
-    baseDirectory,
+    coreDirectory,
 }: {
     contentPath: string;
-    baseDirectory: string;
+    coreDirectory: string;
 }): Promise<string> => {
-    const path = filePath({ contentPath, baseDirectory });
+    const path = filePath({ contentPath, coreDirectory });
     try {
         const buffer = await fsReadFile(path);
         return buffer.toString();
@@ -81,15 +81,15 @@ export const readFile = async ({
 
 export const updateFile = async ({
     contentPath,
-    baseDirectory,
+    coreDirectory,
     content,
 }: {
     contentPath: string;
-    baseDirectory: string;
+    coreDirectory: string;
     content: string;
 }) => {
     try {
-        await open(filePath({ contentPath, baseDirectory }), "wx");
+        await open(filePath({ contentPath, coreDirectory }), "wx");
         throw new QueryError(
             404,
             `File ${contentPath} doesn't exist. Did you mean to create it?`,
@@ -102,14 +102,14 @@ export const updateFile = async ({
         ) {
             let fileToEditContents: string = await readFile({
                 contentPath,
-                baseDirectory,
+                coreDirectory,
             });
 
             log(`Logging contents of ${contentPath} before write:`);
             log(fileToEditContents);
 
             content = cleanContent({ content });
-            await writeFile(filePath({ contentPath, baseDirectory }), content);
+            await writeFile(filePath({ contentPath, coreDirectory }), content);
             return content;
         }
         throw error;
@@ -117,13 +117,13 @@ export const updateFile = async ({
 };
 export const removeFile = async ({
     contentPath,
-    baseDirectory,
+    coreDirectory,
 }: {
     contentPath: string;
-    baseDirectory: string;
+    coreDirectory: string;
 }) => {
     try {
-        await open(filePath({ contentPath, baseDirectory }), "wx");
+        await open(filePath({ contentPath, coreDirectory }), "wx");
         throw new QueryError(404, `File ${contentPath} doesn't exist`);
     } catch (error) {
         if (
@@ -131,7 +131,7 @@ export const removeFile = async ({
             "code" in error &&
             error.code === "EEXIST"
         ) {
-            rm(filePath({ contentPath, baseDirectory }));
+            rm(filePath({ contentPath, coreDirectory }));
             return;
         }
         throw error;
@@ -139,11 +139,11 @@ export const removeFile = async ({
 };
 
 export const listAllDirectoryContents = async ({
-    baseDirectory,
+    coreDirectory,
 }: {
-    baseDirectory: string;
+    coreDirectory: string;
 }) => {
-    const normalizedBaseDirectory = normalize(baseDirectory);
+    const normalizedBaseDirectory = normalize(coreDirectory);
     const all = await readdir(normalizedBaseDirectory, {
         recursive: true,
         withFileTypes: true,

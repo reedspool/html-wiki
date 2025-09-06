@@ -9,7 +9,7 @@ import { html } from "./utilities.mts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const baseDirectory = `${__dirname}/../entries`;
+const coreDirectory = `${__dirname}/../entries`;
 
 async function applyTemplatingAndParse(
     parameters: ParameterValue,

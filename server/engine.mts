@@ -32,11 +32,11 @@ export const Status = {
 } as const;
 export type Status = typeof Status;
 
-// "Path absolute URL string" (starting with slash), but still relative to baseDirectory
+// "Path absolute URL string" (starting with slash), but still relative to coreDirectory
 export type ContentPath = string;
 
 // Where to start looking for paths. Should have no final slash such that
-// if you concatenate `contentPath` and `baseDirectory` you get a valid
+// if you concatenate `contentPath` and `coreDirectory` you get a valid
 // file path on this file system.
 export type BaseDirectory = string;
 
@@ -51,7 +51,7 @@ export type ReadParameters = {
 };
 export type Request = {
     contentPath: ContentPath;
-    baseDirectory: BaseDirectory;
+    coreDirectory: BaseDirectory;
 } & (
     | {
           command: "create";
@@ -80,8 +80,8 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
 
     log("Engine executing parameters: %O", parameters);
     const validationIssues: Array<string> = [];
-    if (!parameters.baseDirectory) {
-        validationIssues.push("baseDirectory required");
+    if (!parameters.coreDirectory) {
+        validationIssues.push("coreDirectory required");
     }
     if (!parameters.contentPath) {
         validationIssues.push("contentPath required");
@@ -113,9 +113,9 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
                 return validationErrorResponse(validationIssues);
 
             await createFileAndDirectories({
-                baseDirectory: stringParameterValue(
+                coreDirectory: stringParameterValue(
                     parameters,
-                    "baseDirectory",
+                    "coreDirectory",
                 ),
                 contentPath: stringParameterValue(parameters, "contentPath"),
                 content: stringParameterValue(parameters, "content"),
@@ -135,9 +135,9 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
                     topLevelParameters: parameters,
                 });
             const fileContents = await readFile({
-                baseDirectory: stringParameterValue(
+                coreDirectory: stringParameterValue(
                     parameters,
-                    "baseDirectory",
+                    "coreDirectory",
                 ),
                 contentPath: stringParameterValue(parameters, "contentPath"),
             });
@@ -164,9 +164,9 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
             await updateFile({
-                baseDirectory: stringParameterValue(
+                coreDirectory: stringParameterValue(
                     parameters,
-                    "baseDirectory",
+                    "coreDirectory",
                 ),
                 contentPath: stringParameterValue(parameters, "contentPath"),
                 content: stringParameterValue(parameters, "content"),
@@ -180,9 +180,9 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
             await removeFile({
-                baseDirectory: stringParameterValue(
+                coreDirectory: stringParameterValue(
                     parameters,
-                    "baseDirectory",
+                    "coreDirectory",
                 ),
                 contentPath: stringParameterValue(parameters, "contentPath"),
             });
@@ -341,13 +341,13 @@ export const maybeRecordParameterValue = (
 
 export const getWithTemplateApplied = async ({
     contentPath,
-    baseDirectory,
+    coreDirectory,
 }: {
     contentPath: string;
-    baseDirectory: string;
+    coreDirectory: string;
 }) => {
     const fileContents = await readFile({
-        baseDirectory,
+        coreDirectory,
         contentPath,
     });
     if (!/\.html$/.test(contentPath)) return { originalContent: fileContents };
@@ -371,18 +371,18 @@ export const getWithTemplateApplied = async ({
 };
 
 export const listNonDirectoryFiles = async ({
-    baseDirectory,
+    coreDirectory,
 }: {
-    baseDirectory: string;
+    coreDirectory: string;
 }) => {
-    const allDirents = await listAllDirectoryContents({ baseDirectory });
+    const allDirents = await listAllDirectoryContents({ coreDirectory });
     return Promise.all(
         allDirents
             .filter(({ type }) => type === "file")
             .map(async (dirent) => {
                 const result = await getWithTemplateApplied({
                     contentPath: dirent.contentPath,
-                    baseDirectory,
+                    coreDirectory,
                 });
                 return {
                     ...dirent,

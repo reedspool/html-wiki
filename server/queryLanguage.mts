@@ -27,27 +27,27 @@ export const p: (...args: unknown[]) => Promise<unknown> = async (...args) => {
 };
 
 export const siteProxy = ({
-    baseDirectory,
+    coreDirectory,
 }: {
-    baseDirectory?: string | null;
+    coreDirectory?: string | null;
 }) =>
     new Proxy(
         {},
         {
             get(_target: unknown, prop: string) {
-                if (!baseDirectory)
+                if (!coreDirectory)
                     throw new Error(
-                        "Can't access `site` without `baseDirectory` parameter",
+                        "Can't access `site` without `coreDirectory` parameter",
                     );
                 switch (prop) {
                     case "allFiles":
                         return listNonDirectoryFiles({
-                            baseDirectory,
+                            coreDirectory,
                         });
                     case "search":
                         return async (query: string) => {
                             const list = await listNonDirectoryFiles({
-                                baseDirectory,
+                                coreDirectory,
                             });
                             // TODO: Probably want to cache this when we have an
                             // active cache for the content of all files
@@ -82,14 +82,14 @@ export const siteProxy = ({
 export const renderer =
     ({ topLevelParameters }: { topLevelParameters: ParameterValue }) =>
     async (contentPath: string, contentParameters?: ParameterValue) => {
-        const baseDirectory = maybeStringParameterValue(
+        const coreDirectory = maybeStringParameterValue(
             topLevelParameters,
-            "baseDirectory",
+            "coreDirectory",
         );
-        if (!baseDirectory) throw new Error("Required baseDirectory");
+        if (!coreDirectory) throw new Error("Required coreDirectory");
 
         const contentFileContents = await readFile({
-            baseDirectory,
+            coreDirectory,
             contentPath,
         });
 
@@ -138,10 +138,10 @@ export const pString: (
         topLevelParameters: params?.topLevelParameters ?? {},
     };
     const site = siteProxy({
-        baseDirectory: params
+        coreDirectory: params
             ? maybeStringParameterValue(
                   params.topLevelParameters,
-                  "baseDirectory",
+                  "coreDirectory",
               )
             : null,
     });

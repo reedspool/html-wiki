@@ -2,9 +2,9 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const baseDirectory = `${__dirname}/../entries`;
+const coreDirectory = `${__dirname}/../entries`;
 export const configuredFiles = {
-    baseDirectory,
+    coreDirectory,
     defaultPageTemplate: "/$/templates/global-page.html",
     rootIndexHtml: "/index.html",
     logbook: "/project/logbook.md",

@@ -49,7 +49,7 @@ program
             log(`Using default port ${port}`);
         }
         if (options.ignoreErrors) ignoreErrors();
-        server = createServer({ port, baseDirectory: options.inDirectory });
+        server = createServer({ port, coreDirectory: options.inDirectory });
     });
 
 program
@@ -66,7 +66,7 @@ program
         }
         const files = (
             await listNonDirectoryFiles({
-                baseDirectory: inDirectory,
+                coreDirectory: inDirectory,
             })
         ).map(({ contentPath }) => contentPath);
 
@@ -78,7 +78,7 @@ program
             setEachParameterWithSource(
                 readParameters,
                 {
-                    baseDirectory: inDirectory,
+                    coreDirectory: inDirectory,
                     contentPath: defaultPageTemplate,
                     command: "read",
                 },
@@ -109,7 +109,7 @@ program
             setEachParameterWithSource(
                 writeParameters,
                 {
-                    baseDirectory: outDirectory,
+                    coreDirectory: outDirectory,
                     contentPath: outputPath,
                     content: readResult.content,
                     command: "create",

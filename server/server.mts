@@ -31,10 +31,10 @@ const log = debug("server:server");
 
 export const createServer = ({
     port,
-    baseDirectory,
+    coreDirectory,
 }: {
     port: number;
-    baseDirectory: string;
+    coreDirectory: string;
 }) => {
     // Create an event emitter to handle cross-cutting communications
     const emitter = new EventEmitter();
@@ -143,8 +143,8 @@ export const createServer = ({
         // Set server configuration last so it's not overridden
         setParameterWithSource(
             parameters,
-            "baseDirectory",
-            baseDirectory,
+            "coreDirectory",
+            coreDirectory,
             "server configured",
         );
 
@@ -262,7 +262,7 @@ export const createServer = ({
         ) {
             log("Serving static file %s", pathToEntryFilename(req.path));
             const content = await readFile({
-                baseDirectory,
+                coreDirectory,
                 contentPath: pathToEntryFilename(req.path),
             });
             res.setHeader(

@@ -449,7 +449,7 @@ test(
         );
 
         const fileContents = await readFile(
-            `${configuredFiles.baseDirectory}${filename}`,
+            `${configuredFiles.coreDirectory}${filename}`,
         );
         assert.equal(fileContents.toString(), content);
 

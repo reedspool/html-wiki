@@ -15,7 +15,7 @@ import { configuredFiles } from "./configuration.mts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const baseDirectory = `${__dirname}/../entries`;
+const coreDirectory = `${__dirname}/../entries`;
 
 const o = { concurrency: true };
 test("p() with no parameters returns undefined", o, async () => {
@@ -174,7 +174,7 @@ test(
 test("site.allFiles gets all the files", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { baseDirectory },
+        { coreDirectory },
         "query param",
     );
     const result = await pString("site.allFiles", {
@@ -198,7 +198,7 @@ test("site.allFiles gets all the files", o, async () => {
 test("site.allFiles with no base directory is an error", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { baseDirectory: null },
+        { coreDirectory: null },
         "query param",
     );
     assert.rejects(() =>
@@ -212,7 +212,7 @@ test("site.allFiles with no base directory is an error", o, async () => {
 test("site.search(<exact title>) gets that page", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { baseDirectory },
+        { coreDirectory },
         "query param",
     );
     const result = await pString("site.search('HTML Wiki')", {
@@ -233,7 +233,7 @@ test("site.search(<exact title>) gets that page", o, async () => {
 test("site.search(<fuzzy>) gets that page", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { baseDirectory },
+        { coreDirectory },
         "query param",
     );
     const result = await pString("site.search('ht wi')", {
@@ -254,7 +254,7 @@ test("site.search(<fuzzy>) gets that page", o, async () => {
 test("site.search(<anything>) searches body of pages", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { baseDirectory },
+        { coreDirectory },
         "query param",
     );
     const result = await pString("site.search('home page')", {
@@ -275,7 +275,7 @@ test("site.search(<anything>) searches body of pages", o, async () => {
 test("site.search(<anything>) gets titles of Markdown pages", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { baseDirectory },
+        { coreDirectory },
         "query param",
     );
     const result = await pString("site.search('Markdown File Title')", {
@@ -303,7 +303,7 @@ test("site.search(<anything>) gets titles of Markdown pages", o, async () => {
 test("site.search(<anything>) gets contents of Markdown pages", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { baseDirectory },
+        { coreDirectory },
         "query param",
     );
     const result = await pString("site.search('simple markdown file')", {
@@ -331,7 +331,7 @@ test("site.search(<anything>) gets contents of Markdown pages", o, async () => {
 test("render(parameters.contentPath) renders a page", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { baseDirectory, contentPath: "/index.html" },
+        { coreDirectory, contentPath: "/index.html" },
         "query param",
     );
     const result = await pString("render(parameters.contentPath)", {
