@@ -12,6 +12,7 @@ import {
     setParameterWithSource,
 } from "./engine.mts";
 import debug from "debug";
+import { configuredFiles } from "./configuration.mts";
 const log = debug("cli:main");
 
 let server: ReturnType<typeof createServer>;
@@ -30,12 +31,20 @@ const program = new Command().description("HTML Wiki command line tool");
 program
     .command("server")
     .description("run web server")
-    .option("-i, --in-directory <string>", "where to read files", ".")
+    .option("-c, --core-directory <string>", "where to read core files", "")
+    .option("-u, --user-directory <string>", "where to read user files")
     .option("--port <number>")
     .option("--ignore-errors")
     .action((options) => {
         log({ options });
-        if (!options.inDirectory) {
+        if (!options.coreDirectory) {
+            options.coreDirectory = configuredFiles.coreDirectory;
+            log(
+                `No core directory given, using default ${options.coreDirectory}`,
+            );
+        }
+        if (!options.userDirectory) {
+            throw new Error("--user-directory option is required");
         }
         let port: number;
         if (process.env.PORT !== undefined) {
@@ -49,7 +58,11 @@ program
             log(`Using default port ${port}`);
         }
         if (options.ignoreErrors) ignoreErrors();
-        server = createServer({ port, coreDirectory: options.inDirectory });
+        server = createServer({
+            port,
+            coreDirectory: options.coreDirectory,
+            userDirectory: options.userDirectory,
+        });
     });
 
 program
@@ -71,15 +84,16 @@ program
         ).map(({ contentPath }) => contentPath);
 
         log(`Writing files to ${outDirectory}:`, "\n" + files.join("\n"));
-        const defaultPageTemplate = "/$/templates/global-page.html";
-        log(`Using default page template '${defaultPageTemplate}'`);
+        log(
+            `Using default page template '${configuredFiles.defaultPageTemplate}'`,
+        );
         files.forEach(async (contentPath) => {
             const readParameters: ParameterValue = {};
             setEachParameterWithSource(
                 readParameters,
                 {
                     coreDirectory: inDirectory,
-                    contentPath: defaultPageTemplate,
+                    contentPath: configuredFiles.defaultPageTemplate,
                     command: "read",
                 },
                 "query param",

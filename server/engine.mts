@@ -1,4 +1,4 @@
-import { applyTemplating } from "./dom.mts";
+import { applyTemplating, Meta } from "./dom.mts";
 import {
     createFileAndDirectories,
     listAllDirectoryContents,
@@ -134,20 +134,20 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
                     parameters: parameters,
                     topLevelParameters: parameters,
                 });
-            const fileContents = await readFile({
-                coreDirectory: stringParameterValue(
-                    parameters,
-                    "coreDirectory",
-                ),
+            const readResult = await readFile({
+                searchDirectories: [
+                    stringParameterValue(parameters, "userDirectory"),
+                    stringParameterValue(parameters, "coreDirectory"),
+                ],
                 contentPath: stringParameterValue(parameters, "contentPath"),
             });
             const content = (await getQueryValue("parameters.raw"))
                 ? (await getQueryValue("parameters.escape"))
-                    ? escapeHtml(fileContents)
-                    : fileContents
+                    ? escapeHtml(readResult.content)
+                    : readResult.content
                 : (
                       await applyTemplating({
-                          content: fileContents,
+                          content: readResult.content,
                           parameters: parameters,
                           topLevelParameters: parameters,
                       })
@@ -341,29 +341,29 @@ export const maybeRecordParameterValue = (
 
 export const getWithTemplateApplied = async ({
     contentPath,
-    coreDirectory,
+    searchDirectories,
 }: {
     contentPath: string;
-    coreDirectory: string;
+    searchDirectories: string[];
 }) => {
-    const fileContents = await readFile({
-        coreDirectory,
+    const readResults = await readFile({
+        searchDirectories,
         contentPath,
     });
-    if (!/\.html$/.test(contentPath)) return { originalContent: fileContents };
+    if (!/\.html$/.test(contentPath)) return { originalContent: readResults };
     try {
         const result = await applyTemplating({
-            content: fileContents,
+            content: readResults.content,
             parameters: {},
             topLevelParameters: {},
             stopAtSelector: "body",
         });
         return {
             ...result,
-            originalContent: fileContents,
+            originalContent: readResults,
         };
     } catch (error) {
-        log(fileContents);
+        log(readResults);
         throw new Error(
             `Couldn't apply templating for '${contentPath}': ${error}`,
         );
@@ -371,24 +371,36 @@ export const getWithTemplateApplied = async ({
 };
 
 export const listNonDirectoryFiles = async ({
-    coreDirectory,
+    searchDirectories,
 }: {
-    coreDirectory: string;
+    searchDirectories: [];
 }) => {
-    const allDirents = await listAllDirectoryContents({ coreDirectory });
+    const preResults =
+    const results: Array<{
+        meta: Meta,
+        originalContent:string,
+
+        name: string,
+        contentPath: string,
+        type: "file" | "directory"
+    }> = [];
+for (const directory in searchDirectories){     const allDirents = await listAllDirectoryContents({ directory });
     return Promise.all(
         allDirents
             .filter(({ type }) => type === "file")
-            .map(async (dirent) => {
-                const result = await getWithTemplateApplied({
+            .forEach(async (dirent) => {
+                const templateResults = await getWithTemplateApplied({
                     contentPath: dirent.contentPath,
-                    coreDirectory,
+                    searchDirectories,
                 });
-                return {
+                const result = {
                     ...dirent,
-                    meta: "meta" in result ? result.meta : {},
-                    originalContent: result.originalContent,
+                    meta: "meta" in templateResults ? templateResults.meta : {},
+                    originalContent: templateResults.originalContent,
                 };
+                results.push(result);
             }),
     );
+ }
+return results;
 };

@@ -13,13 +13,13 @@ const log = debug("server:filesystem");
 
 export const filePath = ({
     contentPath,
-    coreDirectory,
+    directory,
 }: {
     contentPath: string;
-    coreDirectory: string;
+    directory: string;
 }) =>
     // TODO: Find a good library to establish this is a real valid path
-    `${coreDirectory}${contentPath}`;
+    `${directory}${contentPath}`;
 
 export const createFileAndDirectories = async ({
     contentPath,
@@ -55,28 +55,31 @@ export const createFileAndDirectories = async ({
 
 export const readFile = async ({
     contentPath,
-    coreDirectory,
+    searchDirectories,
 }: {
     contentPath: string;
-    coreDirectory: string;
-}): Promise<string> => {
-    const path = filePath({ contentPath, coreDirectory });
-    try {
-        const buffer = await fsReadFile(path);
-        return buffer.toString();
-    } catch (error) {
-        if (error instanceof Error) {
-            if ("code" in error && error.code === "ENOENT") {
-                throw new QueryError(
-                    404,
-                    `Couldn't find a file named ${contentPath}`,
-                    error,
-                );
+    searchDirectories: string[];
+}): Promise<{ content: string; foundInDirectory: string }> => {
+    for (const directory of searchDirectories) {
+        const path = filePath({ contentPath, directory });
+        try {
+            const buffer = await fsReadFile(path);
+            return { content: buffer.toString(), foundInDirectory: directory };
+        } catch (error) {
+            if (error instanceof Error) {
+                if ("code" in error && error.code === "ENOENT") {
+                    continue;
+                }
             }
-        }
 
-        throw error;
+            throw error;
+        }
     }
+    throw new QueryError(
+        404,
+        `Couldn't find a file named ${contentPath}`,
+        null,
+    );
 };
 
 export const updateFile = async ({
@@ -139,11 +142,11 @@ export const removeFile = async ({
 };
 
 export const listAllDirectoryContents = async ({
-    coreDirectory,
+    directory,
 }: {
-    coreDirectory: string;
+    directory: string;
 }) => {
-    const normalizedBaseDirectory = normalize(coreDirectory);
+    const normalizedBaseDirectory = normalize(directory);
     const all = await readdir(normalizedBaseDirectory, {
         recursive: true,
         withFileTypes: true,
