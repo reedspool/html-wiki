@@ -332,7 +332,7 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
     // Save button should have a formaction without any special mode
     assert.match(
         responseText,
-        /<button\s+type="submit"\s+formaction="\/\$\/test\/fixtures\/test.md"/,
+        /<button\s+type="submit"\s+formaction="\/fixtures\/test.md"/,
     );
 
     await validateAssertAndReport(responseText, url);
@@ -399,7 +399,7 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
 });
 
 const tmpFileName = (extension: string = ".html") =>
-    `/$/test/tmp/tmpfile${Temporal.Now.plainDateTimeISO()}${extension}`;
+    `/tmp/tmpfile${Temporal.Now.plainDateTimeISO()}${extension}`;
 
 //TODO: Instead of doing all these things at once, could use node filesystem commands to set up and clean up. With separate tests, it would be easier to tell if one thing was failing or everything was failing, and I'd have setups for more indepth testing of certain cases.
 test(
@@ -449,7 +449,7 @@ test(
         );
 
         const fileContents = await readFile(
-            `${configuredFiles.coreDirectory}${filename}`,
+            `${configuredFiles.testDirectory}${filename}`,
         );
         assert.equal(fileContents.toString(), content);
 

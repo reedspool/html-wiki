@@ -4,10 +4,12 @@
   "version": "1.0.0",
   "description": "A wiki with data stored as HTML",
   "scripts": {
-    "build": "DEBUG=* node server/cli.mts generate -i entries -o ./build",
+    "build:documentation": "DEBUG=* node server/cli.mts generate --user-directory entries/documentation -o ./build",
+    "build:test": "DEBUG=* node server/cli.mts generate --user-directory entries/test -o ./build",
     "fix:css": "stylelint --fix entries/$/global.css",
-    "start": "DEBUG=* npm run start:server",
-    "start:server": "node server/cli.mts server --port 3001 -i entries",
+    "start": "DEBUG=* npm run start:server:documentation",
+    "start:server:documentation": "node server/cli.mts server --port 3001 -u entries/documentation",
+    "start:server:test": "node server/cli.mts server --port 3001 -u entries/test",
     "test": "DEBUG=* node --test",
     "test:watch": "cd server && node --test --watch"
   },

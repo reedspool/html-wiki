@@ -2,9 +2,10 @@ import { Temporal } from "temporal-polyfill";
 import Fuse from "fuse.js";
 import { readFile } from "./filesystem.mts";
 import {
-    listNonDirectoryFiles,
+    getContentsAndMetaOfAllFiles,
     maybeStringParameterValue,
     setEachParameterWithSource,
+    stringParameterValue,
     type ParameterValue,
 } from "./engine.mts";
 import debug from "debug";
@@ -27,27 +28,27 @@ export const p: (...args: unknown[]) => Promise<unknown> = async (...args) => {
 };
 
 export const siteProxy = ({
-    coreDirectory,
+    searchDirectories,
 }: {
-    coreDirectory?: string | null;
+    searchDirectories: string[];
 }) =>
     new Proxy(
         {},
         {
             get(_target: unknown, prop: string) {
-                if (!coreDirectory)
+                if (!searchDirectories)
                     throw new Error(
-                        "Can't access `site` without `coreDirectory` parameter",
+                        "Can't access `site` without `searchDirectories` parameter",
                     );
                 switch (prop) {
                     case "allFiles":
-                        return listNonDirectoryFiles({
-                            coreDirectory,
+                        return getContentsAndMetaOfAllFiles({
+                            searchDirectories,
                         });
                     case "search":
                         return async (query: string) => {
-                            const list = await listNonDirectoryFiles({
-                                coreDirectory,
+                            const list = await getContentsAndMetaOfAllFiles({
+                                searchDirectories,
                             });
                             // TODO: Probably want to cache this when we have an
                             // active cache for the content of all files
@@ -68,7 +69,7 @@ export const siteProxy = ({
                                 // fieldNormWeight: 1,
                                 keys: [
                                     "contentPath",
-                                    "originalContent",
+                                    "originalContent.content",
                                     "meta.title",
                                 ],
                             });
@@ -86,10 +87,19 @@ export const renderer =
             topLevelParameters,
             "coreDirectory",
         );
-        if (!coreDirectory) throw new Error("Required coreDirectory");
+        const userDirectory = maybeStringParameterValue(
+            topLevelParameters,
+            "userDirectory",
+        );
 
-        const contentFileContents = await readFile({
-            coreDirectory,
+        if (!userDirectory || !coreDirectory) {
+            throw new Error(
+                "`render` requires userDirectory and coreDirectory",
+            );
+        }
+
+        const contentFileReadResult = await readFile({
+            searchDirectories: [userDirectory, coreDirectory],
             contentPath,
         });
 
@@ -102,17 +112,17 @@ export const renderer =
         // concepts, even if they have to be mixed and matched
         if (contentParameters?.raw) {
             if (contentParameters.escape) {
-                return escapeHtml(contentFileContents);
+                return escapeHtml(contentFileReadResult.content);
             }
-            return contentFileContents;
+            return contentFileReadResult;
         }
         if (contentParameters?.renderMarkdown) {
             // TODO if this set contents instead of returning that would seem to enable template values in markdown
-            return renderMarkdown(contentFileContents);
+            return renderMarkdown(contentFileReadResult.content);
         }
         return (
             await applyTemplating({
-                content: contentFileContents,
+                content: contentFileReadResult.content,
                 parameters: setEachParameterWithSource(
                     {},
                     contentParameters ?? {},
@@ -128,23 +138,32 @@ export const and = (...args: unknown[]) => args.reduce((a, b) => a && b);
 
 export const pString: (
     pArgList: string,
-    params?: {
+    params: {
         parameters: ParameterValue;
         topLevelParameters: ParameterValue;
     },
-) => ReturnType<typeof p> = async (pArgList, params) => {
-    const { parameters, topLevelParameters } = {
-        parameters: params?.parameters ?? {},
-        topLevelParameters: params?.topLevelParameters ?? {},
-    };
-    const site = siteProxy({
-        coreDirectory: params
-            ? maybeStringParameterValue(
-                  params.topLevelParameters,
-                  "coreDirectory",
-              )
-            : null,
-    });
+) => ReturnType<typeof p> = async (
+    pArgList,
+    { topLevelParameters, parameters },
+) => {
+    const searchDirectories = [];
+
+    if (maybeStringParameterValue(topLevelParameters, "userDirectory")) {
+        searchDirectories.push(
+            stringParameterValue(topLevelParameters, "userDirectory"),
+        );
+    }
+    if (maybeStringParameterValue(topLevelParameters, "coreDirectory")) {
+        searchDirectories.push(
+            stringParameterValue(topLevelParameters, "coreDirectory"),
+        );
+    }
+    const site =
+        searchDirectories.length > 0
+            ? siteProxy({
+                  searchDirectories,
+              })
+            : null;
     const paramObject = {
         p,
         Temporal,
@@ -152,11 +171,12 @@ export const pString: (
         topLevelParameters,
         site,
         render: renderer({
-            topLevelParameters: params?.topLevelParameters ?? {},
+            topLevelParameters,
         }),
         or,
         and,
-        query: (input: string) => pString(input, params),
+        query: (input: string) =>
+            pString(input, { parameters, topLevelParameters }),
     } as const;
     const fn = new Function(
         "paramObject",

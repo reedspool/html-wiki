@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert";
 import {
     execute,
-    listNonDirectoryFiles,
+    getContentsAndMetaOfAllFiles,
     type ParameterValue,
     setEachParameterWithSource,
     setParameterChildrenWithSource,
@@ -31,6 +31,7 @@ test("Render a file which doens't exist", { concurrency: true }, async () => {
         {
             command: "read",
             contentPath: "/This file certainly doesn't exist",
+            userDirectory: configuredFiles.testDirectory,
             coreDirectory: configuredFiles.coreDirectory,
         },
         "query param",
@@ -50,6 +51,7 @@ test("Render a file which doens't exist", { concurrency: true }, async () => {
             assert.match(error.toString(), /\/.*file.*doesn't.*exist/);
             // Never show the coreDirectory path
             assert.doesNotMatch(error.toString(), /entries/);
+            assert.doesNotMatch(error.toString(), /core/);
         }
 
         if (error instanceof QueryError) {
@@ -70,6 +72,7 @@ test(
                 {
                     command: "read",
                     contentPath: "/index.html",
+                    userDirectory: configuredFiles.testDirectory,
                     coreDirectory: configuredFiles.coreDirectory,
                 },
                 "query param",
@@ -81,10 +84,15 @@ test(
         assert.equal(
             content,
             parse(
-                await readFile({
-                    coreDirectory: configuredFiles.coreDirectory,
-                    contentPath: "/index.html",
-                }),
+                (
+                    await readFile({
+                        searchDirectories: [
+                            configuredFiles.testDirectory,
+                            configuredFiles.coreDirectory,
+                        ],
+                        contentPath: "/index.html",
+                    })
+                ).content,
             ).toString(),
         );
     },
@@ -100,6 +108,7 @@ test(
             {
                 command: "read",
                 contentPath: configuredFiles.defaultPageTemplate,
+                userDirectory: configuredFiles.testDirectory,
                 coreDirectory: configuredFiles.coreDirectory,
             },
             "query param",
@@ -121,7 +130,7 @@ test(
             "derived",
         );
 
-        const { dom, $1 } = await executeAndParse(parameters);
+        const { $1 } = await executeAndParse(parameters);
 
         // All the global page stuff is there
         assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/);
@@ -144,6 +153,7 @@ test("Render sitemap", { concurrency: true }, async () => {
             {
                 command: "read",
                 contentPath: "/sitemap.html",
+                userDirectory: configuredFiles.testDirectory,
                 coreDirectory: configuredFiles.coreDirectory,
             },
             "query param",
@@ -155,10 +165,19 @@ test("Render sitemap", { concurrency: true }, async () => {
         listElements.length >= 7,
         `${listElements.length} was less than 7`,
     );
-    assert.match($1("li a[href=/index.html]").innerHTML, /Homepage/);
-    assert.match($1("li a[href=/sitemap.html]").innerHTML, /Sitemap/);
+    assert.match(
+        $1(`li a[href=${configuredFiles.rootIndexHtml}]`).innerHTML,
+        /Homepage/,
+    );
+    assert.match(
+        $1(`li a[href=${configuredFiles.sitemapTemplate}]`).innerHTML,
+        /Sitemap/,
+    );
     // Falls back to filename
-    assert.match($1("li a[href=/project/logbook.md]").innerHTML, /logbook\.md/);
+    assert.match(
+        $1(`li a[href=${configuredFiles.testMarkdownFile}]`).innerHTML,
+        /test\.md/,
+    );
 });
 
 test(
@@ -166,19 +185,46 @@ test(
     { concurrency: true },
     async () => {
         const allFiles = (
-            await listNonDirectoryFiles({
-                coreDirectory: configuredFiles.coreDirectory,
+            await getContentsAndMetaOfAllFiles({
+                searchDirectories: [configuredFiles.coreDirectory],
             })
         ).map(({ contentPath }) => contentPath);
         [
             configuredFiles.defaultPageTemplate,
             configuredFiles.rootIndexHtml,
-            configuredFiles.logbook,
-            configuredFiles.testMarkdownFile,
             configuredFiles.defaultDeleteTemplateFile,
             configuredFiles.defaultEditTemplateFile,
             configuredFiles.defaultCreateTemplateFile,
             configuredFiles.defaultCssFile,
         ].forEach((contentPath) => assert.ok(allFiles.includes(contentPath)));
+    },
+);
+
+test(
+    "Generate list of files in both userDirectory and coreDirectory",
+    { concurrency: true },
+    async () => {
+        const allFiles = (
+            await getContentsAndMetaOfAllFiles({
+                searchDirectories: [
+                    configuredFiles.testDirectory,
+                    configuredFiles.coreDirectory,
+                ],
+            })
+        ).map(({ contentPath }) => contentPath);
+        [
+            configuredFiles.defaultPageTemplate,
+            configuredFiles.rootIndexHtml,
+            configuredFiles.testMarkdownFile,
+            configuredFiles.defaultDeleteTemplateFile,
+            configuredFiles.defaultEditTemplateFile,
+            configuredFiles.defaultCreateTemplateFile,
+            configuredFiles.defaultCssFile,
+        ].forEach((contentPath) =>
+            assert.ok(
+                allFiles.includes(contentPath),
+                `'${contentPath}' missing`,
+            ),
+        );
     },
 );

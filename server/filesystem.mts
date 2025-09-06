@@ -8,36 +8,34 @@ import {
     readFile as fsReadFile,
     readdir,
 } from "node:fs/promises";
-import debug from "debug";
-const log = debug("server:filesystem");
 
 export const filePath = ({
     contentPath,
-    coreDirectory,
+    directory,
 }: {
     contentPath: string;
-    coreDirectory: string;
+    directory: string;
 }) =>
     // TODO: Find a good library to establish this is a real valid path
-    `${coreDirectory}${contentPath}`;
+    `${directory}${contentPath}`;
 
 export const createFileAndDirectories = async ({
     contentPath,
-    coreDirectory,
+    directory,
     content,
 }: {
     contentPath: string;
-    coreDirectory: string;
+    directory: string;
     content: string;
 }) => {
     try {
         await mkdir(
-            filePath({ contentPath: dirname(contentPath), coreDirectory }),
+            filePath({ contentPath: dirname(contentPath), directory }),
             {
                 recursive: true,
             },
         );
-        const fd = await open(filePath({ contentPath, coreDirectory }), "wx");
+        const fd = await open(filePath({ contentPath, directory }), "wx");
         content = cleanContent({ content });
         await writeFile(fd, content);
         return content;
@@ -55,41 +53,44 @@ export const createFileAndDirectories = async ({
 
 export const readFile = async ({
     contentPath,
-    coreDirectory,
+    searchDirectories,
 }: {
     contentPath: string;
-    coreDirectory: string;
-}): Promise<string> => {
-    const path = filePath({ contentPath, coreDirectory });
-    try {
-        const buffer = await fsReadFile(path);
-        return buffer.toString();
-    } catch (error) {
-        if (error instanceof Error) {
-            if ("code" in error && error.code === "ENOENT") {
-                throw new QueryError(
-                    404,
-                    `Couldn't find a file named ${contentPath}`,
-                    error,
-                );
+    searchDirectories: string[];
+}): Promise<{ content: string; foundInDirectory: string }> => {
+    for (const directory of searchDirectories) {
+        const path = filePath({ contentPath, directory });
+        try {
+            const buffer = await fsReadFile(path);
+            return { content: buffer.toString(), foundInDirectory: directory };
+        } catch (error) {
+            if (error instanceof Error) {
+                if ("code" in error && error.code === "ENOENT") {
+                    continue;
+                }
             }
-        }
 
-        throw error;
+            throw error;
+        }
     }
+    throw new QueryError(
+        404,
+        `Couldn't find a file named ${contentPath}`,
+        null,
+    );
 };
 
 export const updateFile = async ({
     contentPath,
-    coreDirectory,
+    directory,
     content,
 }: {
     contentPath: string;
-    coreDirectory: string;
+    directory: string;
     content: string;
 }) => {
     try {
-        await open(filePath({ contentPath, coreDirectory }), "wx");
+        await open(filePath({ contentPath, directory }), "wx");
         throw new QueryError(
             404,
             `File ${contentPath} doesn't exist. Did you mean to create it?`,
@@ -100,16 +101,8 @@ export const updateFile = async ({
             "code" in error &&
             error.code === "EEXIST"
         ) {
-            let fileToEditContents: string = await readFile({
-                contentPath,
-                coreDirectory,
-            });
-
-            log(`Logging contents of ${contentPath} before write:`);
-            log(fileToEditContents);
-
             content = cleanContent({ content });
-            await writeFile(filePath({ contentPath, coreDirectory }), content);
+            await writeFile(filePath({ contentPath, directory }), content);
             return content;
         }
         throw error;
@@ -117,13 +110,13 @@ export const updateFile = async ({
 };
 export const removeFile = async ({
     contentPath,
-    coreDirectory,
+    directory,
 }: {
     contentPath: string;
-    coreDirectory: string;
+    directory: string;
 }) => {
     try {
-        await open(filePath({ contentPath, coreDirectory }), "wx");
+        await open(filePath({ contentPath, directory }), "wx");
         throw new QueryError(404, `File ${contentPath} doesn't exist`);
     } catch (error) {
         if (
@@ -131,19 +124,53 @@ export const removeFile = async ({
             "code" in error &&
             error.code === "EEXIST"
         ) {
-            rm(filePath({ contentPath, coreDirectory }));
+            rm(filePath({ contentPath, directory }));
             return;
         }
         throw error;
     }
 };
 
-export const listAllDirectoryContents = async ({
-    coreDirectory,
+/**
+ * Return a list of all the unique paths which are accessible in the given
+ * searchDirectories. Unique means that if the same path can access a file/dir
+ * in more than one of the directories, only one entry for the that path is
+ * included which reflects the entry in the earliest searchDirectory.
+ **/
+export const listAndMergeAllDirectoryContents = async ({
+    searchDirectories,
 }: {
-    coreDirectory: string;
-}) => {
-    const normalizedBaseDirectory = normalize(coreDirectory);
+    searchDirectories: string[];
+}): ReturnType<typeof listAllDirectoryContents> => {
+    const seenContentPaths = new Set<string>();
+    const results = [];
+    const resultsForEachDirectory = await Promise.all(
+        searchDirectories.map((directory) =>
+            listAllDirectoryContents({ directory }),
+        ),
+    );
+    for (const resultsForDirectory of resultsForEachDirectory) {
+        for (const result of resultsForDirectory) {
+            if (seenContentPaths.has(result.contentPath)) continue;
+            seenContentPaths.add(result.contentPath);
+            results.push(result);
+        }
+    }
+    return results;
+};
+
+export const listAllDirectoryContents = async ({
+    directory,
+}: {
+    directory: string;
+}): Promise<
+    Array<{
+        name: string;
+        contentPath: string;
+        type: "directory" | "file" | "other";
+    }>
+> => {
+    const normalizedBaseDirectory = normalize(directory);
     const all = await readdir(normalizedBaseDirectory, {
         recursive: true,
         withFileTypes: true,

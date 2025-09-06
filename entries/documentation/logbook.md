@@ -4,6 +4,13 @@
 
 Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
+
+### Sat Sep  6 06:52:49 PM PDT 2025
+
+Shared the project with Ryan and Drew. Got a lot of great feedback about how to pitch and explain it. Iw as excited that they found it interesting. 
+
+Future: Had the thought to attach a log to a single instance of parameters and add to that log whenever a parameter was written or updated or the parameters were used. It would be easy to make a widget in the global template to view the log for the generation of each page.
+
 ### Thu Sep  4 10:40:27 PM PDT 2025
 
 Tied up some loose ends which made the project feel a lot nicer: a delete button and a 404 page. The 404 page has a button to create the given URL, which makes it really feel like a wiki.

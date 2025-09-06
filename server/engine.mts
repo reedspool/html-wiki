@@ -1,7 +1,7 @@
-import { applyTemplating } from "./dom.mts";
+import { applyTemplating, type Meta } from "./dom.mts";
 import {
     createFileAndDirectories,
-    listAllDirectoryContents,
+    listAndMergeAllDirectoryContents,
     readFile,
     removeFile,
     updateFile,
@@ -113,10 +113,7 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
                 return validationErrorResponse(validationIssues);
 
             await createFileAndDirectories({
-                coreDirectory: stringParameterValue(
-                    parameters,
-                    "coreDirectory",
-                ),
+                directory: stringParameterValue(parameters, "userDirectory"),
                 contentPath: stringParameterValue(parameters, "contentPath"),
                 content: stringParameterValue(parameters, "content"),
             });
@@ -134,20 +131,20 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
                     parameters: parameters,
                     topLevelParameters: parameters,
                 });
-            const fileContents = await readFile({
-                coreDirectory: stringParameterValue(
-                    parameters,
-                    "coreDirectory",
-                ),
+            const readResult = await readFile({
+                searchDirectories: [
+                    stringParameterValue(parameters, "userDirectory"),
+                    stringParameterValue(parameters, "coreDirectory"),
+                ],
                 contentPath: stringParameterValue(parameters, "contentPath"),
             });
             const content = (await getQueryValue("parameters.raw"))
                 ? (await getQueryValue("parameters.escape"))
-                    ? escapeHtml(fileContents)
-                    : fileContents
+                    ? escapeHtml(readResult.content)
+                    : readResult.content
                 : (
                       await applyTemplating({
-                          content: fileContents,
+                          content: readResult.content,
                           parameters: parameters,
                           topLevelParameters: parameters,
                       })
@@ -164,10 +161,7 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
             await updateFile({
-                coreDirectory: stringParameterValue(
-                    parameters,
-                    "coreDirectory",
-                ),
+                directory: stringParameterValue(parameters, "userDirectory"),
                 contentPath: stringParameterValue(parameters, "contentPath"),
                 content: stringParameterValue(parameters, "content"),
             });
@@ -180,10 +174,7 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
             await removeFile({
-                coreDirectory: stringParameterValue(
-                    parameters,
-                    "coreDirectory",
-                ),
+                directory: stringParameterValue(parameters, "userDirectory"),
                 contentPath: stringParameterValue(parameters, "contentPath"),
             });
             return {
@@ -307,7 +298,8 @@ export const stringParameterValue = (
     const parameterVCasted = parameterV as ParameterValue;
     const parameter =
         property in parameterVCasted && parameterVCasted[property];
-    if (typeof parameter !== "string") throw new Error("String required");
+    if (typeof parameter !== "string")
+        throw new Error(`String required for property '${property}'`);
     return parameter;
 };
 
@@ -341,53 +333,64 @@ export const maybeRecordParameterValue = (
 
 export const getWithTemplateApplied = async ({
     contentPath,
-    coreDirectory,
+    searchDirectories,
 }: {
     contentPath: string;
-    coreDirectory: string;
+    searchDirectories: string[];
 }) => {
-    const fileContents = await readFile({
-        coreDirectory,
+    const readResults = await readFile({
+        searchDirectories,
         contentPath,
     });
-    if (!/\.html$/.test(contentPath)) return { originalContent: fileContents };
+    if (!/\.html$/.test(contentPath)) return { originalContent: readResults };
     try {
         const result = await applyTemplating({
-            content: fileContents,
+            content: readResults.content,
             parameters: {},
             topLevelParameters: {},
             stopAtSelector: "body",
         });
         return {
             ...result,
-            originalContent: fileContents,
+            originalContent: readResults,
         };
     } catch (error) {
-        log(fileContents);
+        log(readResults);
         throw new Error(
             `Couldn't apply templating for '${contentPath}': ${error}`,
         );
     }
 };
 
-export const listNonDirectoryFiles = async ({
-    coreDirectory,
+export const getContentsAndMetaOfAllFiles = async ({
+    searchDirectories,
 }: {
-    coreDirectory: string;
-}) => {
-    const allDirents = await listAllDirectoryContents({ coreDirectory });
+    searchDirectories: string[];
+}): Promise<
+    Array<{
+        meta: Meta;
+        originalContent: { content: string; foundInDirectory: string };
+        name: string;
+        contentPath: string;
+        type: "file";
+    }>
+> => {
+    const allDirents = await listAndMergeAllDirectoryContents({
+        searchDirectories,
+    });
     return Promise.all(
         allDirents
             .filter(({ type }) => type === "file")
             .map(async (dirent) => {
-                const result = await getWithTemplateApplied({
+                const templateResults = await getWithTemplateApplied({
                     contentPath: dirent.contentPath,
-                    coreDirectory,
+                    searchDirectories,
                 });
                 return {
                     ...dirent,
-                    meta: "meta" in result ? result.meta : {},
-                    originalContent: result.originalContent,
+                    type: "file", // TypeScript doesnt track the filter above
+                    meta: "meta" in templateResults ? templateResults.meta : {},
+                    originalContent: templateResults.originalContent,
                 };
             }),
     );

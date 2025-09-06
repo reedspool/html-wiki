@@ -8,14 +8,8 @@ import {
     setParameterChildrenWithSource,
     setParameterWithSource,
 } from "./engine.mts";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 import { parse } from "node-html-parser";
 import { configuredFiles } from "./configuration.mts";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const coreDirectory = `${__dirname}/../entries`;
 
 const o = { concurrency: true };
 test("p() with no parameters returns undefined", o, async () => {
@@ -87,7 +81,10 @@ test(
     "pString() given a string, evals the contents of the string as if they were a parameter list to p()",
     o,
     async () => {
-        const result = await pString("5,(a)=>a*3,(a)=>a+4");
+        const result = await pString("5,(a)=>a*3,(a)=>a+4", {
+            parameters: {},
+            topLevelParameters: {},
+        });
         assert.equal(result, 19);
     },
 );
@@ -95,7 +92,10 @@ test(
 test("pString() can get a current timestamp", o, async () => {
     const before = Temporal.Now.plainDateTimeISO();
     await wait(1);
-    const result = await pString("Temporal.Now.plainDateTimeISO().toString()");
+    const result = await pString("Temporal.Now.plainDateTimeISO().toString()", {
+        parameters: {},
+        topLevelParameters: {},
+    });
     await wait(1);
     const after = Temporal.Now.plainDateTimeISO();
     if (typeof result !== "string") assert.fail();
@@ -174,7 +174,10 @@ test(
 test("site.allFiles gets all the files", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { coreDirectory },
+        {
+            userDirectory: configuredFiles.testDirectory,
+            coreDirectory: configuredFiles.coreDirectory,
+        },
         "query param",
     );
     const result = await pString("site.allFiles", {
@@ -195,24 +198,28 @@ test("site.allFiles gets all the files", o, async () => {
     assert.equal(edit.meta.title, "Edit Page");
 });
 
-test("site.allFiles with no base directory is an error", o, async () => {
+test("site.allFiles with no base directory is an error", o, () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
         { coreDirectory: null },
         "query param",
     );
-    assert.rejects(() =>
-        pString("site.allFiles", {
-            parameters: topLevelParameters,
-            topLevelParameters,
-        }),
+    assert.rejects(
+        async () =>
+            await pString("site.allFiles", {
+                parameters: topLevelParameters,
+                topLevelParameters,
+            }),
     );
 });
 
 test("site.search(<exact title>) gets that page", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { coreDirectory },
+        {
+            userDirectory: configuredFiles.testDirectory,
+            coreDirectory: configuredFiles.coreDirectory,
+        },
         "query param",
     );
     const result = await pString("site.search('HTML Wiki')", {
@@ -233,7 +240,10 @@ test("site.search(<exact title>) gets that page", o, async () => {
 test("site.search(<fuzzy>) gets that page", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { coreDirectory },
+        {
+            userDirectory: configuredFiles.testDirectory,
+            coreDirectory: configuredFiles.coreDirectory,
+        },
         "query param",
     );
     const result = await pString("site.search('ht wi')", {
@@ -254,7 +264,10 @@ test("site.search(<fuzzy>) gets that page", o, async () => {
 test("site.search(<anything>) searches body of pages", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { coreDirectory },
+        {
+            userDirectory: configuredFiles.testDirectory,
+            coreDirectory: configuredFiles.coreDirectory,
+        },
         "query param",
     );
     const result = await pString("site.search('home page')", {
@@ -275,7 +288,10 @@ test("site.search(<anything>) searches body of pages", o, async () => {
 test("site.search(<anything>) gets titles of Markdown pages", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { coreDirectory },
+        {
+            userDirectory: configuredFiles.testDirectory,
+            coreDirectory: configuredFiles.coreDirectory,
+        },
         "query param",
     );
     const result = await pString("site.search('Markdown File Title')", {
@@ -303,7 +319,10 @@ test("site.search(<anything>) gets titles of Markdown pages", o, async () => {
 test("site.search(<anything>) gets contents of Markdown pages", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { coreDirectory },
+        {
+            userDirectory: configuredFiles.testDirectory,
+            coreDirectory: configuredFiles.coreDirectory,
+        },
         "query param",
     );
     const result = await pString("site.search('simple markdown file')", {
@@ -322,16 +341,24 @@ test("site.search(<anything>) gets contents of Markdown pages", o, async () => {
         configuredFiles.testMarkdownFile,
     );
     // assert.equal(testMarkdownFile.meta.title, "Markdown File Title");
-    const index = result.find((file) => file.contentPath === "/index.html");
+    const index = result.find(
+        (file) => file.contentPath === configuredFiles.rootIndexHtml,
+    );
     assert.ok(!index);
-    const edit = result.find((file) => file.contentPath.includes("/edit.html"));
+    const edit = result.find((file) =>
+        file.contentPath.includes(configuredFiles.defaultEditTemplateFile),
+    );
     assert.ok(!edit);
 });
 
 test("render(parameters.contentPath) renders a page", o, async () => {
     const topLevelParameters = setEachParameterWithSource(
         {},
-        { coreDirectory, contentPath: "/index.html" },
+        {
+            userDirectory: configuredFiles.testDirectory,
+            coreDirectory: configuredFiles.coreDirectory,
+            contentPath: configuredFiles.rootIndexHtml,
+        },
         "query param",
     );
     const result = await pString("render(parameters.contentPath)", {
