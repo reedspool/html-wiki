@@ -7,15 +7,10 @@ import {
     setEachParameterWithSource,
     setParameterChildrenWithSource,
 } from "./engine.mts";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 import { QueryError } from "./error.mts";
 import { readFile } from "./filesystem.mts";
 import { parse } from "node-html-parser";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const baseDirectory = `${__dirname}/../entries`;
+import { configuredFiles } from "./configuration.mts";
 
 async function executeAndParse(parameters: ParameterValue) {
     const { content, status } = await execute(parameters);
@@ -36,7 +31,7 @@ test("Render a file which doens't exist", { concurrency: true }, async () => {
         {
             command: "read",
             contentPath: "/This file certainly doesn't exist",
-            baseDirectory,
+            baseDirectory: configuredFiles.baseDirectory,
         },
         "query param",
     );
@@ -75,7 +70,7 @@ test(
                 {
                     command: "read",
                     contentPath: "/index.html",
-                    baseDirectory,
+                    baseDirectory: configuredFiles.baseDirectory,
                 },
                 "query param",
             ),
@@ -87,7 +82,7 @@ test(
             content,
             parse(
                 await readFile({
-                    baseDirectory,
+                    baseDirectory: configuredFiles.baseDirectory,
                     contentPath: "/index.html",
                 }),
             ).toString(),
@@ -104,8 +99,8 @@ test(
             parameters,
             {
                 command: "read",
-                contentPath: "/$/templates/global-page.html",
-                baseDirectory,
+                contentPath: configuredFiles.defaultPageTemplate,
+                baseDirectory: configuredFiles.baseDirectory,
             },
             "query param",
         );
@@ -149,7 +144,7 @@ test("Render sitemap", { concurrency: true }, async () => {
             {
                 command: "read",
                 contentPath: "/sitemap.html",
-                baseDirectory,
+                baseDirectory: configuredFiles.baseDirectory,
             },
             "query param",
         ),
@@ -170,17 +165,20 @@ test(
     "Generate list of files in baseDirectory",
     { concurrency: true },
     async () => {
-        const allFiles = (await listNonDirectoryFiles({ baseDirectory })).map(
-            ({ contentPath }) => contentPath,
-        );
+        const allFiles = (
+            await listNonDirectoryFiles({
+                baseDirectory: configuredFiles.baseDirectory,
+            })
+        ).map(({ contentPath }) => contentPath);
         [
-            "/index.html",
-            "/project/logbook.md",
-            "/$/test/fixtures/test.md",
-            "/$/templates/delete.html",
-            "/$/templates/edit.html",
-            "/$/templates/global-page.html",
-            "/$/actions/create.html",
+            configuredFiles.defaultPageTemplate,
+            configuredFiles.rootIndexHtml,
+            configuredFiles.logbook,
+            configuredFiles.testMarkdownFile,
+            configuredFiles.defaultDeleteTemplateFile,
+            configuredFiles.defaultEditTemplateFile,
+            configuredFiles.defaultCreateTemplateFile,
+            configuredFiles.defaultCssFile,
         ].forEach((contentPath) => assert.ok(allFiles.includes(contentPath)));
     },
 );

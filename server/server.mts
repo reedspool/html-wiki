@@ -26,6 +26,7 @@ import {
 } from "./engine.mts";
 import debug from "debug";
 import { readFile } from "./filesystem.mts";
+import { configuredFiles } from "./configuration.mts";
 const log = debug("server:server");
 
 export const createServer = ({
@@ -157,7 +158,7 @@ export const createServer = ({
             setParameterWithSource(
                 parameters,
                 "contentPath",
-                "/$/templates/global-page.html",
+                configuredFiles.defaultPageTemplate,
                 "derived",
             );
             const editContentParameters: ParameterValue = {};
@@ -180,7 +181,7 @@ export const createServer = ({
             setEachParameterWithSource(
                 editContentParameters,
                 {
-                    contentPath: `/$/templates/edit.html`,
+                    contentPath: configuredFiles.defaultEditTemplateFile,
                     select: "body",
                 },
                 "derived",
@@ -202,7 +203,7 @@ export const createServer = ({
             setParameterWithSource(
                 parameters,
                 "contentPath",
-                "/$/templates/global-page.html",
+                configuredFiles.defaultPageTemplate,
                 "derived",
             );
             const editContentParameters: ParameterValue = {};
@@ -223,7 +224,7 @@ export const createServer = ({
             setEachParameterWithSource(
                 editContentParameters,
                 {
-                    contentPath: `/$/templates/delete.html`,
+                    contentPath: configuredFiles.defaultDeleteTemplateFile,
                     select: "body",
                 },
                 "derived",
@@ -278,7 +279,7 @@ export const createServer = ({
             setParameterWithSource(
                 parameters,
                 "contentPath",
-                "/$/templates/global-page.html",
+                configuredFiles.defaultPageTemplate,
                 "derived",
             );
 
@@ -320,7 +321,7 @@ export const createServer = ({
             // TODO: This is silly because it's like the one instance where I'm not
             // looking at the contentPath and instead looking only at the path.
             // Suggests this is somethign the Engine should be doing instead?
-            if (req.path === "/404.html") {
+            if (req.path === configuredFiles.fileMissingPageTemplate) {
                 res.status(404);
             }
             res.send(result.content);
@@ -385,7 +386,9 @@ export const createServer = ({
         }
 
         // Otherwise, redirect to the 404 page but given this
-        res.redirect(`/404.html?originalPath=${req.path}`);
+        res.redirect(
+            `${configuredFiles.fileMissingPageTemplate}?originalPath=${req.path}`,
+        );
     });
 
     const listener = app.listen(port, (error) => {

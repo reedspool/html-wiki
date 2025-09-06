@@ -11,6 +11,7 @@ import {
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import { parse } from "node-html-parser";
+import { configuredFiles } from "./configuration.mts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -185,12 +186,12 @@ test("site.allFiles gets all the files", o, async () => {
     const index = result.find((file) => file.contentPath === "/index.html");
     assert.ok(index);
     assert.equal(index.name, "index.html");
-    assert.equal(index.contentPath, "/index.html");
+    assert.equal(index.contentPath, configuredFiles.rootIndexHtml);
     assert.equal(index.meta.title, "HTML Wiki Homepage");
     const edit = result.find((file) => file.contentPath.includes("/edit.html"));
     assert.ok(edit);
     assert.equal(edit.name, "edit.html");
-    assert.equal(edit.contentPath, "/$/templates/edit.html");
+    assert.equal(edit.contentPath, configuredFiles.defaultEditTemplateFile);
     assert.equal(edit.meta.title, "Edit Page");
 });
 
@@ -284,11 +285,14 @@ test("site.search(<anything>) gets titles of Markdown pages", o, async () => {
     assert.ok(Array.isArray(result));
     assert.ok(result.length > 0);
     const testMarkdownFile = result.find(
-        (file) => file.contentPath === "/$/test/fixtures/test.md",
+        (file) => file.contentPath === configuredFiles.testMarkdownFile,
     );
     assert.ok(testMarkdownFile);
     assert.equal(testMarkdownFile.name, "test.md");
-    assert.equal(testMarkdownFile.contentPath, "/$/test/fixtures/test.md");
+    assert.equal(
+        testMarkdownFile.contentPath,
+        configuredFiles.testMarkdownFile,
+    );
     // assert.equal(testMarkdownFile.meta.title, "Markdown File Title");
     const index = result.find((file) => file.contentPath === "/index.html");
     assert.ok(!index);
@@ -309,11 +313,14 @@ test("site.search(<anything>) gets contents of Markdown pages", o, async () => {
     assert.ok(Array.isArray(result));
     assert.ok(result.length > 0);
     const testMarkdownFile = result.find(
-        (file) => file.contentPath === "/$/test/fixtures/test.md",
+        (file) => file.contentPath === configuredFiles.testMarkdownFile,
     );
     assert.ok(testMarkdownFile);
     assert.equal(testMarkdownFile.name, "test.md");
-    assert.equal(testMarkdownFile.contentPath, "/$/test/fixtures/test.md");
+    assert.equal(
+        testMarkdownFile.contentPath,
+        configuredFiles.testMarkdownFile,
+    );
     // assert.equal(testMarkdownFile.meta.title, "Markdown File Title");
     const index = result.find((file) => file.contentPath === "/index.html");
     assert.ok(!index);

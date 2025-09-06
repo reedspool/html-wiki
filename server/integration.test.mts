@@ -4,13 +4,10 @@ import assert from "node:assert";
 import { validateAssertAndReport, validateHtml } from "./testUtilities.mts";
 import { parse as parseHtml } from "node-html-parser";
 import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 import { Temporal } from "temporal-polyfill";
 import { html } from "./utilities.mts";
 import stylelint from "stylelint";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { configuredFiles } from "./configuration.mts";
 
 let port = 3001;
 // TODO: All this forking stuff seems to work (with the delay), but it doesn't
@@ -140,7 +137,7 @@ test(
     { concurrency: true },
     async () => {
         const { url, response, responseText, $1 } = await getPath(
-            `/$/templates/edit.html`,
+            configuredFiles.defaultEditTemplateFile,
         );
 
         assert.strictEqual(response.status, 200);
@@ -165,7 +162,7 @@ test(
     { concurrency: true },
     async () => {
         const { url, response, responseText, $1 } = await getPath(
-            `/?contentPath=/$/templates/edit.html&raw`,
+            `/?contentPath=${configuredFiles.defaultEditTemplateFile}&raw`,
         );
 
         assert.strictEqual(response.status, 200);
@@ -237,7 +234,7 @@ test(
     { concurrency: true },
     async () => {
         const { url, responseText, $1 } = await getPath(
-            `/$/templates/edit?edit`,
+            `${configuredFiles.defaultEditTemplateFile}?edit`,
         );
 
         assert.match($1("h1").innerHTML, /Edit/);
@@ -260,7 +257,7 @@ test(
     { concurrency: true },
     async () => {
         const { url, responseText, $1, $ } = await getPath(
-            `/$/test/fixtures/test.md`,
+            configuredFiles.testMarkdownFile,
         );
 
         // The markdown has been transformed!
@@ -296,7 +293,7 @@ test(
     { concurrency: true },
     async () => {
         const { responseText, $1 } = await getPath(
-            `/?contentPath=/$/test/fixtures/test.md&raw`,
+            `/?contentPath=${configuredFiles.testMarkdownFile}&raw`,
         );
 
         // The markdown has not been transformed!
@@ -318,7 +315,7 @@ test(
 
 test("Can get edit page for markdown file", { concurrency: true }, async () => {
     const { url, responseText, $1 } = await getPath(
-        `/$/test/fixtures/test.md?edit`,
+        `${configuredFiles.testMarkdownFile}?edit`,
     );
 
     assert.match($1("h1").innerHTML, /Edit/);
@@ -341,7 +338,7 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
     await validateAssertAndReport(responseText, url);
 
     // The page should be exactly the same as if we call the expanded version
-    const expandedUrl = `http://localhost:${port}/$/templates/global-page.html?content=${encodeURIComponent(`/$/templates/edit.html?select=body&content=${encodeURIComponent("/$/test/fixtures/test.md?raw&escape")}`)}`;
+    const expandedUrl = `http://localhost:${port}${configuredFiles.defaultPageTemplate}?content=${encodeURIComponent(`${configuredFiles.defaultEditTemplateFile}?select=body&content=${encodeURIComponent(`${configuredFiles.testMarkdownFile}?raw&escape`)}`)}`;
     const responseForExpandedUrl = await fetch(expandedUrl);
     const responseTextForExpandedUrl = await responseForExpandedUrl.text();
 
@@ -350,7 +347,9 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
 });
 
 test("Can get create page", { concurrency: true }, async () => {
-    const { url, responseText, $1 } = await getPath(`/$/actions/create`);
+    const { url, responseText, $1 } = await getPath(
+        configuredFiles.defaultCreateTemplateFile,
+    );
 
     assert.match($1("h1").innerHTML, /Create/);
 
@@ -376,7 +375,7 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
         // TODO: The reason this isn't working is that these aren't cascaded
         // down to the contentParameters. And it seems like some things
         // definitely should be
-        `/$/actions/create?filename=/posts/My new page&rand=3`,
+        `${configuredFiles.defaultCreateTemplateFile}?filename=/posts/My new page&rand=3`,
     );
 
     assert.strictEqual(response.status, 200);
@@ -450,7 +449,7 @@ test(
         );
 
         const fileContents = await readFile(
-            `${__dirname}/../entries/${filename}`,
+            `${configuredFiles.baseDirectory}${filename}`,
         );
         assert.equal(fileContents.toString(), content);
 

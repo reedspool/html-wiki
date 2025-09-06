@@ -4,6 +4,22 @@
 
 Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
+### Thu Sep  4 10:40:27 PM PDT 2025
+
+Tied up some loose ends which made the project feel a lot nicer: a delete button and a 404 page. The 404 page has a button to create the given URL, which makes it really feel like a wiki.
+
+Future: I wanted my link widget to have an easy button to insert a link with the given text even if I haven't made that page yet. Maybe then it would make sense if the template language marked links specially if they pointed to a page which did not exist, which TiddlyWiki did by default. Wikipedia also does this with red links.
+
+Future: I solidified the separation between "shadow" and "core" documents and user-made ones. I liked TiddlyWiki's concept of overwriting "shadow" Tiddlers and giving a warning about it. 
+
+Future: I made an HTML template and made it easy to load from the edit page for a blank page.
+
+Future: I added a suggestion to the creation page to give a file extension.
+
+Future: I added tests for pages with no extension
+
+Future: I added an image, such as a favicon, and maybe a homepage hero image, and then I added tests for fetching images. 
+
 ### Mon Sep  1 11:32:49 AM PDT 2025
 
 I made a query playground page as a separate page first which was a really nice way to experiment with the interaction loop, write a query, run it, see the results, copy the results. Then I separately began to work on the popover/dialog version of the tool as a widget within the edit page.

@@ -71,13 +71,15 @@ program
         ).map(({ contentPath }) => contentPath);
 
         log(`Writing files to ${outDirectory}:`, "\n" + files.join("\n"));
+        const defaultPageTemplate = "/$/templates/global-page.html";
+        log(`Using default page template '${defaultPageTemplate}'`);
         files.forEach(async (contentPath) => {
             const readParameters: ParameterValue = {};
             setEachParameterWithSource(
                 readParameters,
                 {
                     baseDirectory: inDirectory,
-                    contentPath: "/$/templates/global-page.html",
+                    contentPath: defaultPageTemplate,
                     command: "read",
                 },
                 "query param",
