@@ -8,6 +8,7 @@ import express from "express";
 import EventEmitter from "node:events";
 import { escapeHtml } from "./utilities.mts";
 import { contentType } from "mime-types";
+import multer from "multer";
 import {
     expressQueryToRecord,
     pathToEntryFilename,
@@ -25,9 +26,10 @@ import {
     type ParameterValue,
 } from "./engine.mts";
 import debug from "debug";
-import { readFile } from "./filesystem.mts";
+import { readFileRaw } from "./filesystem.mts";
 import { configuredFiles } from "./configuration.mts";
 const log = debug("server:server");
+const upload = multer();
 
 export const createServer = ({
     port,
@@ -49,6 +51,7 @@ export const createServer = ({
     const baseURL = `localhost:${port}`;
 
     app.use(express.urlencoded({ extended: true }));
+    app.use(upload.none());
 
     app.use("/", async (req, res, _next) => {
         // Silly chrome dev tools stuff is noisy
@@ -80,6 +83,18 @@ export const createServer = ({
                     }
                 } else if (query.create !== undefined) {
                     command = "create";
+                } else if (req.path === "/$/shared-content-receiver") {
+                    // TODO: I don't see any other way to match the specific
+                    // share content receiver for sure other than the exact path given
+                    // but this is opposed to the general concept that the path is
+                    // free for users to target particular entries.
+                    command = "read";
+                    setParameterWithSource(
+                        parameters,
+                        "contentPath",
+                        req.path + ".html",
+                        "derived",
+                    );
                 } else {
                     // The most RESTful
                     command = "update";
@@ -269,7 +284,7 @@ export const createServer = ({
             !/\.(html|md)$/.test(pathToEntryFilename(req.path))
         ) {
             log("Serving static file %s", pathToEntryFilename(req.path));
-            const readResults = await readFile({
+            const readResults = await readFileRaw({
                 searchDirectories: [userDirectory, coreDirectory],
                 contentPath: pathToEntryFilename(req.path),
             });
@@ -279,7 +294,7 @@ export const createServer = ({
                     pathToEntryFilename(req.path).match(/\.[^.]+$/)![0],
                 ) || "application/octet-stream",
             );
-            res.send(readResults.content);
+            res.send(readResults.buffer);
             return;
         }
 

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Share Content Receiver</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+
+  <body>
+    <drop-if truthy="true">
+      <p>
+        This URL is a placeholder for the shared content receiver defined in the
+        <a href="./../site.webmanifest">site.webmanifest</a> file. This URL will
+        be hit when the
+      </p>
+    </drop-if>
+    <h2>Create from Shared</h2>
+    <p>
+      The Share API specifies the <code>title</code>, <code>url</code>, and
+      <code>text</code> fields; however it's not clear how consistently callers
+      use these. So here are some easy links to variations of entries you might
+      want to create based on the shared data.
+    </p>
+
+    <table>
+      <tr>
+        <td>filename</td>
+        <replace-with
+          td
+          x-content="`${topLevelParameters.title}.md`"
+        ></replace-with>
+      </tr>
+      <tr>
+        <td>fileContent</td>
+        <td>
+          <replace-with
+            div
+            x-content="`# [${topLevelParameters.title}](${topLevelParameters.url})`"
+          ></replace-with>
+          <replace-with div x-content="topLevelParameters.text"></replace-with>
+        </td>
+      </tr>
+    </table>
+    <p>
+      <replace-with
+        a
+        x-href="`/$/actions/create.html?filename=${topLevelParameters.title}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.url})%0A%0A${topLevelParameters.text}`"
+        >Go to Create the above</replace-with
+      >
+    </p>
+    <blockquote>
+      <replace-with h3 x-content="topLevelParameters.title"> </replace-with>
+    </blockquote>
+    <h2>Raw Data</h2>
+
+    <table>
+      <tr>
+        <td>title</td>
+        <replace-with td x-content="topLevelParameters.title"></replace-with>
+      </tr>
+      <tr>
+        <td>url</td>
+        <replace-with td x-content="topLevelParameters.url"></replace-with>
+      </tr>
+      <tr>
+        <td>text</td>
+        <replace-with td x-content="topLevelParameters.text"></replace-with>
+      </tr>
+    </table>
+  </body>
+</html>

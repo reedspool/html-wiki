@@ -49,7 +49,7 @@ async function getPath(path: string, status: number = 200) {
 }
 async function postPath(
     path: string,
-    body: Record<string, string> = {},
+    body: Record<string, string> | FormData = {},
     status: number = 200,
 ) {
     if (path[0] !== "/")
@@ -59,7 +59,7 @@ async function postPath(
     try {
         response = await fetch(url, {
             method: "post",
-            body: new URLSearchParams(body),
+            body: body instanceof FormData ? body : new URLSearchParams(body),
         });
     } catch (error) {
         console.log(`Fetch failed for URL ${url}: ${error}`);
@@ -605,5 +605,23 @@ test(
         assert.match($1('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/);
 
         await validateAssertAndReport(responseText, url);
+    },
+);
+
+test(
+    "Submit multipart/form-data to the share content receiver",
+    { concurrency: true },
+    async () => {
+        const formData = new FormData();
+        formData.append("title", "test title");
+        formData.append("url", "test url");
+        formData.append("text", "test text");
+        const { responseText } = await postPath(
+            "/$/shared-content-receiver",
+            formData,
+        );
+        assert.match(responseText, /test title/i);
+        assert.match(responseText, /test url/i);
+        assert.match(responseText, /test text/i);
     },
 );

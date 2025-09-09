@@ -7,9 +7,9 @@
     "build:documentation": "DEBUG=* node server/cli.mts generate --user-directory entries/documentation -o ./build",
     "build:test": "DEBUG=* node server/cli.mts generate --user-directory entries/test -o ./build",
     "fix:css": "stylelint --fix entries/$/global.css",
-    "start": "DEBUG=* npm run start:server:documentation",
-    "start:server:documentation": "node server/cli.mts server --port 3001 -u entries/documentation",
-    "start:server:test": "node server/cli.mts server --port 3001 -u entries/test",
+    "start": "npm run start:server:documentation",
+    "start:server:documentation": "DEBUG=* node server/cli.mts server --port 3001 -u entries/documentation",
+    "start:server:test": "DEBUG=* node server/cli.mts server --port 3001 -u entries/test",
     "test": "DEBUG=* node --test",
     "test:watch": "cd server && node --test --watch"
   },
@@ -22,6 +22,7 @@
     "@types/express": "^5.0.3",
     "@types/express-ws": "^3.0.5",
     "@types/mime-types": "^3.0.1",
+    "@types/multer": "^2.0.0",
     "@types/node": "^24.0.7",
     "commander": "^14.0.0",
     "commonmark": "^0.31.2",
@@ -30,6 +31,7 @@
     "express-ws": "^5.0.2",
     "fuse.js": "^7.1.0",
     "mime-types": "^3.0.1",
+    "multer": "^2.0.2",
     "node-html-parser": "^7.0.1",
     "temporal-polyfill": "^0.3.0"
   },

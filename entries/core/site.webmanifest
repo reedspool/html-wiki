@@ -1,0 +1,40 @@
+{
+  "name": "HTML Wiki",
+  "short_name": "wiki",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/assets/code-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/code-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "share_target": {
+    "action": "/$/shared-content-receiver",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "lists",
+          "accept": ["text/csv", ".csv"]
+        },
+        {
+          "name": "photos",
+          "accept": ["image/svg+xml", ".svg"]
+        }
+      ]
+    }
+  }
+}

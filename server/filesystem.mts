@@ -51,18 +51,29 @@ export const createFileAndDirectories = async ({
     }
 };
 
-export const readFile = async ({
+export const readFile = async (params: {
+    contentPath: string;
+    searchDirectories: string[];
+}): Promise<{ content: string; foundInDirectory: string }> => {
+    const rawResults = await readFileRaw(params);
+    return {
+        content: rawResults.buffer.toString(),
+        foundInDirectory: rawResults.foundInDirectory,
+    };
+};
+
+export const readFileRaw = async ({
     contentPath,
     searchDirectories,
 }: {
     contentPath: string;
     searchDirectories: string[];
-}): Promise<{ content: string; foundInDirectory: string }> => {
+}): Promise<{ buffer: Buffer; foundInDirectory: string }> => {
     for (const directory of searchDirectories) {
         const path = filePath({ contentPath, directory });
         try {
             const buffer = await fsReadFile(path);
-            return { content: buffer.toString(), foundInDirectory: directory };
+            return { buffer, foundInDirectory: directory };
         } catch (error) {
             if (error instanceof Error) {
                 if ("code" in error && error.code === "ENOENT") {
