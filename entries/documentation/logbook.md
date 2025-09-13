@@ -5,6 +5,20 @@
 Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
 
+### Sat Sep 13 10:49:24 AM PDT 2025
+
+I made the browser page installable as a PWA so that I could use Android's Share feature. This was simple enough. I learned that although the Share API specifies `text`, `url`, and `title` fields, there's no consistent use of these. Even when you share a URL from Chrome, it doesn't use the `url` field. Hum.
+
+Future: During normal use, I wanted to create a link to a page which didn't exist yet. I thought my search-and-link page should help me with this since I also wanted that page to allow me to create a link to a page if the search has no results.
+
+Future: I missed wikilinks from TiddlyWiki. I wanted to use Markdown and this was the only feature I missed from TiddlyWiki's wikitext format so far. The positive aspect of wikilinks I was missing was the ability to declare a piece of text was a link without specifying a separate URL or path. I didn't know of a way to do this with Markdown, so I searched for that. I had a theory if I couldn't find any way to do this that I could make Markdown's ref-link syntax work in a "just in time" kind of way. I found [Shortcut reference links](https://spec.commonmark.org/0.31.2/#shortcut-reference-link) in the commonmark spec, and I figured that I could somehow create corresponding reference link definitions if none existed. 
+
+Another idea I had was to have a rule that for any empty `href` attribute, my template engine would replace that with a slash plus the link's text content. That would mean any empty link in Markdown would be filled in the rendered representation. This would require me to use empty "inline links", e.g. `[link text]()` with nothing in the parentheses, but the parentheses still present. Whereas a solution which only required the square brackets, e.g. `[shortcut ref links]` would be easier. Unfortunately, shorcut ref links aren't rendered as links if there's no matching ref link definition present.
+
+I found [this 10 year old discussion](https://talk.commonmark.org/t/i-wonder-if-there-is-a-wiki-engine-that-uses-markdown/1281/20) on the topic with a quick search. Probably with more searching I could find more thoughts.
+
+Future: I also wanted to have more intelligence around file extensions. This felt complicated. So far I had my server deciding that any URL without a file extension was an HTML file, and it would automatically reference the same path with a `.html` at the end. But instead I wanted to target any file with any extension like this, and have the server smartly find a matching file. Of course, this would lead to confusion or conflicts if there were files with the same path but different file extensions. But that seemed worthwhile for the ease it would grant most of the time. 
+
 ### Sat Sep  6 06:52:49 PM PDT 2025
 
 Shared the project with Ryan and Drew. Got a lot of great feedback about how to pitch and explain it. Iw as excited that they found it interesting. 
