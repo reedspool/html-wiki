@@ -10,6 +10,8 @@ Here's **bold** and _emphasized_ formatted text
 
 Here's a [reference link][index].
 
+Here's a [/shortcut reference link with no associated reference link definition]. I use a trick to generate reference link definitions for these on the fly.
+
 And some `inline code` as well as a codeblock:
 
 ```js

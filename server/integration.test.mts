@@ -266,12 +266,20 @@ test(
 
         const anchors = $("main a");
 
-        assert.equal(anchors.length, 2);
-
         assert.match(anchors[0].innerHTML, /Google/);
         assert.match(anchors[0].getAttribute("href")!, /google\.com/);
         assert.match(anchors[1].innerHTML, /reference link/);
         assert.match(anchors[1].getAttribute("href")!, /\/index/);
+        assert.match(
+            anchors[2].innerHTML,
+            /\/shortcut reference link with no associated reference link definition/,
+        );
+        assert.match(
+            anchors[2].getAttribute("href")!,
+            /\/shortcut%20reference%20link%20with%20no%20associated%20reference%20link%20definition/,
+        );
+        assert.equal(anchors.length, 3);
+
         assert.match($1("em").innerHTML, /emphasized/);
         assert.match($1("strong").innerHTML, /bold/);
         const inlineCode = $(":not(:has(pre)) code");

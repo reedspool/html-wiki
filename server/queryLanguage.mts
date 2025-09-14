@@ -117,8 +117,20 @@ export const renderer =
             return contentFileReadResult;
         }
         if (contentParameters?.renderMarkdown) {
+            let contentToRender = contentFileReadResult.content;
+            // Find all *possible* reference link definitions
+            const labels = Array.from(
+                contentToRender.matchAll(/\[([^\]]+)\]/g),
+            ).map(([_, label]) => label);
+
+            contentToRender += "\n";
+            contentToRender += "\n";
+            contentToRender += labels
+                .map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`)
+                .join("\n");
+
             // TODO if this set contents instead of returning that would seem to enable template values in markdown
-            return renderMarkdown(contentFileReadResult.content);
+            return renderMarkdown(contentToRender);
         }
         return (
             await applyTemplating({
