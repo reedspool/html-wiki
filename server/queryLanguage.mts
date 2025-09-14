@@ -82,7 +82,10 @@ export const siteProxy = ({
 
 export const renderer =
     ({ topLevelParameters }: { topLevelParameters: ParameterValue }) =>
-    async (contentPath: string, contentParameters?: ParameterValue) => {
+    async (
+        contentPath: string,
+        contentParameters?: ParameterValue,
+    ): Promise<string> => {
         const coreDirectory = maybeStringParameterValue(
             topLevelParameters,
             "coreDirectory",
@@ -114,7 +117,7 @@ export const renderer =
             if (contentParameters.escape) {
                 return escapeHtml(contentFileReadResult.content);
             }
-            return contentFileReadResult;
+            return contentFileReadResult.content;
         }
         if (contentParameters?.renderMarkdown) {
             let contentToRender = contentFileReadResult.content;

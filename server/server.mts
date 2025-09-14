@@ -26,7 +26,7 @@ import {
     type ParameterValue,
 } from "./engine.mts";
 import debug from "debug";
-import { readFileRaw } from "./filesystem.mts";
+import { fileExists, readFileRaw } from "./filesystem.mts";
 import { configuredFiles } from "./configuration.mts";
 const log = debug("server:server");
 const upload = multer();
@@ -178,44 +178,86 @@ export const createServer = ({
             const toEditContentPath =
                 maybeStringParameterValue(parameters, "contentPath") ||
                 pathToEntryFilename(req.path);
-            setParameterWithSource(
-                parameters,
-                "contentPath",
-                configuredFiles.defaultPageTemplate,
-                "derived",
-            );
-            const editContentParameters: ParameterValue = {};
-            const whatToEditContentParameters: ParameterValue = {};
-            setEachParameterWithSource(
-                whatToEditContentParameters,
-                {
-                    raw: "raw",
-                    escape: "escape",
-                    contentPath: toEditContentPath,
-                },
-                "derived",
-            );
-            setParameterChildrenWithSource(
-                editContentParameters,
-                "contentParameters",
-                whatToEditContentParameters,
-                "derived",
-            );
-            setEachParameterWithSource(
-                editContentParameters,
-                {
-                    contentPath: configuredFiles.defaultEditTemplateFile,
-                    select: "body",
-                },
-                "derived",
-            );
+            const fileExistsResult = await fileExists({
+                contentPath: toEditContentPath,
+                searchDirectories: [userDirectory, coreDirectory],
+            });
+            // File not existing at all is handled in the engine
+            if (
+                fileExistsResult.exists &&
+                fileExistsResult.foundInDirectory == coreDirectory
+            ) {
+                // If requesting to edit a core file, prompt to create shadow first
+                setParameterWithSource(
+                    parameters,
+                    "contentPath",
+                    configuredFiles.defaultPageTemplate,
+                    "derived",
+                );
+                setParameterWithSource(
+                    parameters,
+                    "editContentPath",
+                    toEditContentPath,
+                    "derived",
+                );
 
-            setParameterChildrenWithSource(
-                parameters,
-                "contentParameters",
-                editContentParameters,
-                "derived",
-            );
+                const createShadowContentParameters: ParameterValue = {};
+                setEachParameterWithSource(
+                    createShadowContentParameters,
+                    {
+                        select: "body",
+                        contentPath:
+                            configuredFiles.defaultCreateShadowTemplateFile,
+                        editContentPath: toEditContentPath,
+                    },
+                    "derived",
+                );
+                setParameterChildrenWithSource(
+                    parameters,
+                    "contentParameters",
+                    createShadowContentParameters,
+                    "derived",
+                );
+            } else {
+                setParameterWithSource(
+                    parameters,
+                    "contentPath",
+                    configuredFiles.defaultPageTemplate,
+                    "derived",
+                );
+                const editContentParameters: ParameterValue = {};
+                const whatToEditContentParameters: ParameterValue = {};
+                setEachParameterWithSource(
+                    whatToEditContentParameters,
+                    {
+                        raw: "raw",
+                        escape: "escape",
+                        contentPath: toEditContentPath,
+                    },
+                    "derived",
+                );
+                setParameterChildrenWithSource(
+                    editContentParameters,
+                    "contentParameters",
+                    whatToEditContentParameters,
+                    "derived",
+                );
+                setEachParameterWithSource(
+                    editContentParameters,
+                    {
+                        contentPath: configuredFiles.defaultEditTemplateFile,
+                        select: "body",
+                    },
+                    "derived",
+                );
+
+                setParameterChildrenWithSource(
+                    parameters,
+                    "contentParameters",
+                    editContentParameters,
+                    "derived",
+                );
+            }
         } else if (
             stringParameterValue(parameters, "command") == "read" &&
             maybeStringParameterValue(parameters, "delete")
@@ -229,23 +271,23 @@ export const createServer = ({
                 configuredFiles.defaultPageTemplate,
                 "derived",
             );
-            const editContentParameters: ParameterValue = {};
-            const whatToEditContentParameters: ParameterValue = {};
+            const deletePageContentParameters: ParameterValue = {};
+            const whatToDeleteContentParameters: ParameterValue = {};
             setEachParameterWithSource(
-                whatToEditContentParameters,
+                whatToDeleteContentParameters,
                 {
                     contentPath: toDeleteContentPath,
                 },
                 "derived",
             );
             setParameterChildrenWithSource(
-                editContentParameters,
+                deletePageContentParameters,
                 "contentParameters",
-                whatToEditContentParameters,
+                whatToDeleteContentParameters,
                 "derived",
             );
             setEachParameterWithSource(
-                editContentParameters,
+                deletePageContentParameters,
                 {
                     contentPath: configuredFiles.defaultDeleteTemplateFile,
                     select: "body",
@@ -256,7 +298,7 @@ export const createServer = ({
             setParameterChildrenWithSource(
                 parameters,
                 "contentParameters",
-                editContentParameters,
+                deletePageContentParameters,
                 "derived",
             );
         }
@@ -348,6 +390,8 @@ export const createServer = ({
                 res.status(404);
             }
             res.send(result.content);
+        } else if (maybeStringParameterValue(parameters, "redirect")) {
+            res.redirect(stringParameterValue(parameters, "redirect"));
         } else if (command == "update" || command == "create") {
             res.redirect(
                 `${stringParameterValue(parameters, "contentPath")}?statusMessage=${result.content}`,

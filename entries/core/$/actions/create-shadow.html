@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Create a shadow copy</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+
+  <body>
+    <h1>Create a shadow</h1>
+
+    <p>
+      You're attempting to edit file
+      <replace-with code x-content="parameters.editContentPath"
+        >&lt;no file supplied&gt;</replace-with
+      >
+      which only exists in the core directory. You cannot edit that file
+      directly. Instead, you can create and edit a copy of the file in the user
+      directory which will <em>shadow</em> the core file.
+    </p>
+
+    <form action="/?create" method="POST">
+      <replace-with
+        input
+        type="hidden"
+        name="contentPath"
+        x-value="parameters.editContentPath"
+      ></replace-with>
+      <replace-with
+        input
+        type="hidden"
+        name="redirect"
+        x-value="parameters.editContentPath + '?edit'"
+      ></replace-with>
+      <replace-with
+        input
+        type="hidden"
+        name="content"
+        x-value="render(parameters.editContentPath,{raw:'raw'})"
+      ></replace-with>
+      <button type="submit">Create and edit shadow copy</button>
+    </form>
+
+    <p>
+      <replace-with a x-href="parameters.editContentPath"
+        >Go back to the original</replace-with
+      >
+    </p>
+  </body>
+</html>

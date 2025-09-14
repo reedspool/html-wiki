@@ -219,33 +219,26 @@ test("Edit page for no entry 404s", { concurrency: true }, async () => {
     await validateAssertAndReport(responseText, url);
 });
 
-test("Can get edit page for index", { concurrency: true }, async () => {
-    const { url, response, responseText, $1 } = await getPath(`/index?edit`);
-
-    assert.strictEqual(response.status, 200);
-    assert.match($1("h1").innerHTML, /Edit/);
-    assert.doesNotMatch($1("h1").innerHTML, /template/i);
-
-    await validateAssertAndReport(responseText, url);
-});
-
 test(
-    "Can get edit page for weird path $/templates/edit",
+    "Can get edit page for weird path test/fixtures/$/pageWithDollarSign.html",
     { concurrency: true },
     async () => {
         const { url, responseText, $1 } = await getPath(
-            `${configuredFiles.defaultEditTemplateFile}?edit`,
+            `/fixtures/$/pageWithDollarSign.html?edit`,
         );
 
         assert.match($1("h1").innerHTML, /Edit/);
 
         // Should also include itself but escaped
-        assert.match(responseText, /&lt;h1&gt;(.|\n)*Edit(.|\n)*&lt;\/h1&gt;/);
+        assert.match(
+            responseText,
+            /&lt;p&gt;(.|\n)*dollar sign(.|\n)*&lt;\/p&gt;/,
+        );
 
         // Save button should have a formaction without any special mode
         assert.match(
             responseText,
-            /<button\s+type="submit"\s+formaction="\/\$\/templates\/edit.html"/,
+            /<button\s+type="submit"\s+formaction="\/fixtures\/\$\/pageWithDollarSign.html"/,
         );
 
         await validateAssertAndReport(responseText, url);
@@ -534,6 +527,155 @@ test(
         );
 
         await getPath(filename, 404);
+    },
+);
+
+test(
+    "Can edit a core file to shadow it and delete it again to reveal the core",
+    { concurrency: true },
+    async (context) => {
+        const filePathToEdit = configuredFiles.rootIndexHtml;
+        const beforeChangeResponse = await getPath(filePathToEdit);
+
+        assert.match(beforeChangeResponse.$1("h1").innerHTML, /HTML Wiki/);
+
+        // The user directory version doesn't exist
+        assert.rejects(() =>
+            readFile(`${configuredFiles.testDirectory}${filePathToEdit}`),
+        );
+
+        const getEditResponse = await getPath(`${filePathToEdit}?edit`);
+
+        assert.match(getEditResponse.responseText, /core directory/);
+        assert.match(getEditResponse.responseText, /shadow/);
+        assert.match(getEditResponse.responseText, /create/);
+        assert.match(getEditResponse.responseText, /copy/);
+        assert.match(
+            getEditResponse
+                .$1("input[type=hidden][name=contentPath]")
+                .getAttribute("value")!,
+            new RegExp(filePathToEdit),
+        );
+
+        // This page has stuff from the global page template
+        assert.match(
+            getEditResponse.$1("header nav a:nth-child(1)").innerHTML,
+            /HTML Wiki/,
+        );
+        assert.match(
+            getEditResponse.$1('header nav ul a[href="/"]').innerHTML,
+            /Home/,
+        );
+        assert.match(
+            getEditResponse.$1('header nav a[href="/sitemap"]').innerHTML,
+            /Sitemap/,
+        );
+
+        assert.match(
+            getEditResponse.$1("footer nav a:nth-child(1)").innerHTML,
+            /HTML Wiki/,
+        );
+        assert.match(
+            getEditResponse.$1('footer nav ul a[href="/"]').innerHTML,
+            /Home/,
+        );
+        assert.match(
+            getEditResponse.$1('footer nav a[href="/sitemap"]').innerHTML,
+            /Sitemap/,
+        );
+
+        // TODO: This is an example where this integration test should really
+        // occur in a real browser environment e.g. Playwright, because
+        // this is what the button on the page should do, but it's impractical
+        // to get all the stuff
+        const createShadowCopyResponse = await postPath(`/?create`, {
+            contentPath: filePathToEdit,
+            content: (
+                await readFile(
+                    `${configuredFiles.coreDirectory}${filePathToEdit}`,
+                )
+            ).toString(),
+        });
+
+        // File now exists in user directory
+        assert.doesNotReject(() =>
+            readFile(`${configuredFiles.testDirectory}${filePathToEdit}`),
+        );
+
+        // Now edit the page
+        const editedTitle = "My Edited First Testing Temp Page";
+        beforeChangeResponse.$1("h1").innerHTML = editedTitle;
+        const editedContent = beforeChangeResponse.dom.toString();
+
+        const editResponse = await postPath(filePathToEdit, {
+            content: editedContent,
+        });
+
+        // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
+        // TODO: Add a replacing mechanism here and test that it worked
+        assert.match(editResponse.responseText, /success/i);
+
+        const getAfterEditResponse = await getPath(filePathToEdit);
+
+        assert.match(getAfterEditResponse.$1("h1").innerHTML, /edited/i);
+
+        const deleteResponse = await postPath(
+            filePathToEdit + "?delete",
+            {},
+            400,
+        );
+
+        assert.match(
+            deleteResponse.responseText,
+            new RegExp(filePathToEdit.replaceAll(/\$/g, "\\$")),
+        );
+        assert.match(deleteResponse.responseText, /are you sure/i);
+        assert.match(deleteResponse.responseText, /cannot be undone/i);
+        assert.match(
+            deleteResponse.$1(`button[type="submit"]`).innerHTML,
+            /confirm and delete/i,
+        );
+        assert.ok(
+            deleteResponse.$1(
+                `form[action="${filePathToEdit}?delete&delete-confirm"][method="POST"]`,
+            ),
+        );
+        assert.match(
+            deleteResponse.$1(`a[href=${filePathToEdit}]`).innerHTML,
+            /cancel/,
+        );
+        assert.match(
+            deleteResponse.$1(`a[href=${filePathToEdit}]`).innerHTML,
+            /go back/,
+        );
+
+        const deleteConfirmResponse = await postPath(
+            `${filePathToEdit}?delete&delete-confirm`,
+        );
+
+        assert.match(
+            deleteConfirmResponse.responseText,
+            new RegExp(filePathToEdit.replaceAll(/\$/g, "\\$")),
+        );
+        assert.match(
+            deleteConfirmResponse.responseText,
+            /deleted successfully/i,
+        );
+
+        // The path still works, but gets the original
+        const afterDeleteResponse = await getPath(filePathToEdit, 200);
+
+        assert.equal(
+            afterDeleteResponse.responseText,
+            beforeChangeResponse.responseText,
+        );
+
+        assert.rejects(() =>
+            readFile(`${configuredFiles.testDirectory}${filePathToEdit}`),
+        );
+        assert.doesNotReject(() =>
+            readFile(`${configuredFiles.coreDirectory}${filePathToEdit}`),
+        );
     },
 );
 

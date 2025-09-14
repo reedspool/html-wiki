@@ -16,6 +16,7 @@ export const configuredFiles = {
     defaultDeleteTemplateFile: "/$/templates/delete.html",
     defaultEditTemplateFile: "/$/templates/edit.html",
     defaultCreateTemplateFile: "/$/actions/create.html",
+    defaultCreateShadowTemplateFile: "/$/actions/create-shadow.html",
     defaultCssFile: "/$/global.css",
     fileMissingPageTemplate: "/404.html",
     sitemapTemplate: "/sitemap.html",

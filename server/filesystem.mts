@@ -91,6 +91,18 @@ export const readFileRaw = async ({
     );
 };
 
+export const fileExists = async (params: {
+    contentPath: string;
+    searchDirectories: string[];
+}): Promise<{ exists: true; foundInDirectory: string } | { exists: false }> => {
+    try {
+        const { foundInDirectory } = await readFileRaw(params);
+        return { exists: true, foundInDirectory };
+    } catch (error) {
+        return { exists: false };
+    }
+};
+
 export const updateFile = async ({
     contentPath,
     directory,
