@@ -2,7 +2,21 @@
 
 ## Logbook
 
-Here are my notes with the most recent on top. Details, quality, and rationality vary.
+Here are my notes with the most recent on top. Details, quality, and rationality vary. 
+
+Most recent on top, reverse chronological order. Lines which begin `Future:` are notes to myself for work not yet done, despite the past-tense.
+
+### Wed Sep 17 07:45:27 PDT 2025
+
+Future: As I began to use the project more, I found errors which broke the site obnoxious. So I made an error page.
+
+Future: If the title wasn't a file path, then there was no reason for it to have a file extension. That suggested it might be a good idea to have a different way to choose a file type and (by extension) its extension. And it should probably be an error or require confirmation to create a file with no extension. Was there any safe way to attempt to read a binary file as a plaintext file? I tried making a drop-down for different file types. 
+
+Future: I made a Markdown template and an HTML template for file creation and then I made buttons on the Create page to get to them. I considered what might happen to content and title a person had already filled in before selecting those templates. Would it be easy to fill in the template with some existing content? And what about if a user selected a template and then made some changes and selected another template? In that case, it might be wise to warn them that all the content would be inserted as well.
+
+### Tue Sep 16 10:33:29 PM PDT 2025
+
+Future: I learned something which pointed out a flaw in my strategy of naming files whatever I wanted and for that to be the addressable title of an entry. Apparently, Android uses a filesystem with more restrictive file naming constraints than my Linux computer. So I learned that filenames weren't a good place for expressive titles. Instead, meta information inside the file would be the place for the real title, instead of depending on the file system. Or maybe both? Imagine an image file, or any non-plaintext file where metadata wouldn't be easy to encode within the file, it would only be addressable by its file name. So maybe a scheme where both metadata titles and filenames would be used. A good discovery, though it did feel like a discovery of more work at a time when I was excited to start using the thing!
 
 ### Sat Sep 13 10:49:24 AM PDT 2025
 
