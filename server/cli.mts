@@ -6,16 +6,16 @@ import { createServer } from "./server.mts";
 import { Command } from "@commander-js/extra-typings";
 import {
     execute,
-    getContentsAndMetaOfAllFiles,
     type ParameterValue,
     setEachParameterWithSource,
     setParameterWithSource,
 } from "./engine.mts";
 import debug from "debug";
 import { configuredFiles } from "./configuration.mts";
+import { buildCache } from "./fileCache.mts";
 const log = debug("cli:main");
 
-let server: ReturnType<typeof createServer>;
+let server: Awaited<ReturnType<typeof createServer>>;
 
 // So I can kill from local terminal with Ctrl-c
 // From https://github.com/strongloop/node-foreman/issues/118#issuecomment-475902308
@@ -35,7 +35,7 @@ program
     .option("-u, --user-directory <string>", "where to read user files")
     .option("--port <number>")
     .option("--ignore-errors")
-    .action((options) => {
+    .action(async (options) => {
         log({ options });
         if (!options.coreDirectory) {
             options.coreDirectory = configuredFiles.coreDirectory;
@@ -58,7 +58,7 @@ program
             log(`Using default port ${port}`);
         }
         if (options.ignoreErrors) ignoreErrors();
-        server = createServer({
+        server = await createServer({
             port,
             coreDirectory: options.coreDirectory,
             userDirectory: options.userDirectory,
@@ -93,14 +93,12 @@ program
             );
             process.exit(1);
         }
-        const files = (
-            await getContentsAndMetaOfAllFiles({
-                searchDirectories: [
-                    options.userDirectory,
-                    options.coreDirectory,
-                ],
-            })
-        ).map(({ contentPath }) => contentPath);
+        const fileCache = await buildCache({
+            searchDirectories: [options.userDirectory, options.coreDirectory],
+        });
+        const files = fileCache.listOfFilesAndDetails.map(
+            ({ contentPath }) => contentPath,
+        );
 
         log(
             `Writing files to ${options.outDirectory}:`,
@@ -140,7 +138,10 @@ program
                     "query param",
                 );
             }
-            const readResult = await execute(readParameters);
+            const readResult = await execute({
+                parameters: readParameters,
+                fileCache,
+            });
 
             const writeParameters: ParameterValue = {};
             setEachParameterWithSource(
@@ -155,7 +156,7 @@ program
                 },
                 "query param",
             );
-            await execute(writeParameters);
+            await execute({ parameters: writeParameters, fileCache });
         });
     });
 

@@ -1,8 +1,6 @@
 import { Temporal } from "temporal-polyfill";
 import Fuse from "fuse.js";
-import { readFile } from "./filesystem.mts";
 import {
-    getContentsAndMetaOfAllFiles,
     maybeStringParameterValue,
     setEachParameterWithSource,
     stringParameterValue,
@@ -11,6 +9,7 @@ import {
 import debug from "debug";
 import { escapeHtml, renderMarkdown } from "./utilities.mts";
 import { applyTemplating } from "./dom.mts";
+import { type FileCache } from "./fileCache.mts";
 const log = debug("server:queryLanguage");
 
 // `p` is for "pipeline". Accepts functions and calls them with the previous result
@@ -29,7 +28,9 @@ export const p: (...args: unknown[]) => Promise<unknown> = async (...args) => {
 
 export const siteProxy = ({
     searchDirectories,
+    fileCache,
 }: {
+    fileCache: FileCache;
     searchDirectories: string[];
 }) =>
     new Proxy(
@@ -42,14 +43,10 @@ export const siteProxy = ({
                     );
                 switch (prop) {
                     case "allFiles":
-                        return getContentsAndMetaOfAllFiles({
-                            searchDirectories,
-                        });
+                        return fileCache.listOfFilesAndDetails;
                     case "search":
                         return async (query: string) => {
-                            const list = await getContentsAndMetaOfAllFiles({
-                                searchDirectories,
-                            });
+                            const list = fileCache.listOfFilesAndDetails;
                             // TODO: Probably want to cache this when we have an
                             // active cache for the content of all files
                             const fuse = new Fuse(list, {
@@ -81,7 +78,13 @@ export const siteProxy = ({
     );
 
 export const renderer =
-    ({ topLevelParameters }: { topLevelParameters: ParameterValue }) =>
+    ({
+        topLevelParameters,
+        fileCache,
+    }: {
+        topLevelParameters: ParameterValue;
+        fileCache: FileCache;
+    }) =>
     async (
         contentPath: string,
         contentParameters?: ParameterValue,
@@ -101,10 +104,7 @@ export const renderer =
             );
         }
 
-        const contentFileReadResult = await readFile({
-            searchDirectories: [userDirectory, coreDirectory],
-            contentPath,
-        });
+        const contentFileReadResult = await fileCache.readFile(contentPath);
 
         log(
             `Applying in-query templating for ${contentPath} original query content query ${JSON.stringify(contentParameters)}`,
@@ -137,6 +137,7 @@ export const renderer =
         }
         return (
             await applyTemplating({
+                fileCache,
                 content: contentFileReadResult.content,
                 parameters: setEachParameterWithSource(
                     {},
@@ -151,16 +152,15 @@ export const renderer =
 export const or = (...args: unknown[]) => args.reduce((a, b) => a || b);
 export const and = (...args: unknown[]) => args.reduce((a, b) => a && b);
 
-export const pString: (
-    pArgList: string,
-    params: {
-        parameters: ParameterValue;
-        topLevelParameters: ParameterValue;
-    },
-) => ReturnType<typeof p> = async (
-    pArgList,
-    { topLevelParameters, parameters },
-) => {
+export const buildMyServerPStringContext = ({
+    topLevelParameters,
+    parameters,
+    fileCache,
+}: {
+    fileCache: FileCache;
+    parameters: ParameterValue;
+    topLevelParameters: ParameterValue;
+}): PStringContext => {
     const searchDirectories = [];
 
     if (maybeStringParameterValue(topLevelParameters, "userDirectory")) {
@@ -177,24 +177,40 @@ export const pString: (
         searchDirectories.length > 0
             ? siteProxy({
                   searchDirectories,
+                  fileCache,
               })
             : null;
-    const paramObject = {
-        p,
+    return {
         Temporal,
         parameters,
         topLevelParameters,
         site,
         render: renderer({
+            fileCache,
             topLevelParameters,
         }),
         or,
         and,
         query: (input: string) =>
-            pString(input, { parameters, topLevelParameters }),
-    } as const;
+            pString(
+                input,
+                buildMyServerPStringContext({
+                    parameters,
+                    topLevelParameters,
+                    fileCache,
+                }),
+            ),
+    };
+};
+
+export type PStringContext = Record<string, unknown>;
+export const pString: (
+    pArgList: string,
+    context: PStringContext,
+) => ReturnType<typeof p> = async (pArgList, context) => {
     const fn = new Function(
-        "paramObject",
+        "p",
+        "context",
         [
             `const {`,
             // Fancyness so that we don't have to spell out each parameter
@@ -203,8 +219,11 @@ export const pString: (
             // Though I guess then we're relying on the well-ordering of that?
             // Could use Object.entries, and then map once to keys and once to
             // values. But maybe this is simple enough then.
-            Object.keys(paramObject).join(","),
-            `} = paramObject;`,
+            // TODO: What I realized is that doing the above probably would mean
+            // avoiding adding a name to the environment. Here I need the variable
+            // name for the object parameter.
+            Object.keys(context).join(","),
+            `} = context;`,
             `return p(${pArgList});`,
         ].join("\n"),
     );
@@ -212,5 +231,5 @@ export const pString: (
     Object.defineProperty(fn, "name", {
         value: "pString anonymous function",
     });
-    return fn(paramObject);
+    return fn(p, context);
 };

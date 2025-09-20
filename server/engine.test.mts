@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert";
 import {
     execute,
-    getContentsAndMetaOfAllFiles,
     type ParameterValue,
     setEachParameterWithSource,
     setParameterChildrenWithSource,
@@ -11,9 +10,17 @@ import { QueryError } from "./error.mts";
 import { readFile } from "./filesystem.mts";
 import { parse } from "node-html-parser";
 import { configuredFiles } from "./configuration.mts";
+import { buildCache } from "./fileCache.mts";
+
+const fileCache = await buildCache({
+    searchDirectories: [
+        configuredFiles.testDirectory,
+        configuredFiles.coreDirectory,
+    ],
+});
 
 async function executeAndParse(parameters: ParameterValue) {
-    const { content, status } = await execute(parameters);
+    const { content, status } = await execute({ parameters, fileCache });
     const dom = parse(content);
     return {
         content,
@@ -36,7 +43,7 @@ test("Render a file which doens't exist", { concurrency: true }, async () => {
         },
         "query param",
     );
-    const command = () => execute(parameters);
+    const command = () => execute({ parameters, fileCache });
 
     await assert.rejects(command);
 
@@ -179,52 +186,3 @@ test("Render sitemap", { concurrency: true }, async () => {
         /test\.md/,
     );
 });
-
-test(
-    "Generate list of files in coreDirectory",
-    { concurrency: true },
-    async () => {
-        const allFiles = (
-            await getContentsAndMetaOfAllFiles({
-                searchDirectories: [configuredFiles.coreDirectory],
-            })
-        ).map(({ contentPath }) => contentPath);
-        [
-            configuredFiles.defaultPageTemplate,
-            configuredFiles.rootIndexHtml,
-            configuredFiles.defaultDeleteTemplateFile,
-            configuredFiles.defaultEditTemplateFile,
-            configuredFiles.defaultCreateTemplateFile,
-            configuredFiles.defaultCssFile,
-        ].forEach((contentPath) => assert.ok(allFiles.includes(contentPath)));
-    },
-);
-
-test(
-    "Generate list of files in both userDirectory and coreDirectory",
-    { concurrency: true },
-    async () => {
-        const allFiles = (
-            await getContentsAndMetaOfAllFiles({
-                searchDirectories: [
-                    configuredFiles.testDirectory,
-                    configuredFiles.coreDirectory,
-                ],
-            })
-        ).map(({ contentPath }) => contentPath);
-        [
-            configuredFiles.defaultPageTemplate,
-            configuredFiles.rootIndexHtml,
-            configuredFiles.testMarkdownFile,
-            configuredFiles.defaultDeleteTemplateFile,
-            configuredFiles.defaultEditTemplateFile,
-            configuredFiles.defaultCreateTemplateFile,
-            configuredFiles.defaultCssFile,
-        ].forEach((contentPath) =>
-            assert.ok(
-                allFiles.includes(contentPath),
-                `'${contentPath}' missing`,
-            ),
-        );
-    },
-);

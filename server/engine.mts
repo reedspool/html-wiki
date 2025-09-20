@@ -1,14 +1,8 @@
-import { applyTemplating, type Meta } from "./dom.mts";
-import {
-    createFileAndDirectories,
-    listAndMergeAllDirectoryContents,
-    readFile,
-    removeFile,
-    updateFile,
-} from "./filesystem.mts";
+import { applyTemplating } from "./dom.mts";
 import debug from "debug";
 import { escapeHtml } from "./utilities.mts";
-import { pString } from "./queryLanguage.mts";
+import { buildMyServerPStringContext, pString } from "./queryLanguage.mts";
+import { type FileCache } from "./fileCache.mts";
 const log = debug("server:engine");
 
 // Parameters come in tagged with a source to enable specific diagnostic reports
@@ -75,14 +69,21 @@ export type Result = {
     // The complete stringified result. Not necessarily the content rendered.
     content: string;
 };
-export const execute = async (parameters: ParameterValue): Promise<Result> => {
+export const execute = async ({
+    parameters,
+    fileCache,
+}: {
+    parameters: ParameterValue;
+    fileCache: FileCache;
+}): Promise<Result> => {
     // NOTE: Despite TypeScript, it's on us to explicitly validate every property
 
     log("Engine executing parameters: %O", parameters);
     const validationIssues: Array<string> = [];
-    if (!parameters.coreDirectory) {
-        validationIssues.push("coreDirectory required");
-    }
+    // TODO: I think this isn't needed anymore since it's in the file cache
+    // if (!parameters.coreDirectory) {
+    //     validationIssues.push("coreDirectory required");
+    // }
     if (!parameters.contentPath) {
         validationIssues.push("contentPath required");
     }
@@ -112,7 +113,7 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
 
-            await createFileAndDirectories({
+            await fileCache.createFileAndDirectories({
                 directory: stringParameterValue(parameters, "userDirectory"),
                 contentPath: stringParameterValue(parameters, "contentPath"),
                 content: stringParameterValue(parameters, "content"),
@@ -127,23 +128,24 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
             const getQueryValue = (query: string) =>
-                pString(query, {
-                    parameters: parameters,
-                    topLevelParameters: parameters,
-                });
-            const readResult = await readFile({
-                searchDirectories: [
-                    stringParameterValue(parameters, "userDirectory"),
-                    stringParameterValue(parameters, "coreDirectory"),
-                ],
-                contentPath: stringParameterValue(parameters, "contentPath"),
-            });
+                pString(
+                    query,
+                    buildMyServerPStringContext({
+                        parameters,
+                        topLevelParameters: parameters,
+                        fileCache,
+                    }),
+                );
+            const readResult = await fileCache.readFile(
+                stringParameterValue(parameters, "contentPath"),
+            );
             const content = (await getQueryValue("parameters.raw"))
                 ? (await getQueryValue("parameters.escape"))
                     ? escapeHtml(readResult.content)
                     : readResult.content
                 : (
                       await applyTemplating({
+                          fileCache,
                           content: readResult.content,
                           parameters: parameters,
                           topLevelParameters: parameters,
@@ -160,7 +162,7 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
             }
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
-            await updateFile({
+            await fileCache.updateFile({
                 directory: stringParameterValue(parameters, "userDirectory"),
                 contentPath: stringParameterValue(parameters, "contentPath"),
                 content: stringParameterValue(parameters, "content"),
@@ -173,7 +175,7 @@ export const execute = async (parameters: ParameterValue): Promise<Result> => {
         case "delete": {
             if (validationIssues.length > 0)
                 return validationErrorResponse(validationIssues);
-            await removeFile({
+            await fileCache.removeFile({
                 directory: stringParameterValue(parameters, "userDirectory"),
                 contentPath: stringParameterValue(parameters, "contentPath"),
             });
@@ -329,69 +331,4 @@ export const maybeRecordParameterValue = (
 ): unknown | null => {
     if (!parameter) return null;
     return parameter;
-};
-
-export const getWithTemplateApplied = async ({
-    contentPath,
-    searchDirectories,
-}: {
-    contentPath: string;
-    searchDirectories: string[];
-}) => {
-    const readResults = await readFile({
-        searchDirectories,
-        contentPath,
-    });
-    if (!/\.html$/.test(contentPath)) return { originalContent: readResults };
-    try {
-        const result = await applyTemplating({
-            content: readResults.content,
-            parameters: {},
-            topLevelParameters: {},
-            stopAtSelector: "body",
-        });
-        return {
-            ...result,
-            originalContent: readResults,
-        };
-    } catch (error) {
-        log(readResults);
-        throw new Error(
-            `Couldn't apply templating for '${contentPath}': ${error}`,
-        );
-    }
-};
-
-export const getContentsAndMetaOfAllFiles = async ({
-    searchDirectories,
-}: {
-    searchDirectories: string[];
-}): Promise<
-    Array<{
-        meta: Meta;
-        originalContent: { content: string; foundInDirectory: string };
-        name: string;
-        contentPath: string;
-        type: "file";
-    }>
-> => {
-    const allDirents = await listAndMergeAllDirectoryContents({
-        searchDirectories,
-    });
-    return Promise.all(
-        allDirents
-            .filter(({ type }) => type === "file")
-            .map(async (dirent) => {
-                const templateResults = await getWithTemplateApplied({
-                    contentPath: dirent.contentPath,
-                    searchDirectories,
-                });
-                return {
-                    ...dirent,
-                    type: "file", // TypeScript doesnt track the filter above
-                    meta: "meta" in templateResults ? templateResults.meta : {},
-                    originalContent: templateResults.originalContent,
-                };
-            }),
-    );
 };

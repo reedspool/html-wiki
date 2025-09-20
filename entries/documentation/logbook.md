@@ -6,6 +6,10 @@ Here are my notes with the most recent on top. Details, quality, and rationality
 
 Most recent on top, reverse chronological order. Lines which begin `Future:` are notes to myself for work not yet done, despite the past-tense.
 
+### Sat Sep 20 02:50:30 PM PDT 2025
+
+As I implemented the file cache and separated out the concepts of file path and file title, I realized there were other dimensions of virtual distinction. For example, when rendering a page, I expected to render the template within it. That made the rendered page view distinct from the raw contents of the file on disk. But I wanted to refer to either via either the file path or a title within the file. Those distinctions seemed worthy of naming, making them first level concepts, instead of referring to them vaguely as "raw" or "rendered". I wondered what naming made sense. I was making a cache to cache the raw file contents, but that cache wouldn't cache the rendered output. If I wanted to do that, that would be a different cache, at a different layer, with a depenency on the file cache; e.g. if the file contents changed, the file cache might update, which would require the rendered view to update as well.
+
 ### Wed Sep 17 07:45:27 PDT 2025
 
 Future: As I began to use the project more, I found errors which broke the site obnoxious. So I made an error page.

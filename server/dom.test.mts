@@ -1,21 +1,17 @@
 import test from "node:test";
 import assert from "node:assert";
 import { setParameterWithSource, type ParameterValue } from "./engine.mts";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 import { parse } from "node-html-parser";
 import { applyTemplating } from "./dom.mts";
 import { html } from "./utilities.mts";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const coreDirectory = `${__dirname}/../entries`;
+import { buildEmptyCache } from "./fileCache.mts";
 
 async function applyTemplatingAndParse(
     parameters: ParameterValue,
     content: string,
 ) {
     const result = await applyTemplating({
+        fileCache: await buildEmptyCache(),
         content,
         parameters,
         topLevelParameters: parameters,

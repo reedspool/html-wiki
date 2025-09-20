@@ -1,14 +1,16 @@
 import { type Node, NodeType, HTMLElement } from "node-html-parser";
 import { parse as parseHtml } from "node-html-parser";
 import { QueryError } from "./error.mts";
-import { pString } from "./queryLanguage.mts";
+import { buildMyServerPStringContext, pString } from "./queryLanguage.mts";
 import { type ParameterValue, setParameterWithSource } from "./engine.mts";
 import debug from "debug";
+import { type FileCache } from "./fileCache.mts";
 const log = debug("server:dom");
 export type Meta = Record<string, string | string[]>;
 
 export const applyTemplating = async (
     params: {
+        fileCache: FileCache;
         parameters: ParameterValue;
         topLevelParameters: ParameterValue;
         stopAtSelector?: string;
@@ -24,9 +26,17 @@ export const applyTemplating = async (
     content: string;
     meta: Meta;
 }> => {
-    const { parameters, topLevelParameters, stopAtSelector } = params;
+    const { parameters, topLevelParameters, stopAtSelector, fileCache } =
+        params;
     const getQueryValue = (query: string) => {
-        return pString(query, { parameters, topLevelParameters });
+        return pString(
+            query,
+            buildMyServerPStringContext({
+                parameters,
+                topLevelParameters,
+                fileCache,
+            }),
+        );
     };
     const meta: Meta = {};
     let root: HTMLElement;
@@ -210,6 +220,7 @@ export const applyTemplating = async (
                             //@ts-expect-error
                             childElementClone.parentNode = null;
                             const { content } = await applyTemplating({
+                                fileCache,
                                 element: childElementClone,
                                 parameters: parameters,
                                 topLevelParameters,

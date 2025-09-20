@@ -26,12 +26,12 @@ import {
     type ParameterValue,
 } from "./engine.mts";
 import debug from "debug";
-import { fileExists, readFileRaw } from "./filesystem.mts";
 import { configuredFiles } from "./configuration.mts";
+import { buildCache } from "./fileCache.mts";
 const log = debug("server:server");
 const upload = multer();
 
-export const createServer = ({
+export const createServer = async ({
     port,
     coreDirectory,
     userDirectory,
@@ -46,6 +46,10 @@ export const createServer = ({
     // Only be warned if the number of listeners for a specific event goes above
     // this number. The warning will come in logs (MaxListenersExceededWarning)
     emitter.setMaxListeners(100);
+
+    const fileCache = await buildCache({
+        searchDirectories: [userDirectory, coreDirectory],
+    });
 
     const app = express();
     const baseURL = `localhost:${port}`;
@@ -178,10 +182,8 @@ export const createServer = ({
             const toEditContentPath =
                 maybeStringParameterValue(parameters, "contentPath") ||
                 pathToEntryFilename(req.path);
-            const fileExistsResult = await fileExists({
-                contentPath: toEditContentPath,
-                searchDirectories: [userDirectory, coreDirectory],
-            });
+            const fileExistsResult =
+                await fileCache.fileExists(toEditContentPath);
             // File not existing at all is handled in the engine
             if (
                 fileExistsResult.exists &&
@@ -326,10 +328,9 @@ export const createServer = ({
             !/\.(html|md)$/.test(pathToEntryFilename(req.path))
         ) {
             log("Serving static file %s", pathToEntryFilename(req.path));
-            const readResults = await readFileRaw({
-                searchDirectories: [userDirectory, coreDirectory],
-                contentPath: pathToEntryFilename(req.path),
-            });
+            const readResults = await fileCache.readFileRaw(
+                pathToEntryFilename(req.path),
+            );
             res.setHeader(
                 "Content-Type",
                 contentType(
@@ -373,7 +374,7 @@ export const createServer = ({
             }
         }
 
-        const result = await execute(parameters);
+        const result = await execute({ parameters, fileCache });
         if (command === "read") {
             res.setHeader(
                 "Content-Type",

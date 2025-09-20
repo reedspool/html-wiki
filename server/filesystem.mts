@@ -28,6 +28,7 @@ export const createFileAndDirectories = async ({
     directory: string;
     content: string;
 }) => {
+    assertHappyFilePath(contentPath);
     try {
         await mkdir(
             filePath({ contentPath: dirname(contentPath), directory }),
@@ -112,6 +113,8 @@ export const updateFile = async ({
     directory: string;
     content: string;
 }) => {
+    assertHappyFilePath(contentPath);
+
     try {
         await open(filePath({ contentPath, directory }), "wx");
         throw new QueryError(
@@ -131,6 +134,18 @@ export const updateFile = async ({
         throw error;
     }
 };
+
+// From https://superuser.com/a/748264
+export const assertHappyFilePath = (path: string) => {
+    const problems = path.match(/[^a-zA-Z0-9-._/]/g);
+    if (problems) {
+        const chars = problems.map((c) => `'${c}'`).join(", ");
+        throw new Error(
+            `Character${problems.length > 1 ? "s" : ""} ${chars} not allowed in filename`,
+        );
+    }
+};
+
 export const removeFile = async ({
     contentPath,
     directory,
@@ -182,17 +197,16 @@ export const listAndMergeAllDirectoryContents = async ({
     return results;
 };
 
+export type MyDirectoryEntry = {
+    name: string;
+    contentPath: string;
+    type: "directory" | "file" | "other";
+};
 export const listAllDirectoryContents = async ({
     directory,
 }: {
     directory: string;
-}): Promise<
-    Array<{
-        name: string;
-        contentPath: string;
-        type: "directory" | "file" | "other";
-    }>
-> => {
+}): Promise<Array<MyDirectoryEntry>> => {
     const normalizedBaseDirectory = normalize(directory);
     const all = await readdir(normalizedBaseDirectory, {
         recursive: true,
