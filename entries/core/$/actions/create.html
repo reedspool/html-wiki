@@ -54,15 +54,50 @@
         the site. Try not to do that.
       </p>
     </slot>
+    <form method="GET">
+      <!-- Get time once so they don't differ, and remove milliseconds  -->
+      <set-
+        timestamp="Temporal.Now.plainDateTimeISO().toString().replace(/\.\d+$/,'')"
+      ></set->
+      <replace-with
+        input
+        type="hidden"
+        name="filename"
+        x-value="topLevelParameters.timestamp.replace(/[:.]/g,'-'),_=>_+'.md'"
+      >
+      </replace-with>
+      <replace-with
+        input
+        type="hidden"
+        name="fileContent"
+        x-value="topLevelParameters.timestamp,_=>'# '+_+'\n\n'"
+      >
+      </replace-with>
+      <button type="submit">Template: Timestamp</button>
+    </form>
+    <form method="GET">
+      <replace-with
+        input
+        type="hidden"
+        name="fileContent"
+        x-value="render('/$/templates/empty.html', { raw: true })"
+      ></replace-with>
+      <button type="submit">Template: HTML</button>
+    </form>
+    <form method="GET">
+      <replace-with input type="hidden" name="fileContent" x-value="'# \n\n'">
+      </replace-with>
+      <button type="submit">Template: Markdown</button>
+    </form>
     <form method="POST">
       <drop-if truthy="topLevelParameters.filename">
-        <replace-with
+        <input
           input
           type="text"
           name="contentPath"
-          x-value="Temporal.Now.plainDateTimeISO()"
-          placeholder="posts/New Page"
-        ></replace-with>
+          value=""
+          placeholder="Leave blank to generate from title"
+        />
       </drop-if>
       <keep-if truthy="topLevelParameters.filename">
         <replace-with
