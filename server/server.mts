@@ -14,7 +14,7 @@ import {
     pathToEntryFilename,
     urlSearchParamsToRecord,
 } from "./serverUtilities.mts";
-import { QueryError } from "./error.mts";
+import { MissingFileQueryError, QueryError } from "./error.mts";
 import {
     execute,
     maybeStringParameterValue,
@@ -421,11 +421,11 @@ export const createServer = async ({
         _next: () => void,
     ) {
         if (error instanceof QueryError) {
-            if (error.status === 404) {
-                log(`404: Req ${req.path}, ${error.message}`);
+            if (error instanceof MissingFileQueryError) {
+                log(`404: While processing request '${req.path}', ${error.message}`);
 
                 res.status(error.status);
-                res.redirect(`/404.html?originalPath=${req.path}`);
+                res.redirect(`${configuredFiles.fileMissingPageTemplate}?originalPath=${req.path}&missingPath=${error.missingPath}`);
                 return;
             } else {
                 log(`QueryError on ${req.path}:`, error);
@@ -443,7 +443,7 @@ export const createServer = async ({
     app.use(function (req, res) {
         res.status(404);
         // If the path is already the 404 page, then don't redirect as that would be infinite
-        if (req.path === "/404.html") {
+        if (req.path === configuredFiles.fileMissingPageTemplate) {
             res.write(
                 `Couldn't find a file named ${escapeHtml(
                     decodeURIComponent(req.path).slice(1), // Remove leading slash

@@ -6,7 +6,7 @@ import {
     setEachParameterWithSource,
     setParameterChildrenWithSource,
 } from "./engine.mts";
-import { QueryError } from "./error.mts";
+import { MissingFileQueryError } from "./error.mts";
 import { readFile } from "./filesystem.mts";
 import { parse } from "node-html-parser";
 import { configuredFiles } from "./configuration.mts";
@@ -61,10 +61,11 @@ test("Render a file which doens't exist", { concurrency: true }, async () => {
             assert.doesNotMatch(error.toString(), /core/);
         }
 
-        if (error instanceof QueryError) {
+        if (error instanceof MissingFileQueryError) {
             assert.equal(error.status, 404);
+            assert.equal(error.missingPath ,"/This file certainly doesn't exist")
         } else {
-            assert.fail("Expected a QueryError object");
+            assert.fail("Expected a MissingFileQueryError object");
         }
     }
 });

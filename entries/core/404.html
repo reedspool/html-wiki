@@ -1,23 +1,38 @@
 <!doctype html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="x-ua-compatible" content="ie=edge" />
-        <title>404 File Not Found</title>
-        <meta name="description" content="" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-    </head>
-    <body>
-        <keep-if truthy="topLevelParameters.originalPath">
-            <p>
-                Couldn't find <replace-with code
-                x-content="topLevelParameters.originalPath"></replace-with>
-            </p>
-            <p>
-                Do you want to <replace-with a
-                x-href="`/$/actions/create?filename=${topLevelParameters.originalPath}`">create
-                it?</replace-with>
-            </p>
-        </keep-if>
-    </body>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>404 File Not Found</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <keep-if truthy="topLevelParameters.originalPath">
+      <p>While processing the request:</p>
+      <p>
+        <replace-with
+          code
+          x-content="topLevelParameters.originalPath"
+        ></replace-with>
+      </p>
+
+      <p>The server was unable to find a file at path</p>
+      <p>
+        <replace-with
+          code
+          x-content="topLevelParameters.missingPath"
+        ></replace-with>
+      </p>
+
+      <p>
+        Do you want to
+        <replace-with
+          a
+          x-href="`/$/actions/create?filename=${topLevelParameters.missingPath}`"
+          >create it?</replace-with
+        >
+      </p>
+    </keep-if>
+  </body>
 </html>

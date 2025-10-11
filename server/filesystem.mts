@@ -1,4 +1,4 @@
-import { QueryError } from "./error.mts";
+import { MissingFileQueryError, QueryError } from "./error.mts";
 import { dirname, normalize } from "node:path";
 import {
     mkdir,
@@ -70,7 +70,7 @@ export const readFileRaw = async ({
     contentPath: string;
     searchDirectories: string[];
 }): Promise<{ buffer: Buffer; foundInDirectory: string }> => {
-    for (const directory of searchDirectories) {
+    directorySearch: for (const directory of searchDirectories) {
         const path = filePath({ contentPath, directory });
         try {
             const buffer = await fsReadFile(path);
@@ -78,18 +78,15 @@ export const readFileRaw = async ({
         } catch (error) {
             if (error instanceof Error) {
                 if ("code" in error && error.code === "ENOENT") {
-                    continue;
+                    continue directorySearch;
                 }
             }
 
             throw error;
         }
     }
-    throw new QueryError(
-        404,
-        `Couldn't find a file named ${contentPath}`,
-        null,
-    );
+
+    throw new MissingFileQueryError(contentPath);
 };
 
 export const fileExists = async (params: {
@@ -117,10 +114,7 @@ export const updateFile = async ({
 
     try {
         await open(filePath({ contentPath, directory }), "wx");
-        throw new QueryError(
-            404,
-            `File ${contentPath} doesn't exist. Did you mean to create it?`,
-        );
+        throw new MissingFileQueryError(contentPath);
     } catch (error) {
         if (
             error instanceof Error &&
@@ -155,7 +149,7 @@ export const removeFile = async ({
 }) => {
     try {
         await open(filePath({ contentPath, directory }), "wx");
-        throw new QueryError(404, `File ${contentPath} doesn't exist`);
+        throw new MissingFileQueryError(contentPath);
     } catch (error) {
         if (
             error instanceof Error &&

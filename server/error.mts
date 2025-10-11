@@ -7,3 +7,11 @@ export class QueryError extends Error {
         this.originalError = originalError;
     }
 }
+
+export class MissingFileQueryError extends QueryError {
+    missingPath: string;
+    constructor(missingPath: string, originalError?: unknown) {
+        super(404, `Couldn't find expected file at '${missingPath}'`, originalError);
+        this.missingPath = missingPath;
+    }
+}
