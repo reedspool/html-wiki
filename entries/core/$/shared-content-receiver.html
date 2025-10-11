@@ -24,48 +24,109 @@
       want to create based on the shared data.
     </p>
 
-    <table>
-      <tr>
-        <td>filename</td>
-        <replace-with
-          td
-          x-content="`${topLevelParameters.title}.md`"
-        ></replace-with>
-      </tr>
-      <tr>
-        <td>fileContent</td>
-        <td>
-          <replace-with
-            div
-            x-content="`# [${topLevelParameters.title}](${topLevelParameters.url})`"
-          ></replace-with>
-          <replace-with div x-content="topLevelParameters.text"></replace-with>
-        </td>
-      </tr>
-    </table>
-    <p>
+    <style>
+      table[local] {
+        th {
+          text-align: left;
+        }
+        td,
+        th {
+          padding-inline: 1rem;
+        }
+      }
+
+      shared-create-entry {
+        h3 {
+          font-size: 1rem;
+          margin-block-end: 0.2rem;
+        }
+        h4 {
+          margin-block-end: 0.2rem;
+          font-size: 0.6rem;
+          font-family: monospace;
+        }
+        file-details {
+          padding-inline-start: 1rem;
+          padding-block-start: 0.6rem;
+          padding-block-end: 0.2rem;
+          display: block;
+          font-family: monospace;
+          font-size: 0.8rem;
+          border-top-width: 1px;
+          border-left-width: 1px;
+          border-right-width: 0;
+          border-bottom-width: 0;
+          border-style: dashed;
+          border-color: black;
+        }
+      }
+    </style>
+    <shared-create-entry>
+      <h3>Template: From Chrome Android</h3>
+      <h4>filename</h4>
       <replace-with
-        a
-        x-href="`/$/actions/create.html?filename=${topLevelParameters.title}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.url})%0A%0A${topLevelParameters.text}`"
-        >Go to Create the above</replace-with
-      >
-    </p>
-    <blockquote>
-      <replace-with h3 x-content="topLevelParameters.title"> </replace-with>
-    </blockquote>
+        file-details
+        x-content="`${topLevelParameters.title}.md`"
+      ></replace-with>
+      <h4>fileContent</h4>
+      <file-details>
+        <replace-with
+          span
+          x-content="`# [${topLevelParameters.title}](${topLevelParameters.text})`"
+        ></replace-with>
+        <br />
+        <br />
+        <replace-with
+          span
+          x-escape-content='`Shared from Chrome as "${topLevelParameters.title}" from &lt;${topLevelParameters.text}&gt;`'
+        ></replace-with>
+      </file-details>
+      <p>
+        <replace-with
+          a
+          x-href="`/$/actions/create.html?filename=${topLevelParameters.title}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.text})%0A%0AShared from Chrome as %22${topLevelParameters.title}%22 from %3C${topLevelParameters.text}%3E`"
+          >Go to Create the above</replace-with
+        >
+      </p>
+    </shared-create-entry>
+    <shared-create-entry>
+      <h3>Template: Trusting the API</h3>
+      <h4>filename</h4>
+      <replace-with
+        file-details
+        x-content="`${topLevelParameters.title}.md`"
+      ></replace-with>
+      <h4>fileContent</h4>
+      <file-details>
+        <replace-with
+          span
+          x-content="`# [${topLevelParameters.title}](${topLevelParameters.url})`"
+        ></replace-with>
+        <br />
+        <br />
+        <replace-with span x-content="topLevelParameters.text"></replace-with>
+      </file-details>
+      <p>
+        <replace-with
+          a
+          x-href="`/$/actions/create.html?filename=${topLevelParameters.title}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.url})%0A%0A${topLevelParameters.text}`"
+          >Go to Create the above</replace-with
+        >
+      </p>
+    </shared-create-entry>
     <h2>Raw Data</h2>
 
-    <table>
+    <table local>
       <tr>
-        <td>title</td>
+        <th>title</th>
         <replace-with td x-content="topLevelParameters.title"></replace-with>
       </tr>
       <tr>
-        <td>url</td>
+        <th>url</th>
         <replace-with td x-content="topLevelParameters.url"></replace-with>
       </tr>
       <tr>
-        <td>text</td>
+        <th>text</th>
         <replace-with td x-content="topLevelParameters.text"></replace-with>
       </tr>
     </table>

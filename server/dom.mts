@@ -2,6 +2,7 @@ import { type Node, NodeType, HTMLElement } from "node-html-parser";
 import { parse as parseHtml } from "node-html-parser";
 import { QueryError } from "./error.mts";
 import { buildMyServerPStringContext, pString } from "./queryLanguage.mts";
+import { escapeHtml } from "./utilities.mts";
 import { type ParameterValue, setParameterWithSource } from "./engine.mts";
 import debug from "debug";
 import { type FileCache } from "./fileCache.mts";
@@ -249,29 +250,37 @@ export const applyTemplating = async (
 
                     for (let i = 1; i < attributeEntries.length; i++) {
                         const [key, value] = attributeEntries[i];
-                        const match = key.match(/^x-(.*)$/);
+                      const match = key.match(/^x(-escape)?-(.*)$/);
                         if (match) {
-                            const realKey = match[1];
+                          const isEscape = match[1] === "-escape";
+                            const realKey = match[2];
                             const queryValue = await getQueryValue(value);
                             switch (realKey) {
                                 case "content":
+                                  let valueToSet;
                                     if (typeof queryValue !== "string") {
                                         if (
                                             typeof (queryValue as object)?.[
                                                 "toString"
                                             ] === "function"
                                         ) {
-                                            replacementElement.innerHTML = (
+                                            valueToSet = (
                                                 queryValue as object
                                             ).toString();
                                         } else {
-                                            replacementElement.innerHTML =
+                                            valueToSet =
                                                 "&lt;no textual representation&gt;";
                                         }
                                     } else {
-                                        replacementElement.innerHTML =
+                                        valueToSet =
                                             queryValue;
                                     }
+
+                                  if (isEscape) {
+                                    replacementElement.innerHTML = escapeHtml(valueToSet);
+                                  } else {
+                                    replacementElement.innerHTML = valueToSet;
+                                  }
                                     break;
                                 default:
                                     replacementElement.setAttribute(
