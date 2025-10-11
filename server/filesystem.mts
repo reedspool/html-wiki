@@ -137,7 +137,7 @@ export const updateFile = async ({
 
 // From https://superuser.com/a/748264
 export const assertHappyFilePath = (path: string) => {
-    const problems = path.match(/[^a-zA-Z0-9-._/]/g);
+    const problems = path.match(/[^a-zA-Z0-9\-. _/]/g);
     if (problems) {
         const chars = problems.map((c) => `'${c}'`).join(", ");
         throw new Error(
