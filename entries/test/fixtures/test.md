@@ -21,5 +21,4 @@ const log = () => console.log("log!");
 
 Now here's some HTML content within inline code `<code><pre>`.
 
-
 [index]: /index "Reference link to index"

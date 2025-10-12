@@ -2,7 +2,7 @@
 
 ## Logbook
 
-Here are my notes with the most recent on top. Details, quality, and rationality vary. 
+Here are my notes with the most recent on top. Details, quality, and rationality vary.
 
 Most recent on top, reverse chronological order. Lines which begin `Future:` are notes to myself for work not yet done, despite the past-tense.
 
@@ -24,9 +24,9 @@ As I implemented the file cache and separated out the concepts of file path and 
 
 Future: As I began to use the project more, I found errors which broke the site obnoxious. So I made an error page. But I confused by my professional inclination to not expose arbitrary server errors to the user as a security measure. I guess this would only make sense if I had a security model. Maybe I could expose all errors for now, and make a note that when there was authentication in place, errors should not be visible to anyone without editing authorization?
 
-Future: If the title wasn't a file path, then there was no reason for it to have a file extension. That suggested it might be a good idea to have a different way to choose a file type and (by extension) its extension. And it should probably be an error or require confirmation to create a file with no extension. Was there any safe way to attempt to read a binary file as a plaintext file? I tried making a drop-down for different file types. 
+Future: If the title wasn't a file path, then there was no reason for it to have a file extension. That suggested it might be a good idea to have a different way to choose a file type and (by extension) its extension. And it should probably be an error or require confirmation to create a file with no extension. Was there any safe way to attempt to read a binary file as a plaintext file? I tried making a drop-down for different file types.
 
-I made a Markdown template and an HTML template for file creation and then I made buttons on the Create page to get to them. 
+I made a Markdown template and an HTML template for file creation and then I made buttons on the Create page to get to them.
 
 Future: I considered what might happen to content and title a person had already filled in before selecting those templates. Would it be easy to fill in the template with some existing content? And what about if a user selected a template and then made some changes and selected another template? In that case, it might be wise to warn them that all the content would be inserted as well.
 
@@ -40,7 +40,7 @@ I made the browser page installable as a PWA so that I could use Android's Share
 
 Future: During normal use, I wanted to create a link to a page which didn't exist yet. I thought my search-and-link page should help me with this since I also wanted that page to allow me to create a link to a page if the search has no results.
 
-I missed wikilinks from TiddlyWiki. I wanted to use Markdown and this was the only feature I missed from TiddlyWiki's wikitext format so far. The positive aspect of wikilinks I was missing was the ability to declare a piece of text was a link without specifying a separate URL or path. I didn't know of a way to do this with Markdown, so I searched for that. I had a theory if I couldn't find any way to do this that I could make Markdown's ref-link syntax work in a "just in time" kind of way. I found [Shortcut reference links](https://spec.commonmark.org/0.31.2/#shortcut-reference-link) in the commonmark spec, and I figured that I could somehow create corresponding reference link definitions if none existed. I looked at the source of the Markdown parser I was using, `commonmark` on NPM, and step-debugged through it a bit. I didn't see any hooks or gaps between where reference link definitions and inline reference links were parsed where I could do anything "just in time." 
+I missed wikilinks from TiddlyWiki. I wanted to use Markdown and this was the only feature I missed from TiddlyWiki's wikitext format so far. The positive aspect of wikilinks I was missing was the ability to declare a piece of text was a link without specifying a separate URL or path. I didn't know of a way to do this with Markdown, so I searched for that. I had a theory if I couldn't find any way to do this that I could make Markdown's ref-link syntax work in a "just in time" kind of way. I found [Shortcut reference links](https://spec.commonmark.org/0.31.2/#shortcut-reference-link) in the commonmark spec, and I figured that I could somehow create corresponding reference link definitions if none existed. I looked at the source of the Markdown parser I was using, `commonmark` on NPM, and step-debugged through it a bit. I didn't see any hooks or gaps between where reference link definitions and inline reference links were parsed where I could do anything "just in time."
 
 I had another idea though. Maybe I could just find all the instances of square brackets and make reference link definitions for their contents before parsing, regardless of their content or anything else. Since the definitions were used in order of appearance, with earlier definitions overriding later ones, as long as I put my synthesized definitions at the end of the document, they wouldn't affect any "proper" ones originally in the content. I wrote some code to do this very quickly, and it worked like a charm!
 
@@ -48,23 +48,23 @@ Another idea I had was to have a rule that for any empty `href` attribute, my te
 
 I found [this 10 year old discussion](https://talk.commonmark.org/t/i-wonder-if-there-is-a-wiki-engine-that-uses-markdown/1281/20) on the topic with a quick search. Probably with more searching I could find more thoughts.
 
-Future: I also wanted to have more intelligence around file extensions. This felt complicated. So far I had my server deciding that any URL without a file extension was an HTML file, and it would automatically reference the same path with a `.html` at the end. But instead I wanted to target any file with any extension like this, and have the server smartly find a matching file. Of course, this would lead to confusion or conflicts if there were files with the same path but different file extensions. But that seemed worthwhile for the ease it would grant most of the time. 
+Future: I also wanted to have more intelligence around file extensions. This felt complicated. So far I had my server deciding that any URL without a file extension was an HTML file, and it would automatically reference the same path with a `.html` at the end. But instead I wanted to target any file with any extension like this, and have the server smartly find a matching file. Of course, this would lead to confusion or conflicts if there were files with the same path but different file extensions. But that seemed worthwhile for the ease it would grant most of the time.
 
 Future: I wanted to be able to use bare paths (with no extension) or paths with a markdown extension `.md` to internally link to other pages, and then when using the static site generation method, to convert all those links into `.html` file extensions so that they'd work in the static site context, without configuration of any redirects or other tricks.
 
-### Sat Sep  6 06:52:49 PM PDT 2025
+### Sat Sep 6 06:52:49 PM PDT 2025
 
-Shared the project with Ryan and Drew. Got a lot of great feedback about how to pitch and explain it. Iw as excited that they found it interesting. 
+Shared the project with Ryan and Drew. Got a lot of great feedback about how to pitch and explain it. Iw as excited that they found it interesting.
 
 Future: Had the thought to attach a log to a single instance of parameters and add to that log whenever a parameter was written or updated or the parameters were used. It would be easy to make a widget in the global template to view the log for the generation of each page.
 
-### Thu Sep  4 10:40:27 PM PDT 2025
+### Thu Sep 4 10:40:27 PM PDT 2025
 
 Tied up some loose ends which made the project feel a lot nicer: a delete button and a 404 page. The 404 page has a button to create the given URL, which makes it really feel like a wiki.
 
 Future: I wanted my link widget to have an easy button to insert a link with the given text even if I haven't made that page yet. Maybe then it would make sense if the template language marked links specially if they pointed to a page which did not exist, which TiddlyWiki did by default. Wikipedia also does this with red links.
 
-Future: I solidified the separation between "shadow" and "core" documents and user-made ones. I liked TiddlyWiki's concept of overwriting "shadow" Tiddlers and giving a warning about it. 
+Future: I solidified the separation between "shadow" and "core" documents and user-made ones. I liked TiddlyWiki's concept of overwriting "shadow" Tiddlers and giving a warning about it.
 
 Future: I made an HTML template and made it easy to load from the edit page for a blank page.
 
@@ -72,15 +72,15 @@ Future: I added a suggestion to the creation page to give a file extension.
 
 Future: I added tests for pages with no extension
 
-Future: I added an image, such as a favicon, and maybe a homepage hero image, and then I added tests for fetching images. 
+Future: I added an image, such as a favicon, and maybe a homepage hero image, and then I added tests for fetching images.
 
-### Mon Sep  1 11:32:49 AM PDT 2025
+### Mon Sep 1 11:32:49 AM PDT 2025
 
 I made a query playground page as a separate page first which was a really nice way to experiment with the interaction loop, write a query, run it, see the results, copy the results. Then I separately began to work on the popover/dialog version of the tool as a widget within the edit page.
 
 I tried to use the built-in `popover` and `dialog` APIs, but I found them very frustating to use. Neither of these seemed to do the job as I envisioned it. Of course, caveat emptor, I could be using them wrong or I could be trying to do the wrong thing with them. These APIs and their variations, via different attribute values like `popover="manual"` or different functions like `showModal()`, seemed to focus on particular usecases that did not match what I wanted. So I ended up using `<dialog closedby="none">` and `dialog.show()`, which felt like I was doing it all manually via JavaScript and CSS as if I'd used `div`s. Since I wasn't focused on accessibility, I didn't check if using the `dialog` actually made anything better.
 
-### Mon Sep  1 12:41:41 AM PDT 2025
+### Mon Sep 1 12:41:41 AM PDT 2025
 
 I previously wrapped parameters in a proxy as I passed them into the query language. This turned out to be hard to make sensible. I stripped it out when it made a very confusing bug where `.reverse()` on an array parameter was a string, not a function. Facepalm.
 
@@ -130,7 +130,6 @@ I spent some time fiddling with styles. I also removed a bunch of random thought
 
 While this is still true to some degree, I realized I do like having files dedicated to non-HTML formats, for example this very Markdown file.
 
-
 > Contrast with most (so far as I understand) wikis, CMS's, and static site generators which store the content of their entries in a database and transmute them into HTML pages using templating languages. I've always felt templating languages were awkward. So this concept is based on subjective intuition more than any conceptual, theoretically strong basis.
 
 Still true, but I realized that I am building _yet another templating language_. The difference is that this templating language is HTML-based, with [Custom Elements](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements) for structure and a separate query language for dynamism.
@@ -143,7 +142,7 @@ Future: My first attempt at a sitemap was a flat list of all the files, but I wa
 
 ### Sat Aug 23 10:46:53 PDT 2025
 
-Henderson shared [Pollen in Racket](https://docs.racket-lang.org/pollen/) which seemed to have a lot of similar goals. The biggest difference from his description to me (before I did my own research) sounded like it had a custom Markdown format, instead of using HTML. Definitely wanted to check it out to see the similarities. Later I did check it out and it had a [great FAQ section ](https://docs.racket-lang.org/pollen/quick-tour.html#(part._.The_end_of_the_beginning)) which expressed similar thoughts to my own though a little more pointed.
+Henderson shared [Pollen in Racket](https://docs.racket-lang.org/pollen/) which seemed to have a lot of similar goals. The biggest difference from his description to me (before I did my own research) sounded like it had a custom Markdown format, instead of using HTML. Definitely wanted to check it out to see the similarities. Later I did check it out and it had a [great FAQ section ](<https://docs.racket-lang.org/pollen/quick-tour.html#(part._.The_end_of_the_beginning)>) which expressed similar thoughts to my own though a little more pointed.
 
 Pollen's argument helped me understand my theoretical two-pronged approach. One theoretical prong was a HTML-based templating language. The second prong was a query language which was equally at home in a URL as well as in attributes of the HTML templating language. Contrast this with Pollen's templating language and Racket Lisp-as-a-data-language.
 
@@ -209,11 +208,11 @@ Future: All around I had peppered `/${filename}` because some places I was stori
 
 Future: I thought about how the bulk of the work was building an engine which comprised both the templating engine and the query language together. And this engine was a distinct component from the server. It so happened that the engine did a lot of things we consider a server to do. But the server part which dealt with HTTP requests was distinct. When the server received an HTTP request, it used all the information in that request to configure a call to this engine, and then it handled the response of that engine to the HTTP response most of the time. But the engine was a well-delineated compoonent, so I thought it was a good idea to extract and separate that from the server. I imagined other uses for the engine as well, for example:
 
-### Sat Aug  9 09:57:24 PM PDT 2025
+### Sat Aug 9 09:57:24 PM PDT 2025
 
 Future: As I kept working I realized I wanted more string templating capabilities in my budding query language. At this stage, my "language" was really just a dispatch for some specific code, there wasn't any of the combination or imperative powers suggested by the title "programming language". But I found a clear use case for string manipulation: I wanted to append `?raw` to another query which I'd already written to determine an entry file name. It felt good to wait for specific usecases while working on the core of the server before trying to make a complicated programming language, so I continued to hold off on adding the feature for now.
 
-### Sat Aug  9 02:26:34 PM PDT 2025
+### Sat Aug 9 02:26:34 PM PDT 2025
 
 Implemented the tree walking strategy and it worked well. That started to make the whole theory sensible. The server had two core features. First it was an entry point to the templating engine. Second, it implemented the query langauge. Then, the templating engine could call on the query language during expansion. This made the templating engine and query language mutually recursive. The concept felt clear and powerful, but I felt I had a lot more work to do in order to realize the potential.
 
@@ -243,8 +242,8 @@ function encodeAndDecode(str, depth = 2) {
 Then I called it like this with a bunch of special characters:
 
 ```js
-let a="?%3 quick+brown++fox 333^&*(/\\";
-encodeAndDecode(a, 5) === a
+let a = "?%3 quick+brown++fox 333^&*(/\\";
+encodeAndDecode(a, 5) === a;
 ```
 
 And got these results:
@@ -268,7 +267,7 @@ That `true` at the end reassured me. It meant that the encoded and decoded strin
 
 Future: Immediately I saw these encoded values become noisy. Limits and reductions to that noise became a constraint and goal for the query language. Especially my abundant use of `/`. Maybe in the short term I could switch that character to something unencoded, like `.`. Every single character encoded became three characters!
 
-### Wed Aug  6 04:57:31 PM PDT 2025
+### Wed Aug 6 04:57:31 PM PDT 2025
 
 Implementing the create page made a funny bug. At first I just copied and pasted the edit page, with the same form. And it seemed to work! Except... it edited the current page, just like the edit form, which meant it wasn't creating a new page, it was overwriting the Create page. Almost lost all my work on creating that page. Facepalm. Luckily my text editor's undo worked on the changes made elsewhere. Whew.
 
@@ -278,7 +277,7 @@ After fixing creation, I quickly implemented deletion. With that, I had all the 
 
 Future: I wrote more integration tests to cover more configurations with various uses of "raw" and file types.
 
-### Mon Aug  4 06:44:02 PM PDT 2025
+### Mon Aug 4 06:44:02 PM PDT 2025
 
 I began work on the `create` template and functionality. An idea I cribbed from TiddlyWiki was to name a new file with a timestamp. That led me to want a syntax for inserting a value into an `input` tag's `value` attribute. My only templating concept so far was to use `slot` tags. Was there another HTML-first or otherwise-web-first method for targeting a certain attribute? I thought about making a surrounding `slot` tag with attributes pointing to the element, attribute, and value which should be set within it. I also thought of some special global attributes, like `x-set`. I wanted to avoid non-standard syntax for the attribute values themselves, like how many templating languages use curly braces to signify calculated attributes, e.g. `<input value={inputValue} />`. That syntax makes sense if you already take it as a given that you're not writing HTML, but something which resolves to HTML. I wanted to write HTML.
 
@@ -291,8 +290,7 @@ I realized there was a whole part of the spec I hadn't used yet, custom elements
 And the way I had used `slot` elements up to this point could also be replaced with semantically named custom elements, like:
 
 ```html
-<remove-if true="{value}">...</remove-if>
-<keep-if true="{value}">...</keep-if>
+<remove-if true="{value}">...</remove-if> <keep-if true="{value}">...</keep-if>
 ```
 
 Those values could also be queries.
@@ -303,7 +301,7 @@ I wanted my query language to sensibly fit into a URL path as well as it fit int
 
 I considered whether this should effect my prior decision to use the top-level of the path to direct to pages/entries. Maybe pages should have their own top-level path, e.g. `https://my.wiki/p/About.html`, and queries could have their own too, e.g. `https://my.wiki/q/pages titled like About`. In fact, maybe `p/About` was its own query? It's querying for a page! In that case, the top level path would be a query.
 
-### Sun Aug  3 10:51:08 AM PDT 2025
+### Sun Aug 3 10:51:08 AM PDT 2025
 
 Up to this point, I only had "raw" HTML pages, but I wanted to support Markdown. I thought I could identify what content the HTML page stored via a [`<meta>` tag][mdn-meta-tag] in the `<head>`. That led me to the [`itemprop` attribute][mdn-itemprop-attribute] which seemed perfect for the job. So I'd differentiate Markdown content from "just a normal HTML page" with a tag like `<meta itemprop="content-type" content="markdown">`.
 
@@ -331,7 +329,7 @@ Then I made the `?edit` page also only put the Markdown textual content within t
 
 And finally the other side where `?edit&raw` brings you back to the normal, full HTML page edit experience even if you have a different content-type.
 
-### Sat Aug  2 10:28:03 AM PDT 2025
+### Sat Aug 2 10:28:03 AM PDT 2025
 
 At [HTML Day 2025][html-day-2025] in [Portland][html-day-2025-pdx], I got the "edit" page to actually work and submit edits! It was really fun to edit the pages.
 
@@ -339,7 +337,7 @@ I also made the edit page a normal entry, which is a trick I learned from [Tiddl
 
 Someone at HTML Day pointed out that you could easily break the whole site by removing the `<slot>` and `button` from the edit page, thus disallowing any further edits to any page. Fun!
 
-### Fri Aug  1  7:00:14 PM PDT 2025
+### Fri Aug 1 7:00:14 PM PDT 2025
 
 This idea came to me as I used and enjoyed [TiddlyWiki][tiddlywiki] (TW) more and more. I always used TW the [Node Web Server mode of TW][tiddlywiki-node] mode because it simplified the persistence model for me; I wanted the files on my harddrive, to edit them in my text editor sometimes, to sync them across my devices with [Syncthing][syncthing], and I also wanted to back them up in GitHub (note using Syncthing and `git` together isn't recommended).
 
@@ -373,4 +371,3 @@ I was excited, and I wanted to work all night on it, but I made myself go to bed
 [mdn-itemprop-attribute]: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/itemprop "MDN, itemprop attribute"
 [reeds-website-logbooks]: https://reeds.website/topic-project-logs "Reed's Website, Logbooks"
 [tiddlywiki-filter-syntax-history]: https://tiddlywiki.com/#Filter%20Syntax%20History "TiddlyWiki Filter Syntax History"
-

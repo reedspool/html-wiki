@@ -1,13 +1,13 @@
-import test from "node:test";
-import assert from "node:assert";
-import { buildCache } from "./fileCache.mts";
-import { configuredFiles as files } from "./configuration.mts";
+import test from "node:test"
+import assert from "node:assert"
+import { buildCache } from "./fileCache.mts"
+import { configuredFiles as files } from "./configuration.mts"
 
 test("Cache has lots of stuff in it", { concurrency: true }, async () => {
   const cache = await buildCache({
     searchDirectories: [files.testDirectory, files.coreDirectory],
-  });
-  [
+  })
+  ;[
     files.defaultPageTemplate,
     files.rootIndexHtml,
     files.testMarkdownFile,
@@ -23,20 +23,20 @@ test("Cache has lots of stuff in it", { concurrency: true }, async () => {
       ),
       `'${expectedContentPath}' missing`,
     ),
-  );
+  )
 
   assert.match(
     cache.getByContentPath(files.rootIndexHtml)!.meta.title as string,
     /HTML Wiki/,
-  );
+  )
   assert.equal(
     cache.getByContentPath(files.sitemapTemplate)!.meta.title,
     "Sitemap",
-  );
+  )
   assert.equal(
     cache.getByTitle("HTML Wiki Homepage")!.contentPath,
     files.rootIndexHtml,
-  );
+  )
 
-  assert.equal(cache.getByTitle("Sitemap")!.contentPath, files.sitemapTemplate);
-});
+  assert.equal(cache.getByTitle("Sitemap")!.contentPath, files.sitemapTemplate)
+})

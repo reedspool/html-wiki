@@ -1,6 +1,6 @@
 # HTML Wiki
 
-Experiment with a custom wiki where entries are written and stored as HTML files on disk. 
+Experiment with a custom wiki where entries are written and stored as HTML files on disk.
 
 ## Running locally
 
@@ -35,4 +35,3 @@ then you can (with proper auth)
 ```sh
 fly deploy
 ```
-

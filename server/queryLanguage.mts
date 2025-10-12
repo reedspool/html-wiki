@@ -1,235 +1,229 @@
-import { Temporal } from "temporal-polyfill";
-import Fuse from "fuse.js";
+import { Temporal } from "temporal-polyfill"
+import Fuse from "fuse.js"
 import {
-    maybeStringParameterValue,
-    setEachParameterWithSource,
-    stringParameterValue,
-    type ParameterValue,
-} from "./engine.mts";
-import debug from "debug";
-import { escapeHtml, renderMarkdown } from "./utilities.mts";
-import { applyTemplating } from "./dom.mts";
-import { type FileCache } from "./fileCache.mts";
-const log = debug("server:queryLanguage");
+  maybeStringParameterValue,
+  setEachParameterWithSource,
+  stringParameterValue,
+  type ParameterValue,
+} from "./engine.mts"
+import debug from "debug"
+import { escapeHtml, renderMarkdown } from "./utilities.mts"
+import { applyTemplating } from "./dom.mts"
+import { type FileCache } from "./fileCache.mts"
+const log = debug("server:queryLanguage")
 
 // `p` is for "pipeline". Accepts functions and calls them with the previous result
 export const p: (...args: unknown[]) => Promise<unknown> = async (...args) => {
-    let lastValue = undefined;
-    for (const a of args) {
-        if (typeof a === "function") {
-            lastValue = a(lastValue);
-        } else {
-            lastValue = a;
-        }
-        lastValue = await lastValue;
+  let lastValue = undefined
+  for (const a of args) {
+    if (typeof a === "function") {
+      lastValue = a(lastValue)
+    } else {
+      lastValue = a
     }
-    return lastValue;
-};
+    lastValue = await lastValue
+  }
+  return lastValue
+}
 
 export const siteProxy = ({
-    searchDirectories,
-    fileCache,
+  searchDirectories,
+  fileCache,
 }: {
-    fileCache: FileCache;
-    searchDirectories: string[];
+  fileCache: FileCache
+  searchDirectories: string[]
 }) =>
-    new Proxy(
-        {},
-        {
-            get(_target: unknown, prop: string) {
-                if (!searchDirectories)
-                    throw new Error(
-                        "Can't access `site` without `searchDirectories` parameter",
-                    );
-                switch (prop) {
-                    case "allFiles":
-                        return fileCache.listOfFilesAndDetails;
-                    case "search":
-                        return async (query: string) => {
-                            const list = fileCache.listOfFilesAndDetails;
-                            // TODO: Probably want to cache this when we have an
-                            // active cache for the content of all files
-                            const fuse = new Fuse(list, {
-                                isCaseSensitive: false,
-                                // includeScore: false,
-                                // ignoreDiacritics: false,
-                                // shouldSort: true,
-                                // includeMatches: false,
-                                findAllMatches: true,
-                                minMatchCharLength: 3,
-                                // location: 0,
-                                // threshold: 0.6,
-                                // distance: 100,
-                                useExtendedSearch: false,
-                                ignoreLocation: false,
-                                ignoreFieldNorm: true,
-                                // fieldNormWeight: 1,
-                                keys: [
-                                    "contentPath",
-                                    "originalContent.content",
-                                    "meta.title",
-                                ],
-                            });
-                            return fuse.search(query).map(({ item }) => item);
-                        };
-                }
-            },
-        },
-    );
+  new Proxy(
+    {},
+    {
+      get(_target: unknown, prop: string) {
+        if (!searchDirectories)
+          throw new Error(
+            "Can't access `site` without `searchDirectories` parameter",
+          )
+        switch (prop) {
+          case "allFiles":
+            return fileCache.listOfFilesAndDetails
+          case "search":
+            return async (query: string) => {
+              const list = fileCache.listOfFilesAndDetails
+              // TODO: Probably want to cache this when we have an
+              // active cache for the content of all files
+              const fuse = new Fuse(list, {
+                isCaseSensitive: false,
+                // includeScore: false,
+                // ignoreDiacritics: false,
+                // shouldSort: true,
+                // includeMatches: false,
+                findAllMatches: true,
+                minMatchCharLength: 3,
+                // location: 0,
+                // threshold: 0.6,
+                // distance: 100,
+                useExtendedSearch: false,
+                ignoreLocation: false,
+                ignoreFieldNorm: true,
+                // fieldNormWeight: 1,
+                keys: ["contentPath", "originalContent.content", "meta.title"],
+              })
+              return fuse.search(query).map(({ item }) => item)
+            }
+        }
+      },
+    },
+  )
 
 export const renderer =
-    ({
-        topLevelParameters,
+  ({
+    topLevelParameters,
+    fileCache,
+  }: {
+    topLevelParameters: ParameterValue
+    fileCache: FileCache
+  }) =>
+  async (
+    contentPath: string,
+    contentParameters?: ParameterValue,
+  ): Promise<string> => {
+    const coreDirectory = maybeStringParameterValue(
+      topLevelParameters,
+      "coreDirectory",
+    )
+    const userDirectory = maybeStringParameterValue(
+      topLevelParameters,
+      "userDirectory",
+    )
+
+    if (!userDirectory || !coreDirectory) {
+      throw new Error("`render` requires userDirectory and coreDirectory")
+    }
+
+    const contentFileReadResult = await fileCache.readFile(contentPath)
+
+    log(
+      `Applying in-query templating for ${contentPath} original query content query ${JSON.stringify(contentParameters)}`,
+    )
+    // TODO: I think "noApply" is more accurate than "raw", however can
+    // probably come up with a better name. The point is "raw" implies too
+    // much, or could mean several things, so I should pick some more narrow
+    // concepts, even if they have to be mixed and matched
+    if (contentParameters?.raw) {
+      if (contentParameters.escape) {
+        return escapeHtml(contentFileReadResult.content)
+      }
+      return contentFileReadResult.content
+    }
+    if (contentParameters?.renderMarkdown) {
+      let contentToRender = contentFileReadResult.content
+      // Find all *possible* reference link definitions
+      const labels = Array.from(contentToRender.matchAll(/\[([^\]]+)\]/g)).map(
+        ([_, label]) => label,
+      )
+
+      contentToRender += "\n"
+      contentToRender += "\n"
+      contentToRender += labels
+        .map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`)
+        .join("\n")
+
+      // TODO if this set contents instead of returning that would seem to enable template values in markdown
+      return renderMarkdown(contentToRender)
+    }
+    return (
+      await applyTemplating({
         fileCache,
-    }: {
-        topLevelParameters: ParameterValue;
-        fileCache: FileCache;
-    }) =>
-    async (
-        contentPath: string,
-        contentParameters?: ParameterValue,
-    ): Promise<string> => {
-        const coreDirectory = maybeStringParameterValue(
-            topLevelParameters,
-            "coreDirectory",
-        );
-        const userDirectory = maybeStringParameterValue(
-            topLevelParameters,
-            "userDirectory",
-        );
+        content: contentFileReadResult.content,
+        parameters: setEachParameterWithSource(
+          {},
+          contentParameters ?? {},
+          "query param",
+        ),
+        topLevelParameters,
+      })
+    ).content
+  }
 
-        if (!userDirectory || !coreDirectory) {
-            throw new Error(
-                "`render` requires userDirectory and coreDirectory",
-            );
-        }
-
-        const contentFileReadResult = await fileCache.readFile(contentPath);
-
-        log(
-            `Applying in-query templating for ${contentPath} original query content query ${JSON.stringify(contentParameters)}`,
-        );
-        // TODO: I think "noApply" is more accurate than "raw", however can
-        // probably come up with a better name. The point is "raw" implies too
-        // much, or could mean several things, so I should pick some more narrow
-        // concepts, even if they have to be mixed and matched
-        if (contentParameters?.raw) {
-            if (contentParameters.escape) {
-                return escapeHtml(contentFileReadResult.content);
-            }
-            return contentFileReadResult.content;
-        }
-        if (contentParameters?.renderMarkdown) {
-            let contentToRender = contentFileReadResult.content;
-            // Find all *possible* reference link definitions
-            const labels = Array.from(
-                contentToRender.matchAll(/\[([^\]]+)\]/g),
-            ).map(([_, label]) => label);
-
-            contentToRender += "\n";
-            contentToRender += "\n";
-            contentToRender += labels
-                .map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`)
-                .join("\n");
-
-            // TODO if this set contents instead of returning that would seem to enable template values in markdown
-            return renderMarkdown(contentToRender);
-        }
-        return (
-            await applyTemplating({
-                fileCache,
-                content: contentFileReadResult.content,
-                parameters: setEachParameterWithSource(
-                    {},
-                    contentParameters ?? {},
-                    "query param",
-                ),
-                topLevelParameters,
-            })
-        ).content;
-    };
-
-export const or = (...args: unknown[]) => args.reduce((a, b) => a || b);
-export const and = (...args: unknown[]) => args.reduce((a, b) => a && b);
+export const or = (...args: unknown[]) => args.reduce((a, b) => a || b)
+export const and = (...args: unknown[]) => args.reduce((a, b) => a && b)
 
 export const buildMyServerPStringContext = ({
-    topLevelParameters,
-    parameters,
-    fileCache,
+  topLevelParameters,
+  parameters,
+  fileCache,
 }: {
-    fileCache: FileCache;
-    parameters: ParameterValue;
-    topLevelParameters: ParameterValue;
+  fileCache: FileCache
+  parameters: ParameterValue
+  topLevelParameters: ParameterValue
 }): PStringContext => {
-    const searchDirectories = [];
+  const searchDirectories = []
 
-    if (maybeStringParameterValue(topLevelParameters, "userDirectory")) {
-        searchDirectories.push(
-            stringParameterValue(topLevelParameters, "userDirectory"),
-        );
-    }
-    if (maybeStringParameterValue(topLevelParameters, "coreDirectory")) {
-        searchDirectories.push(
-            stringParameterValue(topLevelParameters, "coreDirectory"),
-        );
-    }
-    const site =
-        searchDirectories.length > 0
-            ? siteProxy({
-                  searchDirectories,
-                  fileCache,
-              })
-            : null;
-    return {
-        Temporal,
-        parameters,
-        topLevelParameters,
-        site,
-        render: renderer({
-            fileCache,
-            topLevelParameters,
+  if (maybeStringParameterValue(topLevelParameters, "userDirectory")) {
+    searchDirectories.push(
+      stringParameterValue(topLevelParameters, "userDirectory"),
+    )
+  }
+  if (maybeStringParameterValue(topLevelParameters, "coreDirectory")) {
+    searchDirectories.push(
+      stringParameterValue(topLevelParameters, "coreDirectory"),
+    )
+  }
+  const site =
+    searchDirectories.length > 0
+      ? siteProxy({
+          searchDirectories,
+          fileCache,
+        })
+      : null
+  return {
+    Temporal,
+    parameters,
+    topLevelParameters,
+    site,
+    render: renderer({
+      fileCache,
+      topLevelParameters,
+    }),
+    or,
+    and,
+    query: (input: string) =>
+      pString(
+        input,
+        buildMyServerPStringContext({
+          parameters,
+          topLevelParameters,
+          fileCache,
         }),
-        or,
-        and,
-        query: (input: string) =>
-            pString(
-                input,
-                buildMyServerPStringContext({
-                    parameters,
-                    topLevelParameters,
-                    fileCache,
-                }),
-            ),
-    };
-};
+      ),
+  }
+}
 
-export type PStringContext = Record<string, unknown>;
+export type PStringContext = Record<string, unknown>
 export const pString: (
-    pArgList: string,
-    context: PStringContext,
+  pArgList: string,
+  context: PStringContext,
 ) => ReturnType<typeof p> = async (pArgList, context) => {
-    const fn = new Function(
-        "p",
-        "context",
-        [
-            `const {`,
-            // Fancyness so that we don't have to spell out each parameter
-            // TODO: Might be a little simpler to use this Object.keys list
-            // as the first N parameters to new Function instead
-            // Though I guess then we're relying on the well-ordering of that?
-            // Could use Object.entries, and then map once to keys and once to
-            // values. But maybe this is simple enough then.
-            // TODO: What I realized is that doing the above probably would mean
-            // avoiding adding a name to the environment. Here I need the variable
-            // name for the object parameter.
-            Object.keys(context).join(","),
-            `} = context;`,
-            `return p(${pArgList});`,
-        ].join("\n"),
-    );
+  const fn = new Function(
+    "p",
+    "context",
+    [
+      `const {`,
+      // Fancyness so that we don't have to spell out each parameter
+      // TODO: Might be a little simpler to use this Object.keys list
+      // as the first N parameters to new Function instead
+      // Though I guess then we're relying on the well-ordering of that?
+      // Could use Object.entries, and then map once to keys and once to
+      // values. But maybe this is simple enough then.
+      // TODO: What I realized is that doing the above probably would mean
+      // avoiding adding a name to the environment. Here I need the variable
+      // name for the object parameter.
+      Object.keys(context).join(","),
+      `} = context;`,
+      `return p(${pArgList});`,
+    ].join("\n"),
+  )
 
-    Object.defineProperty(fn, "name", {
-        value: "pString anonymous function",
-    });
-    return fn(p, context);
-};
+  Object.defineProperty(fn, "name", {
+    value: "pString anonymous function",
+  })
+  return fn(p, context)
+}

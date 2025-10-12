@@ -7,14 +7,15 @@
     <drop-if truthy="parameters.contentParameters?.contentPath">
       You are viewing the delete page directly. Maybe you meant to
       <a href="?edit">edit this page</a>
-      (edit the delete page)? Or if you wanted to delete another page, go to that
-      page and add <code>?delete</code> to the end of the URL.
+      (edit the delete page)? Or if you wanted to delete another page, go to
+      that page and add <code>?delete</code> to the end of the URL.
     </drop-if>
     <keep-if truthy="parameters.contentParameters">
       <h1>
-        Really delete <query-content q="parameters.contentParameters.contentPath"
-                       >[file name missing]</query-content
-                                           >?
+        Really delete
+        <query-content q="parameters.contentParameters.contentPath"
+          >[file name missing]</query-content
+        >?
       </h1>
       <replace-with
         form
@@ -24,13 +25,13 @@
         <p>
           Are you sure you want to delete
           <query-content q="parameters.contentParameters.contentPath"
-          >[file name missing]</query-content
-                              >? This action cannot be undone.
+            >[file name missing]</query-content
+          >? This action cannot be undone.
         </p>
         <button type="submit">Confirm and delete</button>
         <replace-with a x-href="parameters.contentParameters.contentPath"
-        >cancel deletion and go back</replace-with
-                                    >
+          >cancel deletion and go back</replace-with
+        >
       </replace-with>
     </keep-if>
   </body>

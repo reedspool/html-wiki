@@ -1,5 +1,5 @@
-import { basename } from "node:path";
-import { applyTemplating, type Meta } from "./dom.mts";
+import { basename } from "node:path"
+import { applyTemplating, type Meta } from "./dom.mts"
 import {
   createFileAndDirectories,
   fileExists,
@@ -9,36 +9,36 @@ import {
   readFileRaw,
   removeFile,
   updateFile,
-} from "./filesystem.mts";
-import debug from "debug";
-const log = debug("server:fileCache");
+} from "./filesystem.mts"
+import debug from "debug"
+const log = debug("server:fileCache")
 
 export type FileContentsAndDetails = {
-  meta: Meta;
-  originalContent: { content: string; foundInDirectory: string };
-} & MyDirectoryEntry;
+  meta: Meta
+  originalContent: { content: string; foundInDirectory: string }
+} & MyDirectoryEntry
 export type FileCache = {
-  listOfFilesAndDetails: Array<FileContentsAndDetails>;
-  getByContentPath: (path: string) => FileContentsAndDetails | undefined;
-  getByTitle: (title: string) => FileContentsAndDetails | undefined;
-  readFile: (path: string) => ReturnType<typeof readFile>;
-  readFileRaw: (path: string) => ReturnType<typeof readFileRaw>;
-  fileExists: (path: string) => ReturnType<typeof fileExists>;
+  listOfFilesAndDetails: Array<FileContentsAndDetails>
+  getByContentPath: (path: string) => FileContentsAndDetails | undefined
+  getByTitle: (title: string) => FileContentsAndDetails | undefined
+  readFile: (path: string) => ReturnType<typeof readFile>
+  readFileRaw: (path: string) => ReturnType<typeof readFileRaw>
+  fileExists: (path: string) => ReturnType<typeof fileExists>
   createFileAndDirectories: (params: {
-    directory: string;
-    contentPath: string;
-    content: string;
-  }) => ReturnType<typeof createFileAndDirectories>;
+    directory: string
+    contentPath: string
+    content: string
+  }) => ReturnType<typeof createFileAndDirectories>
   updateFile: (params: {
-    directory: string;
-    contentPath: string;
-    content: string;
-  }) => ReturnType<typeof updateFile>;
+    directory: string
+    contentPath: string
+    content: string
+  }) => ReturnType<typeof updateFile>
   removeFile: (params: {
-    directory: string;
-    contentPath: string;
-  }) => ReturnType<typeof removeFile>;
-};
+    directory: string
+    contentPath: string
+  }) => ReturnType<typeof removeFile>
+}
 
 export const buildEmptyCache = async (): ReturnType<typeof buildCache> => {
   return {
@@ -46,28 +46,28 @@ export const buildEmptyCache = async (): ReturnType<typeof buildCache> => {
     getByTitle: () => undefined,
     getByContentPath: () => undefined,
     readFile: () => {
-      throw new Error("No files exist in empty cache");
+      throw new Error("No files exist in empty cache")
     },
     readFileRaw: () => {
-      throw new Error("No files exist in empty cache");
+      throw new Error("No files exist in empty cache")
     },
     fileExists: async () => ({ exists: false }),
     createFileAndDirectories: () => {
-      throw new Error("Cannot create anything in empty cache");
+      throw new Error("Cannot create anything in empty cache")
     },
     updateFile: () => {
-      throw new Error("Cannot update anything in empty cache");
+      throw new Error("Cannot update anything in empty cache")
     },
     removeFile: () => {
-      throw new Error("Cannot remove anything in empty cache");
+      throw new Error("Cannot remove anything in empty cache")
     },
-  };
-};
+  }
+}
 
 export const buildCache = async ({
   searchDirectories,
 }: {
-  searchDirectories: string[];
+  searchDirectories: string[]
 }): Promise<FileCache> => {
   const listOfFilesAndDetails = await getContentsAndMetaOfAllFiles({
     // TODO: To recover from race conditions on initial build,
@@ -75,17 +75,17 @@ export const buildCache = async ({
     // Except that wouldn't account for deletions? Unless that was repaired first?
     fileCache: await buildEmptyCache(),
     searchDirectories,
-  });
+  })
 
-  const filesByContentPath: Record<string, FileContentsAndDetails> = {};
+  const filesByContentPath: Record<string, FileContentsAndDetails> = {}
   listOfFilesAndDetails.forEach((everything) => {
-    filesByContentPath[everything.contentPath] = everything;
-  });
-  const filesByTitle: Record<string, FileContentsAndDetails> = {};
+    filesByContentPath[everything.contentPath] = everything
+  })
+  const filesByTitle: Record<string, FileContentsAndDetails> = {}
   listOfFilesAndDetails.forEach((everything) => {
-    if (typeof everything.meta.title !== "string") return;
-    filesByTitle[everything.meta.title] = everything;
-  });
+    if (typeof everything.meta.title !== "string") return
+    filesByTitle[everything.meta.title] = everything
+  })
   const fileCache: FileCache = {
     listOfFilesAndDetails,
     getByContentPath: (path) => filesByContentPath[path],
@@ -111,7 +111,7 @@ export const buildCache = async ({
         directory,
         contentPath,
         content,
-      });
+      })
 
       const details: FileContentsAndDetails = await resolveDirEntToAllStuff({
         dirent: {
@@ -121,24 +121,24 @@ export const buildCache = async ({
         },
         fileCache,
         searchDirectories,
-      });
+      })
 
       // TODO: Hm this isn't technically wrong with the constraints of
       // shadowing.  That is, this file could be called to create a directory
       // deeper in the  stack of shadows, and maybe there's still a file higher
       // up that should shadow it. So maybe we shouldn't always be adding it
       // to these structures
-      listOfFilesAndDetails.push(details);
-      filesByContentPath[contentPath] = details;
+      listOfFilesAndDetails.push(details)
+      filesByContentPath[contentPath] = details
       if (details.meta.title) {
         if (typeof details.meta.title !== "string") {
-          log(`Title must be a string, got %o`, details.meta.title);
-          throw new Error(`Title must be a string, see log`);
+          log(`Title must be a string, got %o`, details.meta.title)
+          throw new Error(`Title must be a string, see log`)
         }
-        filesByTitle[details.meta.title] = details;
+        filesByTitle[details.meta.title] = details
       }
 
-      return result;
+      return result
     },
 
     // TODO: Update cache. The "original contents" need to change at least
@@ -149,26 +149,26 @@ export const buildCache = async ({
       // TODO: Update the cache. This might mean searching for an uncovered
       // previously-shadowed core file. Maybe search the searchDirectories again
       // and start from there..
-      return removeFile({ directory, contentPath });
+      return removeFile({ directory, contentPath })
     },
-  };
+  }
 
-  return fileCache;
-};
+  return fileCache
+}
 
 const getFileContentsAndMetadata = async ({
   contentPath,
   searchDirectories,
   fileCache,
 }: {
-  fileCache: FileCache;
-  contentPath: string;
-  searchDirectories: string[];
+  fileCache: FileCache
+  contentPath: string
+  searchDirectories: string[]
 }) => {
   const readResults = await readFile({
     searchDirectories,
     contentPath,
-  });
+  })
   if (/\.html$/.test(contentPath)) {
     try {
       const result = await applyTemplating({
@@ -177,34 +177,34 @@ const getFileContentsAndMetadata = async ({
         parameters: {},
         topLevelParameters: {},
         stopAtSelector: "body",
-      });
+      })
       return {
         ...result,
         originalContent: readResults,
-      };
+      }
     } catch (error) {
       throw new Error(
         `Couldn't apply templating for '${contentPath}': ${error}`,
-      );
+      )
     }
   } else if (/\.md$/.test(contentPath)) {
     // TODO: Parse and separate frontmatter of markdown file
-    return { originalContent: readResults };
+    return { originalContent: readResults }
   } else {
-    return { originalContent: readResults };
+    return { originalContent: readResults }
   }
-};
+}
 
 const getContentsAndMetaOfAllFiles = async ({
   searchDirectories,
   fileCache,
 }: {
-  searchDirectories: string[];
-  fileCache: FileCache;
+  searchDirectories: string[]
+  fileCache: FileCache
 }): Promise<Array<FileContentsAndDetails>> => {
   const allDirents = await listAndMergeAllDirectoryContents({
     searchDirectories,
-  });
+  })
   return Promise.all(
     allDirents
       .filter(({ type }) => type === "file")
@@ -215,27 +215,27 @@ const getContentsAndMetaOfAllFiles = async ({
           searchDirectories,
         }),
       ),
-  );
-};
+  )
+}
 
 export const resolveDirEntToAllStuff = async ({
   dirent,
   fileCache,
   searchDirectories,
 }: {
-  dirent: MyDirectoryEntry;
-  fileCache: FileCache;
-  searchDirectories: string[];
+  dirent: MyDirectoryEntry
+  fileCache: FileCache
+  searchDirectories: string[]
 }) => {
   const templateResults = await getFileContentsAndMetadata({
     fileCache,
     contentPath: dirent.contentPath,
     searchDirectories,
-  });
+  })
   return {
     ...dirent,
     type: "file", // TypeScript doesnt track the filter above
     meta: "meta" in templateResults ? templateResults.meta : {},
     originalContent: templateResults.originalContent,
-  } as const;
-};
+  } as const
+}
