@@ -6,6 +6,11 @@ Here are my notes with the most recent on top. Details, quality, and rationality
 
 Most recent on top, reverse chronological order. Lines which begin `Future:` are notes to myself for work not yet done, despite the past-tense.
 
+### Sat Oct 11 05:59:04 PM PDT 2025
+
+When I used the Share button on a page in Chrome for Android to share to the HTML Wiki PWA, I found it didn't use the `url` field for the URL, instead it put that in the `text` field. So I made another Share template which used that as the URL.
+
+I revisited how the Create page worked with stuff I'd learned, and made different templates for a timestamp titled journal and another for an HTML page with a basic, empty HTML boilerplate (the same one as my text editor).
 
 ### Sat Sep 27 05:15:15 PM PDT 2025
 
@@ -17,11 +22,13 @@ As I implemented the file cache and separated out the concepts of file path and 
 
 ### Wed Sep 17 07:45:27 PDT 2025
 
-Future: As I began to use the project more, I found errors which broke the site obnoxious. So I made an error page.
+Future: As I began to use the project more, I found errors which broke the site obnoxious. So I made an error page. But I confused by my professional inclination to not expose arbitrary server errors to the user as a security measure. I guess this would only make sense if I had a security model. Maybe I could expose all errors for now, and make a note that when there was authentication in place, errors should not be visible to anyone without editing authorization?
 
 Future: If the title wasn't a file path, then there was no reason for it to have a file extension. That suggested it might be a good idea to have a different way to choose a file type and (by extension) its extension. And it should probably be an error or require confirmation to create a file with no extension. Was there any safe way to attempt to read a binary file as a plaintext file? I tried making a drop-down for different file types. 
 
-Future: I made a Markdown template and an HTML template for file creation and then I made buttons on the Create page to get to them. I considered what might happen to content and title a person had already filled in before selecting those templates. Would it be easy to fill in the template with some existing content? And what about if a user selected a template and then made some changes and selected another template? In that case, it might be wise to warn them that all the content would be inserted as well.
+I made a Markdown template and an HTML template for file creation and then I made buttons on the Create page to get to them. 
+
+Future: I considered what might happen to content and title a person had already filled in before selecting those templates. Would it be easy to fill in the template with some existing content? And what about if a user selected a template and then made some changes and selected another template? In that case, it might be wise to warn them that all the content would be inserted as well.
 
 ### Tue Sep 16 10:33:29 PM PDT 2025
 
