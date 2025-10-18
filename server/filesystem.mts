@@ -29,11 +29,12 @@ export const createFileAndDirectories = async ({
   content: string
 }) => {
   assertHappyFilePath(contentPath)
+  let fd
   try {
     await mkdir(filePath({ contentPath: dirname(contentPath), directory }), {
       recursive: true,
     })
-    const fd = await open(filePath({ contentPath, directory }), "wx")
+    fd = await open(filePath({ contentPath, directory }), "wx")
     content = cleanContent({ content })
     await writeFile(fd, content)
     return content
@@ -42,17 +43,24 @@ export const createFileAndDirectories = async ({
       throw new QueryError(422, `File ${contentPath} already exists`)
     }
     throw error
+  } finally {
+    await fd?.close()
   }
 }
 
+export type ReadResults = {
+  content: string
+  foundInDirectory: string
+  buffer: Buffer
+}
 export const readFile = async (params: {
   contentPath: string
   searchDirectories: string[]
-}): Promise<{ content: string; foundInDirectory: string }> => {
+}): Promise<ReadResults> => {
   const rawResults = await readFileRaw(params)
   return {
+    ...rawResults,
     content: rawResults.buffer.toString(),
-    foundInDirectory: rawResults.foundInDirectory,
   }
 }
 
@@ -106,7 +114,8 @@ export const updateFile = async ({
   assertHappyFilePath(contentPath)
 
   try {
-    await open(filePath({ contentPath, directory }), "wx")
+    const handle = await open(filePath({ contentPath, directory }), "wx")
+    await handle.close()
     throw new MissingFileQueryError(contentPath)
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "EEXIST") {
@@ -137,11 +146,12 @@ export const removeFile = async ({
   directory: string
 }) => {
   try {
-    await open(filePath({ contentPath, directory }), "wx")
+    const handle = await open(filePath({ contentPath, directory }), "wx")
+    await handle.close()
     throw new MissingFileQueryError(contentPath)
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "EEXIST") {
-      rm(filePath({ contentPath, directory }))
+      await rm(filePath({ contentPath, directory }))
       return
     }
     throw error

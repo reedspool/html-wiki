@@ -46,3 +46,9 @@ export const expressQueryToRecord = (
   }
   return query
 }
+
+export const staticContentTypes = {
+  plainText: "text/plain; charset=utf-8",
+  // Causes a download
+  arbitraryFile: "application/octet-stream",
+} as const

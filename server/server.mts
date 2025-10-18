@@ -6,12 +6,10 @@
  */
 import express from "express"
 import EventEmitter from "node:events"
-import { escapeHtml } from "./utilities.mts"
-import { contentType } from "mime-types"
 import multer from "multer"
 import {
   expressQueryToRecord,
-  pathToEntryFilename,
+  staticContentTypes,
   urlSearchParamsToRecord,
 } from "./serverUtilities.mts"
 import { MissingFileQueryError, QueryError } from "./error.mts"
@@ -28,6 +26,7 @@ import {
 import debug from "debug"
 import { configuredFiles } from "./configuration.mts"
 import { buildCache } from "./fileCache.mts"
+import { contentType } from "mime-types"
 const log = debug("server:server")
 const upload = multer()
 
@@ -95,7 +94,7 @@ export const createServer = async ({
           command = "read"
           setParameterWithSource(
             parameters,
-            "contentPath",
+            "contentPathOrContentTitle",
             req.path + ".html",
             "derived",
           )
@@ -124,13 +123,15 @@ export const createServer = async ({
     setParameterWithSource(parameters, "command", command, "derived")
 
     // TODO: This should be placed somewhere it can act consistently at all levels
-    if (
-      maybeStringParameterValue(parameters, "contentPath") &&
-      /\.md$/.test(stringParameterValue(parameters, "contentPath")) &&
-      !maybeStringParameterValue(parameters, "renderMarkdown")
-    ) {
-      setParameterWithSource(parameters, "renderMarkdown", "true", "derived")
-    }
+    // if (
+    //   maybeStringParameterValue(parameters, "contentPathOrContentTitle") &&
+    //   /\.md$/.test(
+    //     stringParameterValue(parameters, "contentPathOrContentTitle"),
+    //   ) &&
+    //   !maybeStringParameterValue(parameters, "renderMarkdown")
+    // ) {
+    //   setParameterWithSource(parameters, "renderMarkdown", "true", "derived")
+    // }
 
     if (
       command === "read" &&
@@ -150,8 +151,8 @@ export const createServer = async ({
       )
       setParameterWithSource(
         parameters,
-        "contentPath",
-        query.contentPath ?? pathToEntryFilename(req.path),
+        "contentPathOrContentTitle",
+        req.path,
         "derived",
       )
     }
@@ -175,13 +176,16 @@ export const createServer = async ({
       maybeStringParameterValue(parameters, "edit")
     ) {
       const toEditContentPath =
-        maybeStringParameterValue(parameters, "contentPath") ||
-        pathToEntryFilename(req.path)
-      const fileExistsResult = await fileCache.fileExists(toEditContentPath)
+        maybeStringParameterValue(parameters, "contentPathOrContentTitle") ||
+        req.path === "/"
+          ? "/index.html"
+          : req.path
+      const fileExistsResult =
+        fileCache.getByContentPathOrContentTitle(toEditContentPath)
       // File not existing at all is handled in the engine
       if (
-        fileExistsResult.exists &&
-        fileExistsResult.foundInDirectory == coreDirectory
+        fileExistsResult &&
+        fileExistsResult.originalContent.foundInDirectory == coreDirectory
       ) {
         // If requesting to edit a core file, prompt to create shadow first
         setParameterWithSource(
@@ -227,7 +231,7 @@ export const createServer = async ({
           {
             raw: "raw",
             escape: "escape",
-            contentPath: toEditContentPath,
+            contentPathOrContentTitle: toEditContentPath,
           },
           "derived",
         )
@@ -258,8 +262,8 @@ export const createServer = async ({
       maybeStringParameterValue(parameters, "delete")
     ) {
       const toDeleteContentPath =
-        maybeStringParameterValue(parameters, "contentPath") ||
-        pathToEntryFilename(req.path)
+        maybeStringParameterValue(parameters, "contentPathOrContentTitle") ||
+        req.path
       setParameterWithSource(
         parameters,
         "contentPath",
@@ -271,7 +275,7 @@ export const createServer = async ({
       setEachParameterWithSource(
         whatToDeleteContentParameters,
         {
-          contentPath: toDeleteContentPath,
+          contentPathOrContentTitle: toDeleteContentPath,
         },
         "derived",
       )
@@ -300,38 +304,34 @@ export const createServer = async ({
 
     if (
       (command == "update" || command == "create" || command == "delete") &&
-      !maybeStringParameterValue(parameters, "contentPath")
+      !maybeStringParameterValue(parameters, "contentPathOrContentTitle")
     ) {
       setParameterWithSource(
         parameters,
-        "contentPath",
-        pathToEntryFilename(req.path),
+        "contentPathOrContentTitle",
+        req.path,
         "derived",
       )
     }
 
-    // If the request didn't specify a contentPath explicitly, and we didn't derive one already (e.g. `?edit`)
     if (
-      !maybeStringParameterValue(parameters, "contentPath") &&
-      command === "read" &&
-      // Any file which isn't template-able by the engine (HTML or MD)
-      // just gets sent back statically
-      !/\.(html|md)$/.test(pathToEntryFilename(req.path))
+      !maybeStringParameterValue(parameters, "contentPathOrContentTitle") &&
+      !maybeStringParameterValue(parameters, "contentPath")
     ) {
-      log("Serving static file %s", pathToEntryFilename(req.path))
-      const readResults = await fileCache.readFileRaw(
-        pathToEntryFilename(req.path),
-      )
-      res.setHeader(
-        "Content-Type",
-        contentType(pathToEntryFilename(req.path).match(/\.[^.]+$/)![0]) ||
-          "application/octet-stream",
-      )
-      res.send(readResults.buffer)
-      return
-    }
-
-    if (!maybeStringParameterValue(parameters, "contentPath")) {
+      if (
+        command === "read" &&
+        fileCache.getByContentPath(req.path)?.renderability === "static"
+      ) {
+        log("Serving static file %s", req.path)
+        const readResults = await fileCache.readFileRaw(req.path)
+        res.setHeader(
+          "Content-Type",
+          contentType(req.path.match(/\.[^.]+$/)![0]) ||
+            staticContentTypes.arbitraryFile,
+        )
+        res.send(readResults.buffer)
+        return
+      }
       setParameterWithSource(
         parameters,
         "contentPath",
@@ -344,36 +344,24 @@ export const createServer = async ({
         contentParameters,
         {
           select: "body",
-          contentPath: pathToEntryFilename(req.path),
+          contentPathOrContentTitle: req.path,
         },
         "derived",
       )
+
       setParameterChildrenWithSource(
         parameters,
         "contentParameters",
         contentParameters,
         "derived",
       )
-      if (/\.md$/.test(req.path)) {
-        setParameterWithSource(
-          contentParameters,
-          "renderMarkdown",
-          "true",
-          "derived",
-        )
-      }
     }
 
     const result = await execute({ parameters, fileCache })
     if (command === "read") {
-      res.setHeader(
-        "Content-Type",
-        (typeof parameters.contentPath === "string" &&
-          contentType(parameters.contentPath.match(/\.[^.]+$/)![0])) ||
-          "application/octet-stream",
-      )
+      res.setHeader("Content-Type", result.contentType)
       // TODO: This is silly because it's like the one instance where I'm not
-      // looking at the contentPath and instead looking only at the path.
+      // looking at the contentPathOrContentTitle and instead looking only at the path.
       // Suggests this is somethign the Engine should be doing instead?
       if (req.path === configuredFiles.fileMissingPageTemplate) {
         res.status(404)
@@ -383,7 +371,7 @@ export const createServer = async ({
       res.redirect(stringParameterValue(parameters, "redirect"))
     } else if (command == "update" || command == "create") {
       res.redirect(
-        `${stringParameterValue(parameters, "contentPath")}?statusMessage=${result.content}`,
+        `${stringParameterValue(parameters, "contentPathOrContentTitle")}?statusMessage=${result.content}`,
       )
     } else if (command == "delete") {
       res.redirect(`/?statusMessage=${result.content}`)
@@ -434,11 +422,8 @@ export const createServer = async ({
     res.status(404)
     // If the path is already the 404 page, then don't redirect as that would be infinite
     if (req.path === configuredFiles.fileMissingPageTemplate) {
-      res.write(
-        `Couldn't find a file named ${escapeHtml(
-          decodeURIComponent(req.path).slice(1), // Remove leading slash
-        )}`,
-      )
+      res.write(`404 - File Not Found`)
+      res.setHeader("Content-Type", staticContentTypes.plainText)
       res.end()
       return
     }
@@ -479,7 +464,7 @@ export const decodeToContentParameters = (content: string): ParameterValue => {
   setEachParameterWithSource(parameters, fromParams, "query param")
   setParameterWithSource(
     parameters,
-    "contentPath",
+    "contentPathOrContentTitle",
     urlParsed.pathname,
     "query param",
   )

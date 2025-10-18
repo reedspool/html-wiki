@@ -3,6 +3,8 @@ import debug from "debug"
 import { escapeHtml } from "./utilities.mts"
 import { buildMyServerPStringContext, pString } from "./queryLanguage.mts"
 import { type FileCache } from "./fileCache.mts"
+import { staticContentTypes } from "./serverUtilities.mts"
+import { contentType } from "mime-types"
 const log = debug("server:engine")
 
 // Parameters come in tagged with a source to enable specific diagnostic reports
@@ -26,48 +28,12 @@ export const Status = {
 } as const
 export type Status = typeof Status
 
-// "Path absolute URL string" (starting with slash), but still relative to coreDirectory
-export type ContentPath = string
-
-// Where to start looking for paths. Should have no final slash such that
-// if you concatenate `contentPath` and `coreDirectory` you get a valid
-// file path on this file system.
-export type BaseDirectory = string
-
-export type ReadParameters = {
-  contentPath?: string
-  select?: string
-  title?: string
-  raw?: string
-  escape?: string
-  renderMarkdown?: string
-  contentParameters?: ReadParameters
-}
-export type Request = {
-  contentPath: ContentPath
-  coreDirectory: BaseDirectory
-} & (
-  | {
-      command: "create"
-      content: string
-    }
-  | {
-      command: "read"
-      parameters: ReadParameters
-    }
-  | {
-      command: "update"
-      content: string
-    }
-  | {
-      command: "delete"
-    }
-)
 export type Result = {
   // A shorthand signifier for what the result signifies
   status: Status[keyof Status]
   // The complete stringified result. Not necessarily the content rendered.
   content: string
+  contentType: string
 }
 export const execute = async ({
   parameters,
@@ -80,12 +46,22 @@ export const execute = async ({
 
   log("Engine executing parameters: %O", parameters)
   const validationIssues: Array<string> = []
-  // TODO: I think this isn't needed anymore since it's in the file cache
-  // if (!parameters.coreDirectory) {
-  //     validationIssues.push("coreDirectory required");
-  // }
-  if (!parameters.contentPath) {
-    validationIssues.push("contentPath required")
+  if (!parameters.contentPath && !parameters.contentPathOrContentTitle) {
+    // None present
+    validationIssues.push(
+      "Exactly one of contentPath or contentPathOrContentTitle required",
+    )
+  } else if (!parameters.contentPath) {
+    // Try as title
+    parameters.contentPath = unpackContentPathOrContentTitle({
+      fileCache,
+      parameters,
+    })
+  }
+
+  // TODO: Really don't want this to be everywhere
+  if (/\.md$/.test(stringParameterValue(parameters, "contentPath"))) {
+    setParameterWithSource(parameters, "renderMarkdown", "true", "derived")
   }
   let command: Command | undefined = narrowStringToCommand(
     stringParameterValue(parameters, "command"),
@@ -111,17 +87,17 @@ export const execute = async ({
         return validationErrorResponse(validationIssues)
 
       await fileCache.createFileAndDirectories({
-        directory: stringParameterValue(parameters, "userDirectory"),
         contentPath: stringParameterValue(parameters, "contentPath"),
         content: stringParameterValue(parameters, "content"),
       })
       return {
         status: Status.OK,
         content: `File ${stringParameterValue(parameters, "contentPath")} created successfully`,
+        contentType: staticContentTypes.plainText,
       }
     }
     case "read": {
-      validateReadParameters(validationIssues, parameters)
+      validateReadParameters(validationIssues, parameters, fileCache)
       if (validationIssues.length > 0)
         return validationErrorResponse(validationIssues)
       const getQueryValue = (query: string) =>
@@ -151,6 +127,12 @@ export const execute = async ({
       return {
         status: Status.OK,
         content,
+        contentType:
+          contentType(
+            stringParameterValue(parameters, "contentPath").match(
+              /\.[^.]+$/,
+            )![0],
+          ) || staticContentTypes.plainText,
       }
     }
     case "update": {
@@ -160,25 +142,25 @@ export const execute = async ({
       if (validationIssues.length > 0)
         return validationErrorResponse(validationIssues)
       await fileCache.updateFile({
-        directory: stringParameterValue(parameters, "userDirectory"),
         contentPath: stringParameterValue(parameters, "contentPath"),
         content: stringParameterValue(parameters, "content"),
       })
       return {
         status: Status.OK,
         content: `File ${stringParameterValue(parameters, "contentPath")} updated successfully`,
+        contentType: staticContentTypes.plainText,
       }
     }
     case "delete": {
       if (validationIssues.length > 0)
         return validationErrorResponse(validationIssues)
       await fileCache.removeFile({
-        directory: stringParameterValue(parameters, "userDirectory"),
         contentPath: stringParameterValue(parameters, "contentPath"),
       })
       return {
         status: Status.OK,
         content: `File ${stringParameterValue(parameters, "contentPath")} deleted successfully`,
+        contentType: staticContentTypes.plainText,
       }
     }
     default:
@@ -188,16 +170,46 @@ export const execute = async ({
   }
 }
 
+export const unpackContentPathOrContentTitle = ({
+  fileCache,
+  parameters,
+}: {
+  fileCache: FileCache
+  parameters: ParameterValue
+}): string | undefined => {
+  return (
+    fileCache.getByContentPathOrContentTitle(
+      stringParameterValue(parameters, "contentPathOrContentTitle"),
+    )?.contentPath ??
+    stringParameterValue(parameters, "contentPathOrContentTitle")
+  )
+}
+
 export const validationErrorResponse = (validationIssues: Array<string>) => ({
   status: Status.ClientError,
   content: `Templating engine request wasn't valid, issues: ${validationIssues.join("; ")}.`,
+  contentType: staticContentTypes.plainText,
 })
 export const validateReadParameters = (
   validationIssues: Array<string>,
   parameters: ParameterValue,
+  fileCache: FileCache,
 ) => {
-  if (!parameters.contentPath) {
-    validationIssues.push("contentPath required")
+  if (!parameters.contentPath && !parameters.contentPathOrContentTitle) {
+    // None present
+    validationIssues.push(
+      "Exactly one of contentPath or contentPathOrContentTitle required",
+    )
+  } else if (!parameters.contentPath) {
+    // Try as title
+    parameters.contentPath = unpackContentPathOrContentTitle({
+      fileCache,
+      parameters,
+    })
+  }
+  // TODO: Really don't want this to be everywhere
+  if (/\.md$/.test(stringParameterValue(parameters, "contentPath"))) {
+    setParameterWithSource(parameters, "renderMarkdown", "true", "derived")
   }
   // TODO: Validate contentPath, something which says it's valid? Maybe check that the file exists?
   if (
@@ -212,6 +224,7 @@ export const validateReadParameters = (
         // Casting because the hope is we're safely validating. Could
         // probably use more tests
         recordParameterValue(parameters.contentParameters) as ParameterValue,
+        fileCache,
       )
     }
   }

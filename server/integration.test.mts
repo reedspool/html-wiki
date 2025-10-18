@@ -145,12 +145,8 @@ test(
 
     await validateAssertAndReport(responseText, url)
 
-    // /index.html ges the same result as /
-    const responseWithoutDotHtml = await fetch(url.replace(/\.html$/, ""))
-    const responseTextWithoutDotHtml = await responseWithoutDotHtml.text()
-
-    assert.strictEqual(response.status, 200)
-    assert.strictEqual(responseText, responseTextWithoutDotHtml)
+    const { responseText: responseTextViaTitle } = await getPath(`/Edit Page`)
+    assert.strictEqual(responseText, responseTextViaTitle)
   },
 )
 
@@ -159,7 +155,7 @@ test(
   { concurrency: true },
   async () => {
     const { url, response, responseText, $1 } = await getPath(
-      `/?contentPath=${configuredFiles.defaultEditTemplateFile}&raw`,
+      `/?contentPathOrContentTitle=${configuredFiles.defaultEditTemplateFile}&raw`,
     )
 
     assert.strictEqual(response.status, 200)
@@ -233,6 +229,12 @@ test(
     )
 
     await validateAssertAndReport(responseText, url)
+
+    // The page should be exactly the same if we get it via its title
+    const { responseText: byTitleResponseText } = await getPath(
+      `/A Page with a Dollar Sign in the Path?edit`,
+    )
+    assert.strictEqual(responseText, byTitleResponseText)
   },
 )
 
@@ -245,7 +247,7 @@ test(
     )
 
     // The markdown has been transformed!
-    assert.match($1("h1").innerHTML, /Markdown File Title/)
+    assert.match($1("h1").innerHTML, /Markdown Fixture File Title/)
     assert.match($1("h2").innerHTML, /Second heading/)
 
     const anchors = $("main a")
@@ -277,6 +279,12 @@ test(
     assert.match($1("pre").innerHTML, /\(\) =&gt; console.log\(/)
 
     await validateAssertAndReport(responseText, url)
+
+    // The page should be exactly the same if we get it via its title
+    const { responseText: byTitleResponseText } = await getPath(
+      `/Markdown Fixture File Title`,
+    )
+    assert.strictEqual(responseText, byTitleResponseText)
   },
 )
 
@@ -285,11 +293,11 @@ test(
   { concurrency: true },
   async () => {
     const { responseText, $1 } = await getPath(
-      `/?contentPath=${configuredFiles.testMarkdownFile}&raw`,
+      `/?contentPathOrContentTitle=${configuredFiles.testMarkdownFile}&raw`,
     )
 
     // The markdown has not been transformed!
-    assert.match(responseText, /# Markdown File Title/)
+    assert.match(responseText, /# Markdown Fixture File Title/)
     assert.match(responseText, /## Second heading/)
     assert.equal($1("h1"), null)
     assert.equal($1("h2"), null)
@@ -302,6 +310,12 @@ test(
     // Validation expected to fail because this markdown file is full of
     // tags inside inline code, e.g. `<tag>`.
     assert.equal(report.valid, false)
+
+    // The page should be exactly the same if we get it via its title
+    const { responseText: byTitleResponseText } = await getPath(
+      `/?contentPathOrContentTitle=Markdown Fixture File Title&raw`,
+    )
+    assert.strictEqual(responseText, byTitleResponseText)
   },
 )
 
@@ -312,7 +326,7 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
 
   assert.match($1("h1").innerHTML, /Edit/)
   // Markdown appears within the text area
-  assert.match($1("textarea").innerHTML, /# Markdown File Title/)
+  assert.match($1("textarea").innerHTML, /# Markdown Fixture File Title/)
   assert.match($1("textarea").innerHTML, /## Second heading/)
   // HTML doesn't appear within the text area
   assert.doesNotMatch($1("textarea").innerHTML, /<!doctype/)
@@ -336,6 +350,12 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
 
   assert.strictEqual(responseForExpandedUrl.status, 200)
   assert.strictEqual(responseText, responseTextForExpandedUrl)
+
+  // The page should be exactly the same if we get it via its title
+  const { responseText: byTitleResponseText } = await getPath(
+    `/Markdown Fixture File Title?edit`,
+  )
+  assert.strictEqual(responseText, byTitleResponseText)
 })
 
 test("Can get create page", { concurrency: true }, async () => {
@@ -345,7 +365,7 @@ test("Can get create page", { concurrency: true }, async () => {
 
   assert.match($1("h1").innerHTML, /Create/)
 
-  // Filename has a timestamp
+  // Default file name is blank
   assert.equal($1("input[name=contentPath]").getAttribute("value")!, "")
   // Text area is blank
   assert.match($1("textarea").innerHTML!, /^\s*$/)
@@ -361,22 +381,18 @@ test("Can get create page", { concurrency: true }, async () => {
 
 test("Can get create page with parameters", { concurrency: true }, async () => {
   const { url, response, responseText, $1 } = await getPath(
-    // TODO: The reason this isn't working is that these aren't cascaded
-    // down to the contentParameters. And it seems like some things
-    // definitely should be
-    `${configuredFiles.defaultCreateTemplateFile}?filename=/posts/My new page&rand=3`,
+    `${configuredFiles.defaultCreateTemplateFile}?filename=/posts/My new page&fileContent=my content`,
   )
 
   assert.strictEqual(response.status, 200)
   assert.match(responseText, /<h1>Create(.|\n)*<\/h1>/)
 
-  // Filename has a timestamp
+  // Filename has the parameter content
   assert.equal(
     $1("input[name=contentPath]").getAttribute("value")!,
     "/posts/My new page",
   )
-  // Text area is blank
-  assert.match($1("textarea").innerHTML!, /^\s*$/)
+  assert.match($1("textarea").innerHTML!, /^my content$/)
 
   // Save button should have a basic formaction
   assert.equal(
@@ -542,7 +558,7 @@ test(
       /Home/,
     )
     assert.match(
-      getEditResponse.$1('header nav a[href="/sitemap"]').innerHTML,
+      getEditResponse.$1('header nav a[href="/sitemap.html"]').innerHTML,
       /Sitemap/,
     )
 
@@ -555,7 +571,7 @@ test(
       /Home/,
     )
     assert.match(
-      getEditResponse.$1('footer nav a[href="/sitemap"]').innerHTML,
+      getEditResponse.$1('footer nav a[href="/sitemap.html"]').innerHTML,
       /Sitemap/,
     )
 
@@ -692,11 +708,11 @@ test(
 
     assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('header nav a[href="/sitemap"]').innerHTML, /Sitemap/)
+    assert.match($1('header nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
 
     assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/)
+    assert.match($1('footer nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
 
     await validateAssertAndReport(responseText, url)
   },
@@ -706,15 +722,15 @@ test(
   "Getting the edit page for the index has the features from the global template",
   { concurrency: true },
   async () => {
-    const { url, responseText, $1 } = await getPath(`/index?edit`)
+    const { url, responseText, $1 } = await getPath(`/?edit`)
 
     assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('header nav a[href="/sitemap"]').innerHTML, /Sitemap/)
+    assert.match($1('header nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
 
     assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('footer nav a[href="/sitemap"]').innerHTML, /Sitemap/)
+    assert.match($1('footer nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
 
     await validateAssertAndReport(responseText, url)
   },
