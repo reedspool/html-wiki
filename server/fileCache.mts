@@ -134,7 +134,7 @@ export const buildCache = async ({
       return pathOrTitle === "/"
         ? filesByContentPath["/index.html"]
         : (filesByTitle[decodeURIComponent(pathOrTitle).replace(/^\//, "")] ??
-            filesByContentPath[pathOrTitle])
+            filesByContentPath[decodeURIComponent(pathOrTitle)])
     },
     readFile: async (path) => {
       const entry = filesByContentPath[path]

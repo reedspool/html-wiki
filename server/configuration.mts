@@ -13,6 +13,7 @@ export const configuredFiles = {
   rootIndexHtml: "/index.html",
   logbook: "/project/logbook.md",
   testMarkdownFile: "/fixtures/test.md",
+  testMarkdownFileWithSpaceInName: "/fixtures/file with a space in the name.md",
   defaultDeleteTemplateFile: "/system/templates/delete.html",
   defaultEditTemplateFile: "/system/templates/edit.html",
   defaultCreateTemplateFile: "/system/actions/create.html",

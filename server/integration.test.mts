@@ -203,6 +203,26 @@ test(
 )
 
 test(
+  "Can get markdown entry with space in name rendered as HTML",
+  { concurrency: true },
+  async () => {
+    const { url, responseText, $1, $ } = await getPath(
+      configuredFiles.testMarkdownFileWithSpaceInName,
+    )
+
+    // The markdown has been transformed!
+    assert.match($1("h1").innerHTML, /Test file with a space in the name/)
+    await validateAssertAndReport(responseText, url)
+
+    // The page should be exactly the same if we get it via its title
+    const { responseText: byTitleResponseText } = await getPath(
+      `/Test file with a space in the name`,
+    )
+    assert.strictEqual(responseText, byTitleResponseText)
+  },
+)
+
+test(
   "Can get markdown entry rendered as raw",
   { concurrency: true },
   async () => {
