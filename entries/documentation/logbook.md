@@ -333,7 +333,7 @@ And finally the other side where `?edit&raw` brings you back to the normal, full
 
 At [HTML Day 2025][html-day-2025] in [Portland][html-day-2025-pdx], I got the "edit" page to actually work and submit edits! It was really fun to edit the pages.
 
-I also made the edit page a normal entry, which is a trick I learned from [TiddlyWiki][tiddlywiki]. So the edit page itself existed at `/$/templates/edit`. And you could edit that page as easily as any other by adding `?edit` to edit itself! Trippy.
+I also made the edit page a normal entry, which is a trick I learned from [TiddlyWiki][tiddlywiki]. So the edit page itself existed at `/system/templates/edit`. And you could edit that page as easily as any other by adding `?edit` to edit itself! Trippy.
 
 Someone at HTML Day pointed out that you could easily break the whole site by removing the `<slot>` and `button` from the edit page, thus disallowing any further edits to any page. Fun!
 

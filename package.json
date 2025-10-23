@@ -6,7 +6,7 @@
   "scripts": {
     "build:documentation": "DEBUG=* node server/cli.mts generate --user-directory entries/documentation -o ./build",
     "build:test": "DEBUG=* node server/cli.mts generate --user-directory entries/test -o ./build",
-    "fix:css": "stylelint --fix entries/$/global.css",
+    "fix:css": "stylelint --fix entries/system/global.css",
     "start": "npm run start:server:documentation",
     "start:server:documentation": "DEBUG=* node server/cli.mts server --port 3001 -u entries/documentation",
     "start:server:test": "DEBUG=* node server/cli.mts server --port 3001 -u entries/test",

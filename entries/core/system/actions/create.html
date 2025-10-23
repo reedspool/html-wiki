@@ -80,7 +80,7 @@
         input
         type="hidden"
         name="fileContent"
-        x-value="render('/$/templates/empty.html', { raw: true })"
+        x-value="render('/system/templates/empty.html', { raw: true })"
       ></replace-with>
       <button type="submit">Template: HTML</button>
     </form>
@@ -108,6 +108,13 @@
           placeholder="posts/New Page"
         ></replace-with>
       </keep-if>
+      <label>
+        File type
+        <select name="type">
+          <option value="html">HTML</option>
+          <option value="md">Markdown</option>
+        </select>
+      </label>
       <replace-with
         textarea
         name="content"

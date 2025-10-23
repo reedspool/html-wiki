@@ -106,8 +106,8 @@ test("Can get homepage", { concurrency: true }, async () => {
   assert.strictEqual(responseText, responseTextSlashIndexNoExtension)
 })
 
-test("Can get /$/global.css", { concurrency: true }, async () => {
-  const path = "/$/global.css"
+test("Can get /system/global.css", { concurrency: true }, async () => {
+  const path = "/system/global.css"
   const url = `http://localhost:${port}${path}`
   const response = await fetch(url)
   const responseText = await response.text()
@@ -128,63 +128,6 @@ test("Can get /$/global.css", { concurrency: true }, async () => {
     assert.fail(stylelintResults.report)
   }
 })
-
-test(
-  "Can get entry at weird path $/templates/edit.html",
-  { concurrency: true },
-  async () => {
-    const { url, response, responseText, $1 } = await getPath(
-      configuredFiles.defaultEditTemplateFile,
-    )
-
-    assert.strictEqual(response.status, 200)
-    assert.match($1("h1").innerHTML, /Editing/)
-    assert.match($1("h1").innerHTML, /template/i)
-
-    assert.match(responseText, /edit page directly/i)
-
-    await validateAssertAndReport(responseText, url)
-
-    const { responseText: responseTextViaTitle } = await getPath(`/Edit Page`)
-    assert.strictEqual(responseText, responseTextViaTitle)
-  },
-)
-
-test(
-  "Can get raw entry at weird path $/templates/edit.html",
-  { concurrency: true },
-  async () => {
-    const { url, response, responseText, $1 } = await getPath(
-      `/?contentPathOrContentTitle=${configuredFiles.defaultEditTemplateFile}&raw`,
-    )
-
-    assert.strictEqual(response.status, 200)
-    assert.match($1("h1").innerHTML, /Edit/)
-
-    // The slot is still present, untransformed
-    assert.match(
-      $1("textarea").innerHTML,
-      /<query-content[^>]*>(.|\n)*something went wrong(.|\n)*<\/query-content>/i,
-    )
-    // assert.match($1("textarea").innerHTML, /^\s*something went wrong\s*$/i);
-
-    await validateAssertAndReport(responseText, url, {
-      // TODO: The <slot> element can't be within a
-      // <textarea>, because no HTML can. Could choose to
-      // solve this by escaping it, or maybe this shows
-      // why the greater concept is flawed? Passing that
-      // buck for now
-      "element-permitted-content": "off",
-    })
-
-    // /index.html ges the same result as /
-    const responseWithoutDotHtml = await fetch(url.replace(/\.html$/, ""))
-    const responseTextWithoutDotHtml = await responseWithoutDotHtml.text()
-
-    assert.strictEqual(response.status, 200)
-    assert.strictEqual(responseText, responseTextWithoutDotHtml)
-  },
-)
 
 test("Normal path for no entry 404s", { concurrency: true }, async () => {
   const { url, responseText } = await getPath(`/This is a fake entry name`, 404)
@@ -208,35 +151,6 @@ test("Edit page for no entry 404s", { concurrency: true }, async () => {
 
   await validateAssertAndReport(responseText, url)
 })
-
-test(
-  "Can get edit page for weird path test/fixtures/$/pageWithDollarSign.html",
-  { concurrency: true },
-  async () => {
-    const { url, responseText, $1 } = await getPath(
-      `/fixtures/$/pageWithDollarSign.html?edit`,
-    )
-
-    assert.match($1("h1").innerHTML, /Edit/)
-
-    // Should also include itself but escaped
-    assert.match(responseText, /&lt;p&gt;(.|\n)*dollar sign(.|\n)*&lt;\/p&gt;/)
-
-    // Save button should have a formaction without any special mode
-    assert.match(
-      responseText,
-      /<button\s+type="submit"\s+formaction="\/fixtures\/\$\/pageWithDollarSign.html"/,
-    )
-
-    await validateAssertAndReport(responseText, url)
-
-    // The page should be exactly the same if we get it via its title
-    const { responseText: byTitleResponseText } = await getPath(
-      `/A Page with a Dollar Sign in the Path?edit`,
-    )
-    assert.strictEqual(responseText, byTitleResponseText)
-  },
-)
 
 test(
   "Can get markdown entry rendered as HTML",
@@ -745,7 +659,7 @@ test(
     formData.append("url", "test url")
     formData.append("text", "test text")
     const { responseText } = await postPath(
-      "/$/shared-content-receiver",
+      "/system/shared-content-receiver",
       formData,
     )
     assert.match(responseText, /test title/i)
