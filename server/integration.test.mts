@@ -178,6 +178,7 @@ test(
       anchors[2].getAttribute("href")!,
       /\/shortcut%20reference%20link%20with%20no%20associated%20reference%20link%20definition/,
     )
+    // Note there is no anchor made for the malformed "url w space in it" example
     assert.equal(anchors.length, 3)
 
     assert.match($1("em").innerHTML, /emphasized/)

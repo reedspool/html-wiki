@@ -116,9 +116,9 @@ export const renderer =
     if (contentParameters?.renderMarkdown) {
       let contentToRender = contentFileReadResult.content
       // Find all *possible* reference link definitions
-      const labels = Array.from(contentToRender.matchAll(/\[([^\]]+)\]/g)).map(
-        ([_, label]) => label,
-      )
+      const labels = Array.from(
+        contentToRender.matchAll(/\[([^\]]+)\][^(]/g),
+      ).map(([_, label]) => label)
 
       contentToRender += "\n"
       contentToRender += "\n"

@@ -12,6 +12,8 @@ Here's a [reference link][index].
 
 Here's a [/shortcut reference link with no associated reference link definition]. I use a trick to generate reference link definitions for these on the fly.
 
+Here's a [link with a malformed space in the URL](oops can't have a space here), to show that my shortcut reference link trick doesn't apply to the normal Markdown link syntax.
+
 And some `inline code` as well as a codeblock:
 
 ```js
