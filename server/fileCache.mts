@@ -14,7 +14,7 @@ import {
 } from "./filesystem.mts"
 import debug from "debug"
 import { MissingFileQueryError } from "./error.mts"
-import { renderMarkdown } from "./utilities.mts"
+import { parseFrontmatter, renderMarkdown } from "./utilities.mts"
 const log = debug("server:fileCache")
 
 export type FileContentsAndDetails = {
@@ -263,10 +263,15 @@ const getFileContentsAndMetadata = async ({
   } else if (/\.md$/.test(contentPath)) {
     try {
       const meta: Meta = {}
+
+      const parsedFrontmatter = parseFrontmatter(readResults.content)
+      if (parsedFrontmatter.frontmatter) {
+        Object.assign(meta, parsedFrontmatter.frontmatter)
+      }
       const markdownContent = renderMarkdown(readResults.content)
       const root = parseHtml(markdownContent)
       const h1 = root.querySelector("h1")
-      if (h1) {
+      if (!meta.title && h1) {
         meta.title = h1.innerText
       }
       return {

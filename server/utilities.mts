@@ -1,4 +1,5 @@
 import { type Request } from "express"
+import YAML from "yaml"
 import { Parser, HtmlRenderer } from "commonmark"
 
 // Stolen from NakedJSX https://github.com/NakedJSX/core
@@ -20,7 +21,9 @@ export const urlFromReq = (req: Request) =>
 
 export const renderMarkdown = (content: string) => {
   let reader = new Parser()
-  let writer = new HtmlRenderer()
+  let writer = new HtmlRenderer({
+    safe: false,
+  })
   let parsed = reader.parse(content)
   return writer.render(parsed)
 }
@@ -31,3 +34,22 @@ export const html: typeof String.raw = (templates, ...args) =>
 
 export const wait = (millis: number) =>
   new Promise((resolve) => setTimeout(resolve, millis))
+
+export const parseFrontmatter = (content: string) => {
+  if (!/^---\n(.|\n)*\n---\n/.test(content)) {
+    return {
+      restOfContent: content,
+    }
+  }
+
+  // Empty string first entry
+  const [_, frontmatterText, ...rest] = content.split(/---\n/)
+  // Any of these symbols after the first are normal horizontal dividers
+  const restOfContent = rest.join("---\n")
+
+  const parsed = YAML.parse(frontmatterText)
+  return {
+    frontmatter: parsed,
+    restOfContent,
+  }
+}

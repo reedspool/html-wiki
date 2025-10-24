@@ -14,6 +14,7 @@ export const configuredFiles = {
   logbook: "/project/logbook.md",
   testMarkdownFile: "/fixtures/test.md",
   testMarkdownFileWithSpaceInName: "/fixtures/file with a space in the name.md",
+  testMarkdownFileWithYamlFrontmatter: "/fixtures/markdown with frontmatter.md",
   defaultDeleteTemplateFile: "/system/templates/delete.html",
   defaultEditTemplateFile: "/system/templates/edit.html",
   defaultCreateTemplateFile: "/system/actions/create.html",

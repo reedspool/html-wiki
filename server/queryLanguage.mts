@@ -7,7 +7,12 @@ import {
   type ParameterValue,
 } from "./engine.mts"
 import debug from "debug"
-import { escapeHtml, renderMarkdown } from "./utilities.mts"
+import {
+  escapeHtml,
+  html,
+  parseFrontmatter,
+  renderMarkdown,
+} from "./utilities.mts"
 import { applyTemplating } from "./dom.mts"
 import { type FileCache } from "./fileCache.mts"
 const log = debug("server:queryLanguage")
@@ -115,16 +120,41 @@ export const renderer =
     }
     if (contentParameters?.renderMarkdown) {
       let contentToRender = contentFileReadResult.content
-      // Find all *possible* reference link definitions
-      const labels = Array.from(
-        contentToRender.matchAll(/\[([^\]]+)\][^(]/g),
-      ).map(([_, label]) => label)
 
-      contentToRender += "\n"
-      contentToRender += "\n"
-      contentToRender += labels
-        .map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`)
-        .join("\n")
+      {
+        // Find all reference link definitions
+        const labels = Array.from(
+          contentToRender.matchAll(/\[([^\]]+)\][^(]/g),
+        ).map(([_, label]) => label)
+
+        contentToRender += "\n"
+        contentToRender += "\n"
+        contentToRender += labels
+          .map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`)
+          .join("\n")
+      }
+
+      {
+        // Frontmatter
+        const parsed = parseFrontmatter(contentToRender)
+        contentToRender = parsed.restOfContent
+        if (parsed.frontmatter) {
+          contentToRender += "\n"
+          contentToRender += "\n"
+          contentToRender += html`<details>
+            <summary>Frontmatter</summary>
+            ${Object.entries(parsed.frontmatter)
+              .map(
+                ([key, value]) =>
+                  html`<dl>
+                    <dt>${key}</dt>
+                    <dd data-frontmatter="${key}">${value}</dd>
+                  </dl>`,
+              )
+              .join("\n")}
+          </details>`
+        }
+      }
 
       // TODO if this set contents instead of returning that would seem to enable template values in markdown
       return renderMarkdown(contentToRender)

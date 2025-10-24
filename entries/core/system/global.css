@@ -220,6 +220,10 @@ button {
   }
 }
 
+details summary {
+  cursor: pointer;
+}
+
 .sticky-top {
   position: sticky;
   top: 0;

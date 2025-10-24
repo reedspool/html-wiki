@@ -224,6 +224,36 @@ test(
 )
 
 test(
+  "Can get markdown entry with front matter",
+  { concurrency: true },
+  async () => {
+    const { url, responseText, $1, $ } = await getPath(
+      configuredFiles.testMarkdownFileWithYamlFrontmatter,
+    )
+
+    // The markdown has been transformed!
+    assert.match($1("h1").innerHTML, /Test markdown file with yaml frontmatter/)
+    assert.match($1("details summary").innerHTML, /Frontmatter/)
+    assert.match(
+      $1("details dd[data-frontmatter=title]").innerHTML,
+      /\(title from frontmatter\)/,
+    )
+    assert.match($1("details dd[data-frontmatter=keywords]").innerHTML, /Media/)
+    assert.match(
+      $1("details dd[data-frontmatter=keywords]").innerHTML,
+      /Currently reading/,
+    )
+    await validateAssertAndReport(responseText, url)
+
+    // The page should be exactly the same if we get it via its title
+    const { responseText: byTitleResponseText } = await getPath(
+      `/Test markdown with frontmatter (title from frontmatter)`,
+    )
+    assert.strictEqual(responseText, byTitleResponseText)
+  },
+)
+
+test(
   "Can get markdown entry rendered as raw",
   { concurrency: true },
   async () => {
