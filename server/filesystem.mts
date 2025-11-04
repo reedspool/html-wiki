@@ -128,14 +128,24 @@ export const updateFile = async ({
 }
 
 // From https://superuser.com/a/748264
-export const assertHappyFilePath = (path: string) => {
-  const problems = path.match(/[^a-zA-Z0-9\-. _/]/g)
+// Function because I'm scared of stateful regex in JS
+const happyFilePathRegex = () => /[^a-zA-Z0-9\-. _/]/g
+export const assertHappyFilePath = (path: string): void => {
+  const problems = path.match(happyFilePathRegex())
   if (problems) {
     const chars = problems.map((c) => `'${c}'`).join(", ")
     throw new Error(
       `Character${problems.length > 1 ? "s" : ""} ${chars} not allowed in filename`,
     )
   }
+}
+
+export const cleanFilePath = (original: string): string => {
+  const cleaned = original.replace(happyFilePathRegex(), "_")
+
+  // Double checking myself
+  assertHappyFilePath(cleaned)
+  return cleaned
 }
 
 export const removeFile = async ({

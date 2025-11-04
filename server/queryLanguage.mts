@@ -15,6 +15,7 @@ import {
 } from "./utilities.mts"
 import { applyTemplating } from "./dom.mts"
 import { type FileCache } from "./fileCache.mts"
+import { cleanFilePath } from "./filesystem.mts"
 const log = debug("server:queryLanguage")
 
 // `p` is for "pipeline". Accepts functions and calls them with the previous result
@@ -206,6 +207,7 @@ export const buildMyServerPStringContext = ({
       : null
   return {
     escapeHtml,
+    cleanFilePath,
     Temporal,
     parameters,
     topLevelParameters,

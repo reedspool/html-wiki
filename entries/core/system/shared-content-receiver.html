@@ -56,7 +56,7 @@
       <h4>filename</h4>
       <replace-with
         file-details
-        x-content="`${topLevelParameters.title}.md`"
+        x-content="`${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md`"
       ></replace-with>
       <h4>fileContent</h4>
       <file-details>
@@ -74,7 +74,7 @@
       <p>
         <replace-with
           a
-          x-href="`/system/actions/create.html?filename=${topLevelParameters.title}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.text})%0A%0AShared from Chrome as %22${topLevelParameters.title}%22 from %3C${topLevelParameters.text}%3E`"
+          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.text})%0A%0AShared from Chrome as %22${topLevelParameters.title}%22 from %3C${topLevelParameters.text}%3E`"
           >Go to Create the above</replace-with
         >
       </p>
@@ -84,7 +84,7 @@
       <h4>filename</h4>
       <replace-with
         file-details
-        x-content="`${topLevelParameters.title}.md`"
+        x-content="`${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md`"
       ></replace-with>
       <h4>fileContent</h4>
       <file-details>
@@ -99,7 +99,7 @@
       <p>
         <replace-with
           a
-          x-href="`/system/actions/create.html?filename=${topLevelParameters.title}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.url})%0A%0A${topLevelParameters.text}`"
+          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.url})%0A%0A${topLevelParameters.text}`"
           >Go to Create the above</replace-with
         >
       </p>
@@ -123,6 +123,7 @@
         <code> title </code>
         <replace-with
           input
+          type="text"
           name="title"
           x-value="or(topLevelParameters.title,'')"
           placeholder="None supplied"
@@ -133,6 +134,7 @@
         <code> url </code>
         <replace-with
           input
+          type="text"
           name="url"
           x-value="or(topLevelParameters.url,'')"
           placeholder="None supplied"
@@ -143,6 +145,7 @@
         <code> text </code>
         <replace-with
           input
+          type="text"
           name="text"
           x-value="or(topLevelParameters.text,'')"
           placeholder="None supplied"
