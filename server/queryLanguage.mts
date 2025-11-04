@@ -205,6 +205,7 @@ export const buildMyServerPStringContext = ({
         })
       : null
   return {
+    escapeHtml,
     Temporal,
     parameters,
     topLevelParameters,

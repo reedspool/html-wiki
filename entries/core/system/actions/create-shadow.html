@@ -38,7 +38,7 @@
         input
         type="hidden"
         name="content"
-        x-value="render(parameters.editContentPath,{raw:'raw'})"
+        x-value="render(parameters.editContentPath,{raw:'raw'}),p=>escapeHtml(p)"
       ></replace-with>
       <button type="submit">Create and edit shadow copy</button>
     </form>

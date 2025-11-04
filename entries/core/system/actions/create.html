@@ -80,7 +80,7 @@
         input
         type="hidden"
         name="fileContent"
-        x-value="render('/system/templates/empty.html', { raw: true })"
+        x-value="render('/system/templates/empty.html', { raw: true }),p=>escapeHtml(p)"
       ></replace-with>
       <button type="submit">Template: HTML</button>
     </form>
@@ -118,7 +118,7 @@
       <replace-with
         textarea
         name="content"
-        x-escape-content="or(topLevelParameters.fileContent,'')"
+        x-content="or(topLevelParameters.fileContent,'')"
       ></replace-with>
 
       <button type="submit" formaction="/?create">Save</button>
