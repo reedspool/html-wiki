@@ -33,6 +33,8 @@ export type Result = {
   status: Status[keyof Status]
   // The complete stringified result. Not necessarily the content rendered.
   content: string
+  // The content path which was acted on
+  contentPath?: string
   contentType: string
 }
 export const execute = async ({
@@ -92,7 +94,8 @@ export const execute = async ({
       })
       return {
         status: Status.OK,
-        content: `File ${stringParameterValue(parameters, "contentPath")} created successfully`,
+        content: `File <a href="${stringParameterValue(parameters, "contentPath")}">${stringParameterValue(parameters, "contentPath")}</a> created successfully`,
+        contentPath: stringParameterValue(parameters, "contentPath"),
         contentType: staticContentTypes.plainText,
       }
     }
@@ -148,7 +151,8 @@ export const execute = async ({
       })
       return {
         status: Status.OK,
-        content: `File ${stringParameterValue(parameters, "contentPath")} updated successfully`,
+        content: `File <a href="${stringParameterValue(parameters, "contentPath")}">${stringParameterValue(parameters, "contentPath")}</a> updated successfully`,
+        contentPath: stringParameterValue(parameters, "contentPath"),
         contentType: staticContentTypes.plainText,
       }
     }
@@ -160,7 +164,7 @@ export const execute = async ({
       })
       return {
         status: Status.OK,
-        content: `File ${stringParameterValue(parameters, "contentPath")} deleted successfully`,
+        content: `File <a href="${stringParameterValue(parameters, "contentPath")}">${stringParameterValue(parameters, "contentPath")}</a> deleted successfully`,
         contentType: staticContentTypes.plainText,
       }
     }

@@ -391,7 +391,7 @@ export const createServer = async ({
       res.redirect(stringParameterValue(parameters, "redirect"))
     } else if (command == "update" || command == "create") {
       res.redirect(
-        `${stringParameterValue(parameters, "contentPathOrContentTitle")}?statusMessage=${result.content}`,
+        `${result.contentPath || "/"}?statusMessage=${result.content}`,
       )
     } else if (command == "delete") {
       res.redirect(`/?statusMessage=${result.content}`)
