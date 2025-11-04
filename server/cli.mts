@@ -91,7 +91,7 @@ program
     const fileCache = await buildCache({
       searchDirectories: [options.userDirectory, options.coreDirectory],
     })
-    const files = fileCache.listOfFilesAndDetails.map(
+    const files = (await fileCache.getListOfFilesAndDetails()).map(
       ({ contentPath }) => contentPath,
     )
 

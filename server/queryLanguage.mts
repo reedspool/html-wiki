@@ -48,10 +48,10 @@ export const siteProxy = ({
           )
         switch (prop) {
           case "allFiles":
-            return fileCache.listOfFilesAndDetails
+            return fileCache.getListOfFilesAndDetails()
           case "search":
             return async (query: string) => {
-              const list = fileCache.listOfFilesAndDetails
+              const list = await fileCache.getListOfFilesAndDetails()
               // TODO: Probably want to cache this when we have an
               // active cache for the content of all files
               const fuse = new Fuse(list, {

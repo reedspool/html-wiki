@@ -7,21 +7,22 @@ test("Cache has lots of stuff in it", { concurrency: true }, async () => {
   const cache = await buildCache({
     searchDirectories: [files.testDirectory, files.coreDirectory],
   })
-  ;[
-    files.defaultPageTemplate,
-    files.rootIndexHtml,
-    files.testMarkdownFile,
-    files.defaultDeleteTemplateFile,
-    files.defaultEditTemplateFile,
-    files.defaultCreateTemplateFile,
-    files.defaultCssFile,
-  ].forEach((expectedContentPath) =>
-    assert.ok(
-      cache.listOfFilesAndDetails.find(
-        ({ contentPath, originalContent }) =>
-          contentPath == expectedContentPath,
+  await Promise.all(
+    [
+      files.defaultPageTemplate,
+      files.rootIndexHtml,
+      files.testMarkdownFile,
+      files.defaultDeleteTemplateFile,
+      files.defaultEditTemplateFile,
+      files.defaultCreateTemplateFile,
+      files.defaultCssFile,
+    ].map(async (expectedContentPath) =>
+      assert.ok(
+        (await cache.getListOfFilesAndDetails()).find(
+          ({ contentPath }) => contentPath == expectedContentPath,
+        ),
+        `'${expectedContentPath}' missing`,
       ),
-      `'${expectedContentPath}' missing`,
     ),
   )
 

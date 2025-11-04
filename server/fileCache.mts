@@ -24,7 +24,7 @@ export type FileContentsAndDetails = {
 } & MyDirectoryEntry
 
 export type FileCache = {
-  listOfFilesAndDetails: Array<FileContentsAndDetails>
+  getListOfFilesAndDetails: () => Promise<Array<FileContentsAndDetails>>
   getByContentPath: (path: string) => FileContentsAndDetails | undefined
   getByTitle: (title: string) => FileContentsAndDetails | undefined
   getByContentPathOrContentTitle: (
@@ -46,7 +46,9 @@ export type FileCache = {
 
 export const buildEmptyCache = async (): ReturnType<typeof buildCache> => {
   return {
-    listOfFilesAndDetails: [],
+    async getListOfFilesAndDetails() {
+      return []
+    },
     getByTitle: () => undefined,
     getByContentPath: () => undefined,
     getByContentPathOrContentTitle: () => undefined,
@@ -127,7 +129,9 @@ export const buildCache = async ({
   allFiles.forEach(addFileToCacheData)
 
   const fileCache: FileCache = {
-    listOfFilesAndDetails,
+    async getListOfFilesAndDetails() {
+      return listOfFilesAndDetails
+    },
     getByContentPath: (path) => filesByContentPath[path],
     getByTitle: (title) => filesByTitle[title],
     getByContentPathOrContentTitle: (pathOrTitle) => {
@@ -328,7 +332,6 @@ export const resolveDirEntToAllStuff = async ({
   })
   return {
     ...dirent,
-    type: "file",
     ...templateResults,
   } as const
 }
