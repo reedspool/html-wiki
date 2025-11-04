@@ -112,18 +112,19 @@ export const execute = async ({
       const readResult = await fileCache.readFile(
         stringParameterValue(parameters, "contentPath"),
       )
-      const content = (await getQueryValue("parameters.raw"))
-        ? (await getQueryValue("parameters.escape"))
-          ? escapeHtml(readResult.content)
-          : readResult.content
-        : (
-            await applyTemplating({
-              fileCache,
-              content: readResult.content,
-              parameters: parameters,
-              topLevelParameters: parameters,
-            })
-          ).content
+      const content =
+        (await getQueryValue("parameters.raw")) !== undefined
+          ? (await getQueryValue("parameters.escape")) !== undefined
+            ? escapeHtml(readResult.content)
+            : readResult.content
+          : (
+              await applyTemplating({
+                fileCache,
+                content: readResult.content,
+                parameters: parameters,
+                topLevelParameters: parameters,
+              })
+            ).content
       return {
         status: Status.OK,
         content,
@@ -313,11 +314,20 @@ export const stringParameterValue = (
 export const maybeStringParameterValue = (
   parameterV: unknown,
   property: string,
-): string | null => {
+): string | undefined => {
   // Temporarily and carefully cast
   const parameterVCasted = parameterV as ParameterValue
   const parameter = property in parameterVCasted && parameterVCasted[property]
-  if (!parameter || typeof parameter !== "string") return null
+  if (typeof parameter !== "string") return undefined
+  return parameter
+}
+
+export const maybeAtLeastEmptyStringParameterValue = (
+  parameterV: unknown,
+  property: string,
+): string | true | undefined => {
+  const parameter = maybeStringParameterValue(parameterV, property)
+  if (parameter === "") return true
   return parameter
 }
 
@@ -332,7 +342,7 @@ export const recordParameterValue = (
 
 export const maybeRecordParameterValue = (
   parameter: ParameterValue["string"],
-): unknown | null => {
-  if (!parameter) return null
+): unknown | undefined => {
+  if (!parameter) return undefined
   return parameter
 }

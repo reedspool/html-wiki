@@ -6,6 +6,10 @@ Here are my notes with the most recent on top. Details, quality, and rationality
 
 Most recent on top, reverse chronological order. Lines which begin `Future:` are notes to myself for work not yet done, despite the past-tense.
 
+### Tue Nov 4 02:35:25 AM PST 2025
+
+When I submitted short query string parameters, like `?edit`, then Express's query parser made those values the empty string. This made for annoying JavaScript truthiness troubles. Since the empty string is falsy, I would have to test explicitly for the existence of the property. `Boolean(query.edit)` would be false whether or not the `?edit` was supplied, so to check if it wasn't supplied, I'd need `query.edit !== undefined` instead. For a while, I was doing a trick to avoid this. I would test for this case up front, and if it was the case, I would set the value of that query parameter to the key, so I set `query.edit = "edit"` (although on another, new object since `req.query` was immutable). This bit me when I made a form where the empty string was a valid value to submit; that code would replace every empty string submission with the name of the form field. Bleh. So I had to get rid of my silly trick, and fix a lot of tests. And since I was joining all the query parameters with the rest of the configured parameters into a large, flat bag, I wasn't sure that I'd actually caught all the instances to fix. Whoops.
+
 ### Sat Oct 11 05:59:04 PM PDT 2025
 
 When I used the Share button on a page in Chrome for Android to share to the HTML Wiki PWA, I found it didn't use the `url` field for the URL, instead it put that in the `text` field. So I made another Share template which used that as the URL.

@@ -15,6 +15,7 @@ import {
 import { MissingFileQueryError, QueryError } from "./error.mts"
 import {
   execute,
+  maybeAtLeastEmptyStringParameterValue,
   maybeStringParameterValue,
   narrowStringToCommand,
   setEachParameterWithSource,
@@ -78,7 +79,7 @@ export const createServer = async ({
         if (query.edit !== undefined) {
           command = "update"
         } else if (query.delete !== undefined) {
-          if (query["delete-confirm"]) {
+          if (query["delete-confirm"] !== undefined) {
             command = "delete"
           } else {
             command = "read"
@@ -122,7 +123,7 @@ export const createServer = async ({
       } else if (req.method === "PUT") {
         command = "create"
       } else if (req.method === "DELETE") {
-        if (query["delete-confirm"]) {
+        if (query["delete-confirm"] !== undefined) {
           command = "delete"
         } else {
           command = "read"
@@ -145,7 +146,7 @@ export const createServer = async ({
     //   /\.md$/.test(
     //     stringParameterValue(parameters, "contentPathOrContentTitle"),
     //   ) &&
-    //   !maybeStringParameterValue(parameters, "renderMarkdown")
+    //   maybeNonEmptyStringParameterValue(parameters, "renderMarkdown") === undefined
     // ) {
     //   setParameterWithSource(parameters, "renderMarkdown", "true", "derived")
     // }
@@ -190,7 +191,7 @@ export const createServer = async ({
 
     if (
       stringParameterValue(parameters, "command") == "read" &&
-      maybeStringParameterValue(parameters, "edit")
+      maybeAtLeastEmptyStringParameterValue(parameters, "edit")
     ) {
       const toEditContentPath =
         maybeStringParameterValue(parameters, "contentPathOrContentTitle") ||
@@ -276,7 +277,7 @@ export const createServer = async ({
       }
     } else if (
       stringParameterValue(parameters, "command") == "read" &&
-      maybeStringParameterValue(parameters, "delete")
+      maybeAtLeastEmptyStringParameterValue(parameters, "delete")
     ) {
       const toDeleteContentPath =
         maybeStringParameterValue(parameters, "contentPathOrContentTitle") ||
@@ -384,7 +385,9 @@ export const createServer = async ({
         res.status(404)
       }
       res.send(result.content)
-    } else if (maybeStringParameterValue(parameters, "redirect")) {
+    } else if (
+      maybeStringParameterValue(parameters, "redirect") !== undefined
+    ) {
       res.redirect(stringParameterValue(parameters, "redirect"))
     } else if (command == "update" || command == "create") {
       res.redirect(

@@ -113,13 +113,13 @@ export const renderer =
     // probably come up with a better name. The point is "raw" implies too
     // much, or could mean several things, so I should pick some more narrow
     // concepts, even if they have to be mixed and matched
-    if (contentParameters?.raw) {
-      if (contentParameters.escape) {
+    if (contentParameters?.raw !== undefined) {
+      if (contentParameters.escape !== undefined) {
         return escapeHtml(contentFileReadResult.content)
       }
       return contentFileReadResult.content
     }
-    if (contentParameters?.renderMarkdown) {
+    if (contentParameters?.renderMarkdown !== undefined) {
       let contentToRender = contentFileReadResult.content
 
       {

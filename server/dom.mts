@@ -110,7 +110,7 @@ export const applyTemplating = async (
               let shouldRemove = element.attributes.name === "remove"
               switch (element.attributes.if) {
                 case "raw":
-                  if (!(await getQueryValue("parameters.raw"))) {
+                  if ((await getQueryValue("parameters.raw")) === undefined) {
                     shouldRemove = !shouldRemove
                   }
                   break
