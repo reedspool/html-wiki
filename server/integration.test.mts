@@ -710,11 +710,30 @@ test(
     formData.append("url", "test url")
     formData.append("text", "test text")
     const { responseText } = await postPath(
-      "/system/shared-content-receiver",
+      configuredFiles.sharedContentReceiver,
       formData,
     )
     assert.match(responseText, /test title/i)
     assert.match(responseText, /test url/i)
     assert.match(responseText, /test text/i)
+  },
+)
+test(
+  "Submit multipart/form-data to the share content receiver has contents of global page",
+  { concurrency: true },
+  async () => {
+    const formData = new FormData()
+    const url = configuredFiles.sharedContentReceiver
+    const { responseText, $1 } = await postPath(url, formData)
+
+    assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/)
+    assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
+    assert.match($1('header nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+
+    assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
+    assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
+    assert.match($1('footer nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+
+    await validateAssertAndReport(responseText, url)
   },
 )

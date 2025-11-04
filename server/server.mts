@@ -86,7 +86,7 @@ export const createServer = async ({
           }
         } else if (query.create !== undefined) {
           command = "create"
-        } else if (req.path === "/system/shared-content-receiver") {
+        } else if (req.path === configuredFiles.sharedContentReceiver) {
           // TODO: I don't see any other way to match the specific
           // share content receiver for sure other than the exact path given
           // but this is opposed to the general concept that the path is
@@ -94,8 +94,25 @@ export const createServer = async ({
           command = "read"
           setParameterWithSource(
             parameters,
-            "contentPathOrContentTitle",
-            req.path + ".html",
+            "contentPath",
+            configuredFiles.defaultPageTemplate,
+            "derived",
+          )
+
+          const contentParameters: ParameterValue = {}
+          setEachParameterWithSource(
+            contentParameters,
+            {
+              select: "body",
+              contentPathOrContentTitle: req.path + ".html",
+            },
+            "derived",
+          )
+
+          setParameterChildrenWithSource(
+            parameters,
+            "contentParameters",
+            contentParameters,
             "derived",
           )
         } else {

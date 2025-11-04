@@ -25,16 +25,6 @@
     </p>
 
     <style>
-      table[local] {
-        th {
-          text-align: left;
-        }
-        td,
-        th {
-          padding-inline: 1rem;
-        }
-      }
-
       shared-create-entry {
         h3 {
           font-size: 1rem;
@@ -116,19 +106,51 @@
     </shared-create-entry>
     <h2>Raw Data</h2>
 
-    <table local>
-      <tr>
-        <th>title</th>
-        <replace-with td x-content="topLevelParameters.title"></replace-with>
-      </tr>
-      <tr>
-        <th>url</th>
-        <replace-with td x-content="topLevelParameters.url"></replace-with>
-      </tr>
-      <tr>
-        <th>text</th>
-        <replace-with td x-content="topLevelParameters.text"></replace-with>
-      </tr>
-    </table>
+    <style>
+      form[local] {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-half);
+        align-items: baseline;
+        label {
+          display: flex;
+          flex-direction: column;
+        }
+      }
+    </style>
+    <form local method="GET" action="#">
+      <label>
+        <code> title </code>
+        <replace-with
+          input
+          name="title"
+          x-value="or(topLevelParameters.title,'')"
+          placeholder="None supplied"
+        >
+        </replace-with>
+      </label>
+      <label>
+        <code> url </code>
+        <replace-with
+          input
+          name="url"
+          x-value="or(topLevelParameters.url,'')"
+          placeholder="None supplied"
+        >
+        </replace-with>
+      </label>
+      <label>
+        <code> text </code>
+        <replace-with
+          input
+          name="text"
+          x-value="or(topLevelParameters.text,'')"
+          placeholder="None supplied"
+        >
+        </replace-with>
+      </label>
+
+      <button type="submit">Update</button>
+    </form>
   </body>
 </html>

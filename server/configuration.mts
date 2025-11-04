@@ -22,4 +22,7 @@ export const configuredFiles = {
   defaultCssFile: "/system/global.css",
   fileMissingPageTemplate: "/404.html",
   sitemapTemplate: "/sitemap.html",
+  // NOTE: If you change this, must be updated in site.webmanifest
+  // and that will require anyone who has installed the app to re-install
+  sharedContentReceiver: "/system/shared-content-receiver",
 }
