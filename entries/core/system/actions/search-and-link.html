@@ -121,7 +121,7 @@
       >
     </form>
     <keep-if truthy="topLevelParameters.query!==undefined">
-      <set- result="site.search(topLevelParameters.query)"> </set->
+      <set- result="site.search(topLevelParameters.query.trim())"> </set->
       <h2>Results</h2>
       <ul>
         <map-list q="topLevelParameters.result" allow-one>
