@@ -163,6 +163,7 @@ test(
     // The markdown has been transformed!
     assert.match($1("h1").innerHTML, /Markdown Fixture File Title/)
     assert.match($1("h2").innerHTML, /Second heading/)
+    assert.equal($1("input[type=checkbox]").getAttribute("disabled")!, "")
 
     const anchors = $("main a")
 
@@ -266,6 +267,7 @@ test(
     assert.match(responseText, /## Second heading/)
     assert.equal($1("h1"), null)
     assert.equal($1("h2"), null)
+    assert.equal($1("input[type=checkbox]"), null)
 
     // One of the links has not been transformed
     assert.match(responseText, /[Google][https:\/\/www.google.com]/)

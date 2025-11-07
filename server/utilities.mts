@@ -1,6 +1,7 @@
 import { type Request } from "express"
 import YAML from "yaml"
-import { Parser, HtmlRenderer } from "commonmark"
+import { micromark } from "micromark"
+import { gfmHtml, gfm } from "micromark-extension-gfm"
 
 // Stolen from NakedJSX https://github.com/NakedJSX/core
 export const escapeHtml = (text: string) => {
@@ -19,14 +20,12 @@ export const escapeHtml = (text: string) => {
 export const urlFromReq = (req: Request) =>
   `${req.protocol}://${req.get("host")}${req.originalUrl}`
 
-export const renderMarkdown = (content: string) => {
-  let reader = new Parser()
-  let writer = new HtmlRenderer({
-    safe: false,
+export const renderMarkdown = (content: string) =>
+  micromark(content, {
+    allowDangerousHtml: true,
+    extensions: [gfm()],
+    htmlExtensions: [gfmHtml()],
   })
-  let parsed = reader.parse(content)
-  return writer.render(parsed)
-}
 
 // For IDE formatting. See https://prettier.io/blog/2020/08/24/2.1.0.html
 export const html: typeof String.raw = (templates, ...args) =>

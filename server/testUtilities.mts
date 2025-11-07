@@ -15,6 +15,9 @@ const htmlvalidate = new HtmlValidate({
     // TODO: Using `replaceWith` and `remove` from node-html-parser
     // leaves a huge amount of unattractive whitespace. Want to fix that
     "no-trailing-whitespace": "off",
+
+    // TODO: Added only because micromark makes checkboxes with disabled=""
+    "attribute-boolean-style": "off",
   },
 })
 

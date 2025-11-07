@@ -125,8 +125,10 @@ export const renderer =
       {
         // Find all reference link definitions
         const labels = Array.from(
-          contentToRender.matchAll(/\[([^\]]+)\]([^(]|$)/g),
-        ).map(([_, label]) => label)
+          contentToRender.matchAll(/\[([^\]]+)\]([^(:]|$)/g),
+        )
+          .map(([_, label]) => label)
+          .filter((label) => /\S/.test(label))
 
         contentToRender += "\n"
         contentToRender += "\n"

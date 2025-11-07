@@ -23,4 +23,6 @@ const log = () => console.log("log!");
 
 Now here's some HTML content within inline code `<code><pre>`.
 
+- [ ] Here's a list item with a checkbox
+
 [index]: /index "Reference link to index"
