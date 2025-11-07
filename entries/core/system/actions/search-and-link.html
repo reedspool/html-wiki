@@ -9,7 +9,7 @@
   </head>
 
   <body>
-    <keep-if truthy="topLevelParameters.dialog">
+    <keep-if truthy="topLevelParameters.dialog!==undefined">
       <link
         rel="stylesheet"
         href="/system/global.css"
@@ -98,7 +98,7 @@
       });
     </script>
     <form method="GET">
-      <keep-if truthy="topLevelParameters.dialog">
+      <keep-if truthy="topLevelParameters.dialog!==undefined">
         <input type="hidden" name="select" value="body" />
         <input type="hidden" name="dialog" value="dialog" />
         <replace-with
@@ -155,7 +155,7 @@
                   <replace-with
                     button
                     type="button"
-                    x-copy='`[${topLevelParameters.ititle}](${topLevelParameters.ipath} "${topLevelParameters.iname}")`'
+                    x-copy='`[${topLevelParameters.ititle}](<${topLevelParameters.ipath}> "${topLevelParameters.iname}")`'
                     title="Copy Markdown link"
                   >
                     <code>[]()</code>
@@ -169,7 +169,7 @@
                     Path
                   </replace-with>
                 </div>
-                <keep-if truthy="topLevelParameters.dialog">
+                <keep-if truthy="topLevelParameters.dialog!==undefined">
                   <div>
                     Insert
                     <replace-with
@@ -183,7 +183,7 @@
                     <replace-with
                       button
                       type="button"
-                      x-insert='`[${topLevelParameters.ititle}](${topLevelParameters.ipath} "${topLevelParameters.iname}")`'
+                      x-insert='`[${topLevelParameters.ititle}](<${topLevelParameters.ipath}> "${topLevelParameters.iname}")`'
                       title="Insert Markdown link"
                     >
                       <code>[]()</code>

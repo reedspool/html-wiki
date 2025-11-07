@@ -9,7 +9,7 @@
   </head>
 
   <body>
-    <keep-if truthy="topLevelParameters.dialog">
+    <keep-if truthy="topLevelParameters.dialog!==undefined">
       <link
         rel="stylesheet"
         href="/system/global.css"
@@ -95,7 +95,7 @@
       });
     </script>
     <form method="GET">
-      <keep-if truthy="topLevelParameters.dialog">
+      <keep-if truthy="topLevelParameters.dialog!==undefined">
         <input type="hidden" name="select" value="body" />
         <input type="hidden" name="dialog" value="dialog" />
         <replace-with
