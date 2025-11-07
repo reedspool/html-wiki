@@ -83,6 +83,9 @@ export const buildCache = async ({
   const filesByTitle: Record<string, FileContentsAndDetails> = {}
   const filesByContentPath: Record<string, FileContentsAndDetails> = {}
   const addFileToCacheData = (everything: FileContentsAndDetails) => {
+    listOfFilesAndDetails = listOfFilesAndDetails.filter(
+      ({ contentPath }) => everything.contentPath !== contentPath,
+    )
     listOfFilesAndDetails.push(everything)
     filesByContentPath[everything.contentPath] = everything
 
@@ -95,7 +98,7 @@ export const buildCache = async ({
   }
   const removeFileFromCacheData = async (contentPath: string) => {
     listOfFilesAndDetails = listOfFilesAndDetails.filter(
-      ({ contentPath }) => contentPath !== contentPath,
+      ({ contentPath: path }) => path !== contentPath,
     )
     const detail = filesByContentPath[contentPath]
     delete filesByContentPath[contentPath]
