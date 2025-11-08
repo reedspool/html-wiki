@@ -24,5 +24,5 @@ export const configuredFiles = {
   sitemapTemplate: "/sitemap.html",
   // NOTE: If you change this, must be updated in site.webmanifest
   // and that will require anyone who has installed the app to re-install
-  sharedContentReceiver: "/system/shared-content-receiver",
+  sharedContentReceiver: "/system/shared-content-receiver.html",
 }

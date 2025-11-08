@@ -105,7 +105,7 @@ export const createServer = async ({
             contentParameters,
             {
               select: "body",
-              contentPathOrContentTitle: req.path + ".html",
+              contentPathOrContentTitle: req.path,
             },
             "derived",
           )
