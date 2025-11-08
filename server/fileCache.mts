@@ -18,15 +18,23 @@ import debug from "debug"
 import { MissingFileQueryError } from "./error.mts"
 import { parseFrontmatter, renderMarkdown } from "./utilities.mts"
 const log = debug("server:fileCache")
-
-export type FileContentsAndDetails = {
+type FileContentsAndMetaData = {
+  originalContent: ReadResults
   meta: Meta
-  originalContent: { content: string; foundInDirectory: string; buffer: Buffer }
   renderability: Renderability
-} & MyDirectoryEntry
+  accessTimeMs: number
+  createdTimeMs: number
+  modifiedTimeMs: number
+  links: Array<string>
+}
+export type FileContentsAndDetails = FileContentsAndMetaData & MyDirectoryEntry
 
 export type FileCache = {
-  addFileToCacheData: (params: { contentPath: string }) => Promise<void>
+  rebuildBacklinks: () => Promise<void>
+  addFileToCacheData: (params: {
+    contentPath: string
+    rebuildBacklinks?: boolean
+  }) => Promise<void>
   getListOfFilesAndDetails: () => Promise<Array<FileContentsAndDetails>>
   getByContentPath: (path: string) => FileContentsAndDetails | undefined
   getByTitle: (title: string) => FileContentsAndDetails | undefined
@@ -45,36 +53,11 @@ export type FileCache = {
     content: string
   }) => ReturnType<typeof updateFile>
   removeFile: (params: { contentPath: string }) => ReturnType<typeof removeFile>
+  getBacklinksByContentPath: (path: string) => Promise<Array<string>>
 }
 
 export const buildEmptyCache = async (): ReturnType<typeof buildCache> => {
-  return {
-    addFileToCacheData: () => {
-      throw new Error("Can't add to empty cache")
-    },
-    async getListOfFilesAndDetails() {
-      return []
-    },
-    getByTitle: () => undefined,
-    getByContentPath: () => undefined,
-    getByContentPathOrContentTitle: () => undefined,
-    readFile: () => {
-      throw new Error("No files exist in empty cache")
-    },
-    readFileRaw: () => {
-      throw new Error("No files exist in empty cache")
-    },
-    fileExists: async () => ({ exists: false }),
-    createFileAndDirectories: () => {
-      throw new Error("Cannot create anything in empty cache")
-    },
-    updateFile: () => {
-      throw new Error("Cannot update anything in empty cache")
-    },
-    removeFile: () => {
-      throw new Error("Cannot remove anything in empty cache")
-    },
-  }
+  return createFreshCache({ searchDirectories: [] })
 }
 
 export const createFreshCache = async ({
@@ -82,16 +65,12 @@ export const createFreshCache = async ({
 }: {
   searchDirectories: string[]
 }): Promise<FileCache> => {
-  if (searchDirectories.length === 0) {
-    throw new Error("Cache requires non-empty searchDirectories upfront")
-  }
   let listOfFilesAndDetails: FileContentsAndDetails[] = []
   const filesByTitle: Record<string, FileContentsAndDetails> = {}
   const filesByContentPath: Record<string, FileContentsAndDetails> = {}
-  const addFileToCacheData = async ({
+  const addFileToCacheData: FileCache["addFileToCacheData"] = async ({
     contentPath,
-  }: {
-    contentPath: string
+    rebuildBacklinks = true,
   }) => {
     const everything: FileContentsAndDetails = {
       contentPath,
@@ -109,6 +88,8 @@ export const createFreshCache = async ({
     )
     listOfFilesAndDetails.push(everything)
     filesByContentPath[everything.contentPath] = everything
+
+    if (rebuildBacklinks) await fileCache.rebuildBacklinks()
 
     if (typeof everything.meta.title === "string") {
       filesByTitle[everything.meta.title] = everything
@@ -129,17 +110,43 @@ export const createFreshCache = async ({
     // Find if there's a revealed shadow file
     const existsResults = await fileExists({ contentPath, searchDirectories })
     if (existsResults.exists) {
-      addFileToCacheData({ contentPath })
+      await addFileToCacheData({ contentPath })
+    }
+  }
+
+  const getListOfFilesAndDetails = async () => [...listOfFilesAndDetails]
+
+  let backLinksByContentPath: Record<string, Array<string>> = {}
+  const getBacklinksByContentPath: (
+    path: string,
+  ) => Promise<Array<string>> = async (path) => {
+    const backlinks = backLinksByContentPath[path]
+    if (!backlinks) return []
+    return [...backlinks]
+  }
+  const rebuildBacklinks: FileCache["rebuildBacklinks"] = async () => {
+    backLinksByContentPath = {}
+    for (const {
+      contentPath: sourceContentPath,
+      links,
+    } of await getListOfFilesAndDetails()) {
+      for (const link of links) {
+        const byTitle = fileCache.getByTitle(link)
+        const destinationContentPath = byTitle ? byTitle.contentPath : link
+        if (!backLinksByContentPath[destinationContentPath])
+          backLinksByContentPath[destinationContentPath] = []
+        backLinksByContentPath[destinationContentPath].push(sourceContentPath)
+      }
     }
   }
 
   const fileCache: FileCache = {
-    async getListOfFilesAndDetails() {
-      return listOfFilesAndDetails
-    },
+    rebuildBacklinks,
+    getListOfFilesAndDetails,
+    getBacklinksByContentPath,
     addFileToCacheData,
-    getByContentPath: (path) => filesByContentPath[path],
-    getByTitle: (title) => filesByTitle[title],
+    getByContentPath: (path) => filesByContentPath[decodeURIComponent(path)],
+    getByTitle: (title) => filesByTitle[decodeURIComponent(title)],
     getByContentPathOrContentTitle: (pathOrTitle) => {
       return pathOrTitle === "/"
         ? filesByContentPath["/index.html"]
@@ -189,7 +196,7 @@ export const createFreshCache = async ({
         content,
       })
       await removeFileFromCacheData(contentPath)
-      addFileToCacheData({ contentPath })
+      await addFileToCacheData({ contentPath })
       return result
     },
     removeFile: async ({ contentPath }) => {
@@ -217,6 +224,9 @@ export const buildCache = async ({
 }: {
   searchDirectories: string[]
 }): Promise<FileCache> => {
+  if (searchDirectories.length === 0) {
+    throw new Error("Cache requires non-empty searchDirectories upfront")
+  }
   const fileCache = await createFreshCache({ searchDirectories })
   const allFiles = await getContentsAndMetaOfAllFiles({
     // TODO: To recover from race conditions on initial build,
@@ -228,9 +238,11 @@ export const buildCache = async ({
 
   await Promise.all(
     allFiles.map(({ contentPath }) =>
-      fileCache.addFileToCacheData({ contentPath }),
+      fileCache.addFileToCacheData({ contentPath, rebuildBacklinks: false }),
     ),
   )
+
+  await fileCache.rebuildBacklinks()
 
   return fileCache
 }
@@ -244,14 +256,7 @@ const getFileContentsAndMetadata = async ({
   fileCache: FileCache
   contentPath: string
   searchDirectories: string[]
-}): Promise<{
-  originalContent: ReadResults
-  meta: Meta
-  renderability: Renderability
-  accessTimeMs: number
-  createdTimeMs: number
-  modifiedTimeMs: number
-}> => {
+}): Promise<FileContentsAndMetaData> => {
   const readResults = await readFile({
     searchDirectories,
     contentPath,
@@ -277,6 +282,7 @@ const getFileContentsAndMetadata = async ({
         ...result,
         originalContent: readResults,
         renderability: "html",
+        links: result.links,
         ...myStats,
       }
     } catch (error) {
@@ -298,10 +304,16 @@ const getFileContentsAndMetadata = async ({
       if (!meta.title && h1) {
         meta.title = h1.innerText
       }
+      const links: string[] = []
+      root.querySelectorAll("a").forEach((a) => {
+        const href = a.getAttribute("href")
+        if (href) links.push(href)
+      })
       return {
         meta,
         originalContent: readResults,
         renderability: "markdown",
+        links,
         ...myStats,
       }
     } catch (error) {
@@ -314,6 +326,7 @@ const getFileContentsAndMetadata = async ({
       originalContent: readResults,
       meta: {},
       renderability: "static",
+      links: [],
       ...myStats,
     }
   }

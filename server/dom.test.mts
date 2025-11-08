@@ -56,6 +56,20 @@ test(
   },
 )
 
+test("Links", { concurrency: true }, async () => {
+  const input = html`
+    <html lang="en-US">
+      <head> </head>
+      <body>
+        <a href="test-href">Test link</a>
+        <a href="test-href2">Test link 2</a>
+      </body>
+    </html>
+  `
+  const { links } = await applyTemplatingAndParse({}, input)
+  assert.deepEqual(links, ["test-href", "test-href2"])
+})
+
 test(
   "keep-if truthy replaces itself with its content",
   { concurrency: true },

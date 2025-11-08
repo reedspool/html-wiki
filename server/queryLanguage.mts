@@ -138,6 +138,31 @@ export const renderer =
       }
 
       {
+        // Backlinks
+        const backlinks = await fileCache.getBacklinksByContentPath(contentPath)
+        contentToRender += "\n"
+        contentToRender += "\n"
+        contentToRender += html`<details open>
+          <summary>Backlinks</summary>
+          <ul>
+            ${backlinks.length
+              ? backlinks
+                  .map(
+                    (link) =>
+                      html`<li>
+                        <a href="${link}"
+                          >${fileCache.getByContentPath(link)?.meta?.title ??
+                          link}</a
+                        >
+                      </li>`,
+                  )
+                  .join("\n")
+              : "No backlinks"}
+          </ul>
+        </details>`
+      }
+
+      {
         // Frontmatter
         const parsed = parseFrontmatter(contentToRender)
         contentToRender = parsed.restOfContent

@@ -26,6 +26,7 @@ export const applyTemplating = async (
 ): Promise<{
   content: string
   meta: Meta
+  links: Array<string>
 }> => {
   const { parameters, topLevelParameters, stopAtSelector, fileCache } = params
   const getQueryValue = (query: string) => {
@@ -39,6 +40,7 @@ export const applyTemplating = async (
     )
   }
   const meta: Meta = {}
+  const links: Array<string> = []
   let root: HTMLElement
   if ("content" in params) {
     root = parseHtml(params.content)
@@ -100,6 +102,11 @@ export const applyTemplating = async (
         break
       case "TITLE":
         meta.title = element.innerText
+        break
+      case "A":
+        if (element.attributes.href) {
+          links.push(element.attributes.href)
+        }
         break
       case "SLOT":
         switch (element.attributes.name) {
@@ -372,10 +379,10 @@ export const applyTemplating = async (
         400,
         `selector ${selector} did not match any elements`,
       )
-    return { content: selected.innerHTML.toString(), meta }
+    return { content: selected.innerHTML.toString(), meta, links }
   }
 
-  return { content: root.toString(), meta }
+  return { content: root.toString(), meta, links }
 }
 
 export type Filter = (
