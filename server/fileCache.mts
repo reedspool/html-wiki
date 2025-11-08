@@ -24,6 +24,7 @@ export type FileContentsAndDetails = {
 } & MyDirectoryEntry
 
 export type FileCache = {
+  addFileToCacheData: (params: { contentPath: string }) => Promise<void>
   getListOfFilesAndDetails: () => Promise<Array<FileContentsAndDetails>>
   getByContentPath: (path: string) => FileContentsAndDetails | undefined
   getByTitle: (title: string) => FileContentsAndDetails | undefined
@@ -46,6 +47,9 @@ export type FileCache = {
 
 export const buildEmptyCache = async (): ReturnType<typeof buildCache> => {
   return {
+    addFileToCacheData: () => {
+      throw new Error("Can't add to empty cache")
+    },
     async getListOfFilesAndDetails() {
       return []
     },
@@ -71,7 +75,7 @@ export const buildEmptyCache = async (): ReturnType<typeof buildCache> => {
   }
 }
 
-export const buildCache = async ({
+export const createFreshCache = async ({
   searchDirectories,
 }: {
   searchDirectories: string[]
@@ -82,7 +86,22 @@ export const buildCache = async ({
   let listOfFilesAndDetails: FileContentsAndDetails[] = []
   const filesByTitle: Record<string, FileContentsAndDetails> = {}
   const filesByContentPath: Record<string, FileContentsAndDetails> = {}
-  const addFileToCacheData = (everything: FileContentsAndDetails) => {
+  const addFileToCacheData = async ({
+    contentPath,
+  }: {
+    contentPath: string
+  }) => {
+    const everything: FileContentsAndDetails = {
+      contentPath,
+      name: basename(contentPath),
+      type: "file",
+      ...(await getFileContentsAndMetadata({
+        fileCache,
+        contentPath,
+        searchDirectories,
+      })),
+    }
+
     listOfFilesAndDetails = listOfFilesAndDetails.filter(
       ({ contentPath }) => everything.contentPath !== contentPath,
     )
@@ -108,33 +127,15 @@ export const buildCache = async ({
     // Find if there's a revealed shadow file
     const existsResults = await fileExists({ contentPath, searchDirectories })
     if (existsResults.exists) {
-      const templateResults = await getFileContentsAndMetadata({
-        contentPath,
-        searchDirectories,
-        fileCache,
-      })
-      addFileToCacheData({
-        name: basename(contentPath),
-        type: "file",
-        contentPath,
-        ...templateResults,
-      })
+      addFileToCacheData({ contentPath })
     }
   }
-  const allFiles = await getContentsAndMetaOfAllFiles({
-    // TODO: To recover from race conditions on initial build,
-    // in the future, probably want to be able to start with the last cache.
-    // Except that wouldn't account for deletions? Unless that was repaired first?
-    fileCache: await buildEmptyCache(),
-    searchDirectories,
-  })
-
-  allFiles.forEach(addFileToCacheData)
 
   const fileCache: FileCache = {
     async getListOfFilesAndDetails() {
       return listOfFilesAndDetails
     },
+    addFileToCacheData,
     getByContentPath: (path) => filesByContentPath[path],
     getByTitle: (title) => filesByTitle[title],
     getByContentPathOrContentTitle: (pathOrTitle) => {
@@ -168,22 +169,12 @@ export const buildCache = async ({
         content,
       })
 
-      const details: FileContentsAndDetails = await resolveDirEntToAllStuff({
-        dirent: {
-          name: basename(contentPath),
-          contentPath,
-          type: "file",
-        },
-        fileCache,
-        searchDirectories,
-      })
-
       // TODO: Hm this isn't technically wrong with the constraints of
       // shadowing.  That is, this file could be called to create a directory
       // deeper in the  stack of shadows, and maybe there's still a file higher
       // up that should shadow it. So maybe we shouldn't always be adding it
       // to these structures
-      addFileToCacheData(details)
+      await addFileToCacheData({ contentPath })
 
       return result
     },
@@ -196,17 +187,7 @@ export const buildCache = async ({
         content,
       })
       await removeFileFromCacheData(contentPath)
-      const templateResults = await getFileContentsAndMetadata({
-        contentPath,
-        searchDirectories,
-        fileCache,
-      })
-      addFileToCacheData({
-        name: basename(contentPath),
-        type: "file",
-        contentPath,
-        ...templateResults,
-      })
+      addFileToCacheData({ contentPath })
       return result
     },
     removeFile: async ({ contentPath }) => {
@@ -226,6 +207,28 @@ export const buildCache = async ({
       return result
     },
   }
+  return fileCache
+}
+
+export const buildCache = async ({
+  searchDirectories,
+}: {
+  searchDirectories: string[]
+}): Promise<FileCache> => {
+  const fileCache = await createFreshCache({ searchDirectories })
+  const allFiles = await getContentsAndMetaOfAllFiles({
+    // TODO: To recover from race conditions on initial build,
+    // in the future, probably want to be able to start with the last cache.
+    // Except that wouldn't account for deletions? Unless that was repaired first?
+    fileCache: await buildEmptyCache(),
+    searchDirectories,
+  })
+
+  await Promise.all(
+    allFiles.map(({ contentPath }) =>
+      fileCache.addFileToCacheData({ contentPath }),
+    ),
+  )
 
   return fileCache
 }
@@ -298,43 +301,12 @@ const getFileContentsAndMetadata = async ({
 
 const getContentsAndMetaOfAllFiles = async ({
   searchDirectories,
-  fileCache,
 }: {
   searchDirectories: string[]
   fileCache: FileCache
-}): Promise<Array<FileContentsAndDetails>> => {
+}): Promise<Array<MyDirectoryEntry>> => {
   const allDirents = await listAndMergeAllDirectoryContents({
     searchDirectories,
   })
-  return Promise.all(
-    allDirents
-      .filter(({ type }) => type === "file")
-      .map((dirent) =>
-        resolveDirEntToAllStuff({
-          dirent,
-          fileCache,
-          searchDirectories,
-        }),
-      ),
-  )
-}
-
-export const resolveDirEntToAllStuff = async ({
-  dirent,
-  fileCache,
-  searchDirectories,
-}: {
-  dirent: MyDirectoryEntry
-  fileCache: FileCache
-  searchDirectories: string[]
-}) => {
-  const templateResults = await getFileContentsAndMetadata({
-    fileCache,
-    contentPath: dirent.contentPath,
-    searchDirectories,
-  })
-  return {
-    ...dirent,
-    ...templateResults,
-  } as const
+  return Promise.all(allDirents.filter(({ type }) => type === "file"))
 }
