@@ -27,12 +27,15 @@
         }
       }
     </style>
+    <p>Ordered by last modified</p>
     <site-map>
       <ul>
         <li>
           <a href="/">/</a>
           <ul>
-            <map-list q="site.allFiles">
+            <map-list
+              q="site.allFiles, (list)=>list.toSorted((a,b)=>b.modifiedTimeMs-a.modifiedTimeMs)"
+            >
               <li>
                 <replace-with
                   a

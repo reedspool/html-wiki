@@ -9,6 +9,8 @@ import {
   readdir,
 } from "node:fs/promises"
 
+export { stat } from "node:fs/promises"
+
 export const filePath = ({
   contentPath,
   directory,

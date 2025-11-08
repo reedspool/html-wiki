@@ -4,12 +4,14 @@ import { applyTemplating, type Meta } from "./dom.mts"
 import {
   createFileAndDirectories,
   fileExists,
+  filePath,
   listAndMergeAllDirectoryContents,
   type MyDirectoryEntry,
   readFile,
   readFileRaw,
   type ReadResults,
   removeFile,
+  stat,
   updateFile,
 } from "./filesystem.mts"
 import debug from "debug"
@@ -246,11 +248,22 @@ const getFileContentsAndMetadata = async ({
   originalContent: ReadResults
   meta: Meta
   renderability: Renderability
+  accessTimeMs: number
+  createdTimeMs: number
+  modifiedTimeMs: number
 }> => {
   const readResults = await readFile({
     searchDirectories,
     contentPath,
   })
+  const stats = await stat(
+    filePath({ contentPath, directory: readResults.foundInDirectory }),
+  )
+  const myStats = {
+    accessTimeMs: stats.atimeMs,
+    createdTimeMs: stats.ctimeMs,
+    modifiedTimeMs: stats.mtimeMs,
+  }
   if (/\.html$/.test(contentPath)) {
     try {
       const result = await applyTemplating({
@@ -264,6 +277,7 @@ const getFileContentsAndMetadata = async ({
         ...result,
         originalContent: readResults,
         renderability: "html",
+        ...myStats,
       }
     } catch (error) {
       throw new Error(
@@ -288,6 +302,7 @@ const getFileContentsAndMetadata = async ({
         meta,
         originalContent: readResults,
         renderability: "markdown",
+        ...myStats,
       }
     } catch (error) {
       throw new Error(
@@ -295,7 +310,12 @@ const getFileContentsAndMetadata = async ({
       )
     }
   } else {
-    return { originalContent: readResults, meta: {}, renderability: "static" }
+    return {
+      originalContent: readResults,
+      meta: {},
+      renderability: "static",
+      ...myStats,
+    }
   }
 }
 
