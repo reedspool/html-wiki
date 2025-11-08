@@ -35,6 +35,7 @@ export type FileCache = {
     contentPath: string
     rebuildBacklinks?: boolean
   }) => Promise<void>
+  removeFileFromCacheData: (params: { contentPath: string }) => Promise<void>
   getListOfFilesAndDetails: () => Promise<Array<FileContentsAndDetails>>
   getByContentPath: (path: string) => FileContentsAndDetails | undefined
   getByTitle: (title: string) => FileContentsAndDetails | undefined
@@ -98,7 +99,9 @@ export const createFreshCache = async ({
       throw new Error(`Title must be a string, see log`)
     }
   }
-  const removeFileFromCacheData = async (contentPath: string) => {
+  const removeFileFromCacheData: FileCache["removeFileFromCacheData"] = async ({
+    contentPath,
+  }) => {
     listOfFilesAndDetails = listOfFilesAndDetails.filter(
       ({ contentPath: path }) => path !== contentPath,
     )
@@ -145,6 +148,7 @@ export const createFreshCache = async ({
     getListOfFilesAndDetails,
     getBacklinksByContentPath,
     addFileToCacheData,
+    removeFileFromCacheData,
     getByContentPath: (path) => filesByContentPath[decodeURIComponent(path)],
     getByTitle: (title) => filesByTitle[decodeURIComponent(title)],
     getByContentPathOrContentTitle: (pathOrTitle) => {
@@ -195,7 +199,7 @@ export const createFreshCache = async ({
         contentPath,
         content,
       })
-      await removeFileFromCacheData(contentPath)
+      await removeFileFromCacheData({ contentPath })
       await addFileToCacheData({ contentPath })
       return result
     },
@@ -212,7 +216,7 @@ export const createFreshCache = async ({
       }
       // Don't update the cache until the operation is successful
       const result = await removeFile({ directory, contentPath })
-      await removeFileFromCacheData(contentPath)
+      await removeFileFromCacheData({ contentPath })
       return result
     },
   }

@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
     "lib": ["esnext"],
+    // Ignoring because Watcher has problems
+    "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "module": "nodenext",

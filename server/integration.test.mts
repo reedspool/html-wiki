@@ -224,6 +224,24 @@ test(
   },
 )
 
+test("Markdown entry has backlinks", { concurrency: true }, async () => {
+  const { url, responseText, $1, $ } = await getPath(
+    configuredFiles.testMarkdownFileWithYamlFrontmatter,
+  )
+
+  // The markdown has been transformed!
+  assert.match($1("h1").innerHTML, /Test markdown file with yaml frontmatter/)
+  assert.match($1("details:nth-of-type(1) summary").innerHTML, /Backlinks/)
+  assert.match($1("details ul").innerHTML, /No backlinks/i)
+  await validateAssertAndReport(responseText, url)
+
+  // The page should be exactly the same if we get it via its title
+  const { responseText: byTitleResponseText } = await getPath(
+    `/Test markdown with frontmatter (title from frontmatter)`,
+  )
+  assert.strictEqual(responseText, byTitleResponseText)
+})
+
 test(
   "Can get markdown entry with front matter",
   { concurrency: true },
@@ -234,7 +252,7 @@ test(
 
     // The markdown has been transformed!
     assert.match($1("h1").innerHTML, /Test markdown file with yaml frontmatter/)
-    assert.match($1("details summary").innerHTML, /Frontmatter/)
+    assert.match($1("details:nth-of-type(2) summary").innerHTML, /Frontmatter/)
     assert.match(
       $1("details dd[data-frontmatter=title]").innerHTML,
       /\(title from frontmatter\)/,

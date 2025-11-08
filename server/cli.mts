@@ -58,8 +58,8 @@ program
     if (options.ignoreErrors) ignoreErrors()
     server = await createServer({
       port,
-      coreDirectory: options.coreDirectory,
-      userDirectory: options.userDirectory,
+      coreDirectory: normalize(options.coreDirectory),
+      userDirectory: normalize(options.userDirectory),
     })
   })
 
