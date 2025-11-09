@@ -50,7 +50,34 @@
           border-color: black;
         }
       }
+      shared-link-entry {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+      }
     </style>
+    <h3>Copy links</h3>
+    <shared-link-entry copy-target-container>
+      <span>[title](text)</span>
+      <replace-with
+        button
+        type="button"
+        copy
+        copy-target
+        x-content="`[${topLevelParameters.title}](${topLevelParameters.text})`"
+      ></replace-with>
+    </shared-link-entry>
+    <shared-link-entry copy-target-container>
+      <span>[title](url)</span>
+      <replace-with
+        button
+        type="button"
+        copy
+        copy-target
+        x-content="`[${topLevelParameters.title}](${topLevelParameters.url})`"
+      ></replace-with>
+    </shared-link-entry>
+    <a href="actions/search-and-link.html">Search</a>
     <shared-create-entry>
       <h3>Template: From Chrome Android</h3>
       <h4>filename</h4>
@@ -118,6 +145,7 @@
         }
       }
     </style>
+    <script src="/system/scripts/copy-and-insert.js"></script>
     <form local method="GET" action="#">
       <label>
         <code> title </code>

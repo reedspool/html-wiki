@@ -53,47 +53,7 @@
         margin-bottom: var(--space-half);
       }
     </style>
-    <script>
-      const wait = (millis) =>
-        new Promise((resolve) => setTimeout(resolve, millis));
-      document.addEventListener("DOMContentLoaded", () => {
-        document.body.addEventListener("click", async ({ target }) => {
-          if (target.tagName !== "BUTTON") return;
-          const isCopyButton = target.hasAttribute("copy");
-          const isInsertButton = target.hasAttribute("insert");
-          if (isCopyButton && isInsertButton)
-            throw new Error(
-              "Buttons should only have copy or insert attributes",
-            );
-          if (!isCopyButton && !isInsertButton) return;
-          try {
-            target.setAttribute("disabled", "true");
-            const text = target
-              .closest("[copy-target-container]")
-              .querySelector("[copy-target]").innerText;
-            if (isCopyButton) {
-              await navigator.clipboard.writeText(text);
-            } else {
-              // Send message to parent frame
-              var event = new CustomEvent("insertText", { detail: { text } });
-              if (!window.parent)
-                throw new Error(
-                  "Can't insert without access to parent document ",
-                );
-              window.parent.document.dispatchEvent(event);
-            }
-            const originalText = target.innerHTML;
-            target.innerHTML = isCopyButton ? "Copied!" : "Inserted!";
-            await wait(1750);
-            target.innerHTML = originalText;
-            target.removeAttribute("disabled");
-          } catch (error) {
-            console.error("Error copying", error);
-            target.innerHTML = "Error :-/";
-          }
-        });
-      });
-    </script>
+    <script src="/system/scripts/copy-and-insert.js"></script>
     <form method="GET">
       <keep-if truthy="topLevelParameters.dialog!==undefined">
         <input type="hidden" name="select" value="body" />
@@ -128,7 +88,10 @@
         ></replace-with>
         <div>
           <button type="button" copy>Copy</button>
-          <button type="button" insert>Insert</button>
+
+          <keep-if truthy="topLevelParameters.dialog!==undefined">
+            <button type="button" insert>Insert</button>
+          </keep-if>
         </div>
       </div>
       <keep-if truthy="Array.isArray(topLevelParameters.result)">

@@ -57,46 +57,7 @@
         list-style: none;
       }
     </style>
-    <script>
-      const wait = (millis) =>
-        new Promise((resolve) => setTimeout(resolve, millis));
-      document.addEventListener("DOMContentLoaded", () => {
-        document.body.addEventListener("click", async ({ target }) => {
-          const button = target.closest("button");
-          if (!button) return;
-          const isCopyButton = button.hasAttribute("copy");
-          const isInsertButton = button.hasAttribute("insert");
-          if (isCopyButton && isInsertButton)
-            throw new Error(
-              "Buttons should have only one of copy or insert attributes",
-            );
-          if (!isCopyButton && !isInsertButton) return;
-          const text = button.getAttribute(isCopyButton ? "copy" : "insert");
-          try {
-            button.setAttribute("disabled", "true");
-            if (isCopyButton) {
-              await navigator.clipboard.writeText(text);
-            } else {
-              // Send message to parent frame
-              var event = new CustomEvent("insertText", { detail: { text } });
-              if (!window.parent)
-                throw new Error(
-                  "Can't insert without access to parent document ",
-                );
-              window.parent.document.dispatchEvent(event);
-            }
-            const originalText = button.innerHTML;
-            button.innerHTML = isCopyButton ? "Copied!" : "Inserted!";
-            await wait(1750);
-            button.innerHTML = originalText;
-            button.removeAttribute("disabled");
-          } catch (error) {
-            console.error("Error copying", error);
-            button.innerHTML = "Error :-/";
-          }
-        });
-      });
-    </script>
+    <script src="/system/scripts/copy-and-insert.js"></script>
     <form method="GET">
       <keep-if truthy="topLevelParameters.dialog!==undefined">
         <input type="hidden" name="select" value="body" />
