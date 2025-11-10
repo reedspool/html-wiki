@@ -77,6 +77,7 @@ test(
         {},
         {
           command: "read",
+          nocontainer: "true",
           contentPath: "/index.html",
           userDirectory: configuredFiles.testDirectory,
           coreDirectory: configuredFiles.coreDirectory,
@@ -90,6 +91,7 @@ test(
         {},
         {
           command: "read",
+          nocontainer: "true",
           contentPathOrContentTitle: "HTML Wiki Homepage",
           userDirectory: configuredFiles.testDirectory,
           coreDirectory: configuredFiles.coreDirectory,
@@ -120,34 +122,18 @@ test(
 )
 
 test(
-  "Render an HTML template file with rendered template content",
+  "Render an HTML template file with rendered template content and container",
   { concurrency: true },
   async () => {
     const parameters: ParameterValue = {}
+
     setEachParameterWithSource(
       parameters,
       {
         command: "read",
-        contentPath: configuredFiles.defaultPageTemplate,
-        userDirectory: configuredFiles.testDirectory,
-        coreDirectory: configuredFiles.coreDirectory,
-      },
-      "query param",
-    )
-
-    const contentParameters: ParameterValue = {}
-    setEachParameterWithSource(
-      contentParameters,
-      {
         select: "body",
         contentPath: "/index.html",
       },
-      "derived",
-    )
-    setParameterChildrenWithSource(
-      parameters,
-      "contentParameters",
-      contentParameters,
       "derived",
     )
 

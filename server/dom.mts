@@ -94,6 +94,9 @@ export const applyTemplating = async (
               ...element.attributes.content.trim().split(/\s*,\s*/),
             )
             break
+          case "nocontainer":
+            meta.nocontainer = "nocontainer"
+            break
           default:
             meta[element.attributes.itemprop] = element.attributes.content
             break

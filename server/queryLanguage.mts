@@ -32,21 +32,11 @@ export const p: (...args: unknown[]) => Promise<unknown> = async (...args) => {
   return lastValue
 }
 
-export const siteProxy = ({
-  searchDirectories,
-  fileCache,
-}: {
-  fileCache: FileCache
-  searchDirectories: string[]
-}) =>
+export const siteProxy = ({ fileCache }: { fileCache: FileCache }) =>
   new Proxy(
     {},
     {
       get(_target: unknown, prop: string) {
-        if (!searchDirectories)
-          throw new Error(
-            "Can't access `site` without `searchDirectories` parameter",
-          )
         switch (prop) {
           case "allFiles":
             return fileCache.getListOfFilesAndDetails()
@@ -120,72 +110,12 @@ export const renderer =
       return contentFileReadResult.content
     }
     if (contentParameters?.renderMarkdown !== undefined) {
-      let contentToRender = contentFileReadResult.content
-
-      {
-        // Find all reference link definitions
-        const labels = Array.from(
-          contentToRender.matchAll(/\[([^\]]+)\]([^(:]|$)/g),
-        )
-          .map(([_, label]) => label)
-          .filter((label) => /\S/.test(label))
-
-        contentToRender += "\n"
-        contentToRender += "\n"
-        contentToRender += labels
-          .map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`)
-          .join("\n")
-      }
-
-      {
-        // Backlinks
-        const backlinks = await fileCache.getBacklinksByContentPath(contentPath)
-        contentToRender += "\n"
-        contentToRender += "\n"
-        contentToRender += html`<details open>
-          <summary>Backlinks</summary>
-          <ul>
-            ${backlinks.length
-              ? backlinks
-                  .map(
-                    (link) =>
-                      html`<li>
-                        <a href="${link}"
-                          >${fileCache.getByContentPath(link)?.meta?.title ??
-                          link}</a
-                        >
-                      </li>`,
-                  )
-                  .join("\n")
-              : "No backlinks"}
-          </ul>
-        </details>`
-      }
-
-      {
-        // Frontmatter
-        const parsed = parseFrontmatter(contentToRender)
-        contentToRender = parsed.restOfContent
-        if (parsed.frontmatter) {
-          contentToRender += "\n"
-          contentToRender += "\n"
-          contentToRender += html`<details>
-            <summary>Frontmatter</summary>
-            ${Object.entries(parsed.frontmatter)
-              .map(
-                ([key, value]) =>
-                  html`<dl>
-                    <dt>${key}</dt>
-                    <dd data-frontmatter="${key}">${value}</dd>
-                  </dl>`,
-              )
-              .join("\n")}
-          </details>`
-        }
-      }
-
-      // TODO if this set contents instead of returning that would seem to enable template values in markdown
-      return renderMarkdown(contentToRender)
+      if (typeof contentParameters.contentPath !== "string") throw new Error()
+      return specialRenderMarkdown({
+        content: contentFileReadResult.content,
+        contentPath: contentParameters.contentPath,
+        fileCache,
+      })
     }
     return (
       await applyTemplating({
@@ -201,6 +131,79 @@ export const renderer =
     ).content
   }
 
+export const specialRenderMarkdown = async ({
+  content,
+  contentPath,
+  fileCache,
+}: {
+  content: string
+  contentPath: string
+  fileCache: FileCache
+}) => {
+  {
+    // Find all reference link definitions
+    const labels = Array.from(content.matchAll(/\[([^\]]+)\]([^(:]|$)/g))
+      .map(([_, label]) => label)
+      .filter((label) => /\S/.test(label))
+
+    content += "\n"
+    content += "\n"
+    content += labels
+      .map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`)
+      .join("\n")
+  }
+
+  {
+    // Backlinks
+    const backlinks = await fileCache.getBacklinksByContentPath(contentPath)
+    content += "\n"
+    content += "\n"
+    content += html`<details open>
+      <summary>Backlinks</summary>
+      <ul>
+        ${backlinks.length
+          ? backlinks
+              .map(
+                (link) =>
+                  html`<li>
+                    <a href="${link}"
+                      >${fileCache.getByContentPath(link)?.meta?.title ??
+                      link}</a
+                    >
+                  </li>`,
+              )
+              .join("\n")
+          : "No backlinks"}
+      </ul>
+    </details>`
+  }
+
+  {
+    // Frontmatter
+    const parsed = parseFrontmatter(content)
+    content = parsed.restOfContent
+    if (parsed.frontmatter) {
+      content += "\n"
+      content += "\n"
+      content += html`<details>
+        <summary>Frontmatter</summary>
+        ${Object.entries(parsed.frontmatter)
+          .map(
+            ([key, value]) =>
+              html`<dl>
+                <dt>${key}</dt>
+                <dd data-frontmatter="${key}">${value}</dd>
+              </dl>`,
+          )
+          .join("\n")}
+      </details>`
+    }
+  }
+
+  // TODO if this set contents instead of returning that would seem to enable template values in markdown
+  return renderMarkdown(content)
+}
+
 export const or = (...args: unknown[]) => args.reduce((a, b) => a || b)
 export const and = (...args: unknown[]) => args.reduce((a, b) => a && b)
 
@@ -213,32 +216,15 @@ export const buildMyServerPStringContext = ({
   parameters: ParameterValue
   topLevelParameters: ParameterValue
 }): PStringContext => {
-  const searchDirectories = []
-
-  if (maybeStringParameterValue(topLevelParameters, "userDirectory")) {
-    searchDirectories.push(
-      stringParameterValue(topLevelParameters, "userDirectory"),
-    )
-  }
-  if (maybeStringParameterValue(topLevelParameters, "coreDirectory")) {
-    searchDirectories.push(
-      stringParameterValue(topLevelParameters, "coreDirectory"),
-    )
-  }
-  const site =
-    searchDirectories.length > 0
-      ? siteProxy({
-          searchDirectories,
-          fileCache,
-        })
-      : null
   return {
     escapeHtml,
     cleanFilePath,
     Temporal,
     parameters,
     topLevelParameters,
-    site,
+    site: siteProxy({
+      fileCache,
+    }),
     render: renderer({
       fileCache,
       topLevelParameters,

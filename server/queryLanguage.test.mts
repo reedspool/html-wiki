@@ -202,25 +202,6 @@ test("site.allFiles gets all the files", o, async () => {
   assert.equal(edit.meta.title, "Edit Page")
 })
 
-test("site.allFiles with no base directory is an error", o, () => {
-  const topLevelParameters = setEachParameterWithSource(
-    {},
-    { coreDirectory: null },
-    "query param",
-  )
-  assert.rejects(
-    async () =>
-      await pString(
-        "site.allFiles",
-        buildMyServerPStringContext({
-          parameters: topLevelParameters,
-          topLevelParameters,
-          fileCache,
-        }),
-      ),
-  )
-})
-
 test("site.search(<exact title>) gets that page", o, async () => {
   const topLevelParameters = setEachParameterWithSource(
     {},

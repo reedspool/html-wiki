@@ -94,27 +94,13 @@ export const createServer = async ({
           // but this is opposed to the general concept that the path is
           // free for users to target particular entries.
           command = "read"
-          setParameterWithSource(
-            parameters,
-            "contentPath",
-            configuredFiles.defaultPageTemplate,
-            "derived",
-          )
 
-          const contentParameters: ParameterValue = {}
           setEachParameterWithSource(
-            contentParameters,
+            parameters,
             {
               select: "body",
               contentPathOrContentTitle: req.path,
             },
-            "derived",
-          )
-
-          setParameterChildrenWithSource(
-            parameters,
-            "contentParameters",
-            contentParameters,
             "derived",
           )
         } else {
@@ -152,6 +138,9 @@ export const createServer = async ({
     //   setParameterWithSource(parameters, "renderMarkdown", "true", "derived")
     // }
 
+    // TODO: Maybe not needed anymore? Would need to provide another simple
+    //       way to deliver these. But maybe the need isn't there. I could just
+    //       pass literal parameters to edit for example
     if (
       command === "read" &&
       maybeStringParameterValue(parameters, "content")
@@ -209,20 +198,13 @@ export const createServer = async ({
         // If requesting to edit a core file, prompt to create shadow first
         setParameterWithSource(
           parameters,
-          "contentPath",
-          configuredFiles.defaultPageTemplate,
-          "derived",
-        )
-        setParameterWithSource(
-          parameters,
           "editContentPath",
           toEditContentPath,
           "derived",
         )
 
-        const createShadowContentParameters: ParameterValue = {}
         setEachParameterWithSource(
-          createShadowContentParameters,
+          parameters,
           {
             select: "body",
             contentPath: configuredFiles.defaultCreateShadowTemplateFile,
@@ -230,20 +212,7 @@ export const createServer = async ({
           },
           "derived",
         )
-        setParameterChildrenWithSource(
-          parameters,
-          "contentParameters",
-          createShadowContentParameters,
-          "derived",
-        )
       } else {
-        setParameterWithSource(
-          parameters,
-          "contentPath",
-          configuredFiles.defaultPageTemplate,
-          "derived",
-        )
-        const editContentParameters: ParameterValue = {}
         const whatToEditContentParameters: ParameterValue = {}
         setEachParameterWithSource(
           whatToEditContentParameters,
@@ -255,24 +224,17 @@ export const createServer = async ({
           "derived",
         )
         setParameterChildrenWithSource(
-          editContentParameters,
+          parameters,
           "contentParameters",
           whatToEditContentParameters,
           "derived",
         )
         setEachParameterWithSource(
-          editContentParameters,
+          parameters,
           {
             contentPath: configuredFiles.defaultEditTemplateFile,
             select: "body",
           },
-          "derived",
-        )
-
-        setParameterChildrenWithSource(
-          parameters,
-          "contentParameters",
-          editContentParameters,
           "derived",
         )
       }
@@ -283,13 +245,6 @@ export const createServer = async ({
       const toDeleteContentPath =
         maybeStringParameterValue(parameters, "contentPathOrContentTitle") ||
         req.path
-      setParameterWithSource(
-        parameters,
-        "contentPath",
-        configuredFiles.defaultPageTemplate,
-        "derived",
-      )
-      const deletePageContentParameters: ParameterValue = {}
       const whatToDeleteContentParameters: ParameterValue = {}
       setEachParameterWithSource(
         whatToDeleteContentParameters,
@@ -299,24 +254,17 @@ export const createServer = async ({
         "derived",
       )
       setParameterChildrenWithSource(
-        deletePageContentParameters,
+        parameters,
         "contentParameters",
         whatToDeleteContentParameters,
         "derived",
       )
       setEachParameterWithSource(
-        deletePageContentParameters,
+        parameters,
         {
           contentPath: configuredFiles.defaultDeleteTemplateFile,
           select: "body",
         },
-        "derived",
-      )
-
-      setParameterChildrenWithSource(
-        parameters,
-        "contentParameters",
-        deletePageContentParameters,
         "derived",
       )
     }
@@ -351,27 +299,13 @@ export const createServer = async ({
         res.send(readResults.buffer)
         return
       }
-      setParameterWithSource(
-        parameters,
-        "contentPath",
-        configuredFiles.defaultPageTemplate,
-        "derived",
-      )
 
-      const contentParameters: ParameterValue = {}
       setEachParameterWithSource(
-        contentParameters,
+        parameters,
         {
           select: "body",
           contentPathOrContentTitle: req.path,
         },
-        "derived",
-      )
-
-      setParameterChildrenWithSource(
-        parameters,
-        "contentParameters",
-        contentParameters,
         "derived",
       )
     }

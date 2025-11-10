@@ -2,6 +2,7 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8" />
+    <meta itemprop="nocontainer" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>
       <query-content q="parameters.title"> HTML Wiki </query-content> <drop-if
@@ -64,9 +65,7 @@
     </div>
     <main>
       <center-column-layout>
-        <query-content
-          q="render(parameters.contentParameters.contentPath,parameters.contentParameters)"
-        >
+        <query-content q="parameters.content">
           <p>
             This is the global page template. Usually, this text would be
             replaced with the HTML content of another entry in the wiki. But I

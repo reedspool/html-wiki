@@ -305,9 +305,8 @@ test(
 )
 
 test("Can get edit page for markdown file", { concurrency: true }, async () => {
-  const { url, responseText, $1 } = await getPath(
-    `${configuredFiles.testMarkdownFile}?edit`,
-  )
+  const path = `${configuredFiles.testMarkdownFile}?edit`
+  const { url, responseText, $1 } = await getPath(path)
 
   assert.match($1("h1").innerHTML, /Edit/)
   // Markdown appears within the text area
@@ -329,12 +328,16 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
   await validateAssertAndReport(responseText, url)
 
   // The page should be exactly the same as if we call the expanded version
-  const expandedUrl = `http://localhost:${port}${configuredFiles.defaultPageTemplate}?content=${encodeURIComponent(`${configuredFiles.defaultEditTemplateFile}?select=body&content=${encodeURIComponent(`${configuredFiles.testMarkdownFile}?raw&escape`)}`)}`
+  const expandedUrl = `http://localhost:${port}${configuredFiles.defaultEditTemplateFile}?select=body&content=${encodeURIComponent(`${configuredFiles.testMarkdownFile}?raw&escape`)}`
   const responseForExpandedUrl = await fetch(expandedUrl)
   const responseTextForExpandedUrl = await responseForExpandedUrl.text()
 
   assert.strictEqual(responseForExpandedUrl.status, 200)
-  assert.strictEqual(responseText, responseTextForExpandedUrl)
+  assert.strictEqual(
+    responseText,
+    responseTextForExpandedUrl,
+    `${path} didn't match ${expandedUrl}`,
+  )
 
   // The page should be exactly the same if we get it via its title
   const { responseText: byTitleResponseText } = await getPath(
@@ -411,12 +414,14 @@ test(
           </p>
         </body>
       </html>`
+    const parsedContent = parseHtml(content)
     const createResponse = await postPath(`/?create`, {
       contentPath: filename,
       content,
     })
 
-    assert.match(createResponse.responseText, /success/i)
+    assert.match(createResponse.$1("[role=status]").innerText, /created/i)
+    assert.match(createResponse.$1("[role=status]").innerText, /success/i)
 
     await validateAssertAndReport(
       createResponse.responseText,
@@ -457,8 +462,8 @@ test(
 
     // Now edit the page
     const editedTitle = "My Edited First Testing Temp Page"
-    afterCreateResponse.$1("h1").innerHTML = editedTitle
-    const editedContent = afterCreateResponse.dom.toString()
+    parsedContent.querySelector("h1")!.innerHTML = editedTitle
+    const editedContent = parsedContent.toString()
 
     const editResponse = await postPath(filename, {
       content: editedContent,
@@ -466,7 +471,8 @@ test(
 
     // TODO: Redirect, or just respond as if it redirected? If redirect, how could we detect the literal redirect (30x) instead of only the content?
     // TODO: Add a replacing mechanism here and test that it worked
-    assert.match(editResponse.responseText, /success/i)
+    assert.match(editResponse.$1("[role=status]").innerText, /updated/i)
+    assert.match(editResponse.$1("[role=status]").innerText, /success/i)
 
     const getAfterEditResponse = await getPath(filename)
 
@@ -576,10 +582,14 @@ test(
       readFile(`${configuredFiles.testDirectory}${filePathToEdit}`),
     )
 
+    // In the UI, the raw content will appear in the ?edit text area. Other tests
+    // assert that content is correct, so let's just grab the raw version to edit
+    const rawResponse = await getPath(`${filePathToEdit}?raw&nocontainer`)
+
     // Now edit the page
     const editedTitle = "My Edited First Testing Temp Page"
-    beforeChangeResponse.$1("h1").innerHTML = editedTitle
-    const editedContent = beforeChangeResponse.dom.toString()
+    rawResponse.$1("h1").innerHTML = editedTitle
+    const editedContent = rawResponse.dom.toString()
 
     const editResponse = await postPath(filePathToEdit, {
       content: editedContent,

@@ -1,10 +1,15 @@
 import { applyTemplating } from "./dom.mts"
 import debug from "debug"
 import { escapeHtml } from "./utilities.mts"
-import { buildMyServerPStringContext, pString } from "./queryLanguage.mts"
+import {
+  buildMyServerPStringContext,
+  pString,
+  specialRenderMarkdown,
+} from "./queryLanguage.mts"
 import { type FileCache } from "./fileCache.mts"
 import { staticContentTypes } from "./serverUtilities.mts"
 import { contentType } from "mime-types"
+import { configuredFiles } from "./configuration.mts"
 const log = debug("server:engine")
 
 // Parameters come in tagged with a source to enable specific diagnostic reports
@@ -46,7 +51,12 @@ export const execute = async ({
 }): Promise<Result> => {
   // NOTE: Despite TypeScript, it's on us to explicitly validate every property
 
-  log("Engine executing parameters: %O", parameters)
+  log("Engine executing parameters: %O", {
+    ...parameters,
+    content: parameters.content
+      ? parameters.content.toString().slice(0, 20) + "..."
+      : undefined,
+  })
   const validationIssues: Array<string> = []
   if (!parameters.contentPath && !parameters.contentPathOrContentTitle) {
     // None present
@@ -115,28 +125,60 @@ export const execute = async ({
       const readResult = await fileCache.readFile(
         stringParameterValue(parameters, "contentPath"),
       )
-      const content =
-        (await getQueryValue("parameters.raw")) !== undefined
-          ? (await getQueryValue("parameters.escape")) !== undefined
-            ? escapeHtml(readResult.content)
-            : readResult.content
-          : (
-              await applyTemplating({
-                fileCache,
-                content: readResult.content,
-                parameters: parameters,
-                topLevelParameters: parameters,
-              })
-            ).content
+      let content
+      let nocontainer = parameters.nocontainer !== undefined
+      if ((await getQueryValue("parameters.raw")) !== undefined) {
+        if ((await getQueryValue("parameters.escape")) !== undefined) {
+          content = escapeHtml(readResult.content)
+        } else {
+          content = readResult.content
+        }
+      } else if (
+        (await getQueryValue("parameters.renderMarkdown")) !== undefined
+      ) {
+        if (typeof parameters.contentPath !== "string") throw new Error()
+        content = await specialRenderMarkdown({
+          contentPath: parameters.contentPath,
+          fileCache,
+          content: readResult.content,
+        })
+      } else {
+        const templateApplicationResults = await applyTemplating({
+          fileCache,
+          content: readResult.content,
+          parameters: parameters,
+          topLevelParameters: parameters,
+        })
+        content = templateApplicationResults.content
+        if (templateApplicationResults.meta.nocontainer) nocontainer = true
+      }
+      let resultContentType =
+        contentType(
+          stringParameterValue(parameters, "contentPath").match(/\.[^.]+$/)![0],
+        ) || staticContentTypes.plainText
+      if (!nocontainer) {
+        const containerExecuteResults = await execute({
+          fileCache,
+          parameters: {
+            // TODO: Can't just do anything here. If I accept all previous
+            // parameters, then I get into recursive loops. Why did I want that anyways?
+            // The idea was to maybe pass some parameters to the top. So maybe  I can have a way to explicitly pass parameters up and out
+            statusMessage: parameters.statusMessage,
+            renderMarkdown: undefined,
+            command: "read",
+            select: undefined,
+            contentPathOrContentTitle: undefined,
+            contentPath: configuredFiles.defaultPageTemplate,
+            content,
+          },
+        })
+        content = containerExecuteResults.content
+        resultContentType = containerExecuteResults.contentType
+      }
       return {
         status: Status.OK,
         content,
-        contentType:
-          contentType(
-            stringParameterValue(parameters, "contentPath").match(
-              /\.[^.]+$/,
-            )![0],
-          ) || staticContentTypes.plainText,
+        contentType: resultContentType,
       }
     }
     case "update": {
