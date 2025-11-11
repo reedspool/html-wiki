@@ -59,75 +59,66 @@
     <h3>Copy links</h3>
     <shared-link-entry copy-target-container>
       <span>[title](text)</span>
-      <replace-with
-        button
+      <button
         type="button"
         copy
         copy-target
         x-content="`[${topLevelParameters.title}](${topLevelParameters.text})`"
-      ></replace-with>
+      ></button>
     </shared-link-entry>
     <shared-link-entry copy-target-container>
       <span>[title](url)</span>
-      <replace-with
-        button
+      <button
         type="button"
         copy
         copy-target
         x-content="`[${topLevelParameters.title}](${topLevelParameters.url})`"
-      ></replace-with>
+      ></button>
     </shared-link-entry>
     <a href="actions/search-and-link.html">Search</a>
     <shared-create-entry>
       <h3>Template: From Chrome Android</h3>
       <h4>filename</h4>
-      <replace-with
-        file-details
+      <file-details
         x-content="`${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md`"
-      ></replace-with>
+      ></file-details>
       <h4>fileContent</h4>
       <file-details>
-        <replace-with
-          span
+        <span
           x-content="`# [${topLevelParameters.title}](${topLevelParameters.text})`"
-        ></replace-with>
+        ></span>
         <br />
         <br />
-        <replace-with
-          span
+        <span
           x-escape-content='`Shared from Chrome as "${topLevelParameters.title}" from &lt;${topLevelParameters.text}&gt;`'
-        ></replace-with>
+        ></span>
       </file-details>
       <p>
-        <replace-with
-          a
+        <a
           x-href="`/system/actions/create.html?filename=${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.text})%0A%0AShared from Chrome as %22${topLevelParameters.title}%22 from %3C${topLevelParameters.text}%3E`"
-          >Go to Create the above</replace-with
+          >Go to Create the above</a
         >
       </p>
     </shared-create-entry>
     <shared-create-entry>
       <h3>Template: Trusting the API</h3>
       <h4>filename</h4>
-      <replace-with
-        file-details
+      <file-details
         x-content="`${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md`"
-      ></replace-with>
+      ></file-details>
       <h4>fileContent</h4>
       <file-details>
-        <replace-with
-          span
+        <span
           x-content="`# [${topLevelParameters.title}](${topLevelParameters.url})`"
-        ></replace-with>
+        ></span>
         <br />
         <br />
-        <replace-with span x-content="topLevelParameters.text"></replace-with>
+        <span x-content="topLevelParameters.text"></span>
       </file-details>
       <p>
-        <replace-with
-          a
+        <a
           x-href="`/system/actions/create.html?filename=${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.url})%0A%0A${topLevelParameters.text}`"
-          >Go to Create the above</replace-with
+          >Go to Create the above</a
         >
       </p>
     </shared-create-entry>
@@ -149,36 +140,31 @@
     <form local method="GET" action="#">
       <label>
         <code> title </code>
-        <replace-with
-          input
+        <input
           type="text"
           name="title"
           x-value="or(topLevelParameters.title,'')"
           placeholder="None supplied"
-        >
-        </replace-with>
+        />
       </label>
       <label>
         <code> url </code>
-        <replace-with
-          input
+        <input
           type="text"
           name="url"
           x-value="or(topLevelParameters.url,'')"
           placeholder="None supplied"
         >
-        </replace-with>
       </label>
       <label>
         <code> text </code>
-        <replace-with
-          input
+        <input
           type="text"
           name="text"
           x-value="or(topLevelParameters.text,'')"
           placeholder="None supplied"
         >
-        </replace-with>
+        </input>
       </label>
 
       <button type="submit">Update</button>

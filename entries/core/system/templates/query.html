@@ -58,34 +58,29 @@
       <keep-if truthy="topLevelParameters.dialog!==undefined">
         <input type="hidden" name="select" value="body" />
         <input type="hidden" name="dialog" value="dialog" />
-        <replace-with
-          input
+        <input
           type="hidden"
           name="contentPath"
           x-value="parameters.contentPath"
         />
       </keep-if>
-      <replace-with
-        textarea
+      <textarea
         autofocus
         name="query"
         x-content="or(topLevelParameters.query,'')"
         placeholder="Temporal.Now.plainDateTimeISO()"
       >
-      </replace-with>
-      <replace-with button type="submit" x-formaction="parameters.contentPath"
-        >Go</replace-with
-      >
+      </textarea>
+      <button type="submit" x-formaction="parameters.contentPath">Go</button>
     </form>
     <keep-if truthy="topLevelParameters.query!==undefined">
       <set- result="query(topLevelParameters.query)"> </set->
       <h2>Complete result</h2>
       <div copy-target-container>
-        <replace-with
-          pre
+        <pre
           x-content="topLevelParameters.result,(p)=>typeof p === 'string'?p:JSON.stringify(p,null,2),(p)=>`<code
             copy-target>${p}</code>`"
-        ></replace-with>
+        ></pre>
         <div>
           <button type="button" copy>Copy</button>
 
@@ -100,11 +95,7 @@
           <map-list q="topLevelParameters.result" allow-one>
             <li copy-target-container>
               <div class="flex-row justify-between">
-                <replace-with
-                  span
-                  copy-target
-                  x-content="parameters.currentListItem"
-                ></replace-with>
+                <span copy-target x-content="parameters.currentListItem"></span>
                 <div>
                   <button type="button" copy>Copy</button>
                   <button type="button" insert>Insert</button>

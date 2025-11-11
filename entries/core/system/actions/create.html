@@ -59,34 +59,28 @@
       <set-
         timestamp="Temporal.Now.plainDateTimeISO().toString().replace(/\.\d+$/,'')"
       ></set->
-      <replace-with
-        input
+      <input
         type="hidden"
         name="filename"
         x-value="topLevelParameters.timestamp.replace(/[:.]/g,'-'),_=>_+'.md'"
-      >
-      </replace-with>
-      <replace-with
-        input
+      />
+      <input
         type="hidden"
         name="fileContent"
         x-value="topLevelParameters.timestamp,_=>'# '+_+'\n\n'"
-      >
-      </replace-with>
+      />
       <button type="submit">Template: Timestamp</button>
     </form>
     <form method="GET">
-      <replace-with
-        input
+      <input
         type="hidden"
         name="fileContent"
         x-value="render('/system/templates/empty.html', { raw: true }),p=>escapeHtml(p)"
-      ></replace-with>
+      />
       <button type="submit">Template: HTML</button>
     </form>
     <form method="GET">
-      <replace-with input type="hidden" name="fileContent" x-value="'# \n\n'">
-      </replace-with>
+      <input type="hidden" name="fileContent" x-value="'# \n\n'" />
       <button type="submit">Template: Markdown</button>
     </form>
     <form method="POST">
@@ -100,13 +94,12 @@
         />
       </drop-if>
       <keep-if truthy="topLevelParameters.filename">
-        <replace-with
-          input
+        <input
           type="text"
           name="contentPath"
           x-value="topLevelParameters.filename"
           placeholder="posts/New Page"
-        ></replace-with>
+        />
       </keep-if>
       <label>
         File type
@@ -115,11 +108,10 @@
           <option value="md">Markdown</option>
         </select>
       </label>
-      <replace-with
-        textarea
+      <textarea
         name="content"
         x-content="or(topLevelParameters.fileContent,'')"
-      ></replace-with>
+      ></textarea>
 
       <button type="submit" formaction="/?create">Save</button>
     </form>

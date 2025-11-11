@@ -50,11 +50,10 @@
     <h1>
       Editing
       <keep-if truthy="parameters.contentParameters?.contentPath">
-        <replace-with
-          a
+        <a
           x-href="parameters.contentParameters.contentPath"
           x-content="parameters.contentParameters.contentPath"
-          >[filename] :-/</replace-with
+          >[filename] :-/</a
         >
       </keep-if>
       <drop-if truthy="parameters.contentParameters?.contentPath">
@@ -131,12 +130,11 @@
             });
           });
         </script>
-        <replace-with
-          textarea
+        <textarea
           name="content"
           spellcheck="false"
           x-content="render(parameters.contentParameters.contentPath,parameters.contentParameters)"
-        ></replace-with>
+        ></textarea>
         <slot name="keep" if="raw">
           <button type="submit" formaction="?raw">Save</button>
           <p>
@@ -145,12 +143,12 @@
           </p>
         </slot>
         <slot name="remove" if="raw">
-          <replace-with
-            button
+          <button
             type="submit"
             x-formaction="parameters.contentParameters.contentPath"
-            >Save</replace-with
           >
+            Save
+          </button>
         </slot>
       </form>
     </keep-if>

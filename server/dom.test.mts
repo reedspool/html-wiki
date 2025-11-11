@@ -1,6 +1,10 @@
 import test from "node:test"
 import assert from "node:assert"
-import { setParameterWithSource, type ParameterValue } from "./engine.mts"
+import {
+  setEachParameterWithSource,
+  setParameterWithSource,
+  type ParameterValue,
+} from "./engine.mts"
 import { parse } from "node-html-parser"
 import { applyTemplating } from "./dom.mts"
 import { html } from "./utilities.mts"
@@ -75,9 +79,7 @@ test(
   { concurrency: true },
   async () => {
     const input = html`
-      <keep-if truthy="parameters.title"
-        ><replace-with h1>Keep me!</replace-with></keep-if
-      >
+      <keep-if truthy="parameters.title"><h1>Keep me!</h1></keep-if>
     `
     const { $1 } = await applyTemplatingAndParse(
       setParameterWithSource({}, "title", "Test title", "query param"),
@@ -102,5 +104,34 @@ test(
     const { $1 } = await applyTemplatingAndParse({}, input)
     assert.equal($1("h1"), undefined, "The content is removed")
     assert.equal($1("keep-if"), undefined, "The keep-if element removes itself")
+  },
+)
+
+test(
+  "Any element can have arbitrary executed attributes",
+  { concurrency: true },
+  async () => {
+    const input = html`
+      <a x-href="parameters.myHref">Test link</a>
+      <span x-content="parameters.spanContent">Not here</span>
+    `
+    const { $1 } = await applyTemplatingAndParse(
+      setEachParameterWithSource(
+        {},
+        { myHref: "Test href", spanContent: "new span stuff" },
+        "query param",
+      ),
+      input,
+    )
+    assert.equal(
+      $1("a").getAttribute("href"),
+      "Test href",
+      "Arbitrary executed attribute",
+    )
+    assert.match(
+      $1("span").innerText,
+      /new span stuff/,
+      "Arbitrary executed attribute",
+    )
   },
 )

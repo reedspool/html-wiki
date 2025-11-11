@@ -62,24 +62,20 @@
       <keep-if truthy="topLevelParameters.dialog!==undefined">
         <input type="hidden" name="select" value="body" />
         <input type="hidden" name="dialog" value="dialog" />
-        <replace-with
-          input
+        <input
           type="hidden"
           name="contentPath"
           x-value="parameters.contentPath"
         />
       </keep-if>
-      <replace-with
-        textarea
+      <textarea
         autofocus
         name="query"
         x-content="or(topLevelParameters.query,'')"
         placeholder="Search here"
       >
-      </replace-with>
-      <replace-with button type="submit" x-formaction="parameters.contentPath"
-        >Go</replace-with
-      >
+      </textarea>
+      <button type="submit" x-formaction="parameters.contentPath">Go</button>
     </form>
     <keep-if truthy="topLevelParameters.query!==undefined">
       <set- result="site.search(topLevelParameters.query.trim())"> </set->
@@ -94,69 +90,62 @@
           <set- iname="parameters.currentListItem.name"> </set->
           <li copy-target-container>
             <div class="flex-row justify-between">
-              <replace-with
-                a
+              <a
                 copy-target
                 x-href="topLevelParameters.ipath"
                 x-title="topLevelParameters.iname"
                 x-content="topLevelParameters.ititle"
                 target="_parent"
-              ></replace-with>
+              ></a>
               <div>
                 <div>
                   Copy
-                  <replace-with
-                    button
+                  <button
                     type="button"
                     x-copy='`<a href="${topLevelParameters.ipath}" title="${topLevelParameters.ititle}">${topLevelParameters.iname}</a>`'
                     title="Copy HTML link"
                   >
                     <code>&lt;a&gt;</code>
-                  </replace-with>
-                  <replace-with
-                    button
+                  </button>
+                  <button
                     type="button"
                     x-copy='`[${topLevelParameters.ititle}](<${topLevelParameters.ipath}> "${topLevelParameters.iname}")`'
                     title="Copy Markdown link"
                   >
                     <code>[]()</code>
-                  </replace-with>
-                  <replace-with
-                    button
+                  </button>
+                  <button
                     type="button"
                     x-copy="topLevelParameters.ipath"
                     title="Copy path"
                   >
                     Path
-                  </replace-with>
+                  </button>
                 </div>
                 <keep-if truthy="topLevelParameters.dialog!==undefined">
                   <div>
                     Insert
-                    <replace-with
-                      button
+                    <button
                       type="button"
                       x-insert='`<a href="${topLevelParameters.ipath}" title="${topLevelParameters.ititle}">${topLevelParameters.iname}</a>`'
                       title="Insert HTML link"
                     >
                       <code>&lt;a&gt;</code>
-                    </replace-with>
-                    <replace-with
-                      button
+                    </button>
+                    <button
                       type="button"
                       x-insert='`[${topLevelParameters.ititle}](<${topLevelParameters.ipath}> "${topLevelParameters.iname}")`'
                       title="Insert Markdown link"
                     >
                       <code>[]()</code>
-                    </replace-with>
-                    <replace-with
-                      button
+                    </button>
+                    <button
                       type="button"
                       x-insert="topLevelParameters.ipath"
                       title="Insert path"
                     >
                       Path
-                    </replace-with>
+                    </button>
                   </div>
                 </keep-if>
               </div>

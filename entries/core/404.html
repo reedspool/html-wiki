@@ -10,27 +10,18 @@
   <body>
     <keep-if truthy="topLevelParameters.originalPath">
       <p>While processing the request:</p>
-      <p>
-        <replace-with
-          code
-          x-content="topLevelParameters.originalPath"
-        ></replace-with>
-      </p>
+      <p><code x-content="topLevelParameters.originalPath"></code></p>
 
       <p>The server was unable to find a file at path</p>
       <p>
-        <replace-with
-          code
-          x-content="topLevelParameters.missingPath"
-        ></replace-with>
+        <code x-content="topLevelParameters.missingPath"></code>
       </p>
 
       <p>
         Do you want to
-        <replace-with
-          a
+        <a
           x-href="`/system/actions/create.html?filename=${topLevelParameters.missingPath}`"
-          >create it?</replace-with
+          >create it?</a
         >
       </p>
     </keep-if>

@@ -321,8 +321,8 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
 
   // Save button should have a formaction without any special mode
   assert.match(
-    responseText,
-    /<button\s+type="submit"\s+formaction="\/fixtures\/test.md"/,
+    $1("button[type=submit]").getAttribute("formaction")!,
+    /\/fixtures\/test.md/,
   )
 
   await validateAssertAndReport(responseText, url)

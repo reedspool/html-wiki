@@ -17,8 +17,7 @@
           >[file name missing]</query-content
         >?
       </h1>
-      <replace-with
-        form
+      <form
         x-action="parameters.contentParameters.contentPath,(p)=>`${p}?delete&delete-confirm`"
         method="POST"
       >
@@ -29,10 +28,10 @@
           >? This action cannot be undone.
         </p>
         <button type="submit">Confirm and delete</button>
-        <replace-with a x-href="parameters.contentParameters.contentPath"
-          >cancel deletion and go back</replace-with
+        <a x-href="parameters.contentParameters.contentPath"
+          >cancel deletion and go back</a
         >
-      </replace-with>
+      </form>
     </keep-if>
   </body>
 </html>

@@ -68,6 +68,45 @@ export const applyTemplating = async (
     }
     const element = treeWalker.currentNode as HTMLElement
     if (stopAtElement && element === stopAtElement) break
+
+    const attributeEntries = Object.entries(element.attributes)
+    for (let i = 0; i < attributeEntries.length; i++) {
+      const [key, value] = attributeEntries[i]
+      const match = key.match(/^x(-escape)?-(.*)$/)
+      if (!match) {
+        continue
+      }
+      const isEscape = match[1] === "-escape"
+      const realKey = match[2]
+      const queryValue = await getQueryValue(value)
+      switch (realKey) {
+        case "content":
+          let valueToSet
+          if (typeof queryValue !== "string") {
+            if (typeof (queryValue as object)?.["toString"] === "function") {
+              valueToSet = (queryValue as object).toString()
+            } else {
+              valueToSet = "&lt;no textual representation&gt;"
+            }
+          } else {
+            valueToSet = queryValue
+          }
+
+          if (isEscape) {
+            element.innerHTML = escapeHtml(valueToSet)
+          } else {
+            element.innerHTML = valueToSet
+          }
+          break
+        default:
+          element.setAttribute(
+            realKey,
+            typeof queryValue === "string" ? queryValue : String(queryValue),
+          )
+          break
+      }
+    }
+
     switch (element.tagName) {
       case "LINK":
         if (element.attributes.rel === "icon") {
@@ -219,65 +258,6 @@ export const applyTemplating = async (
             element.after(...toPlace)
           }
           element.remove()
-        }
-        break
-      case "REPLACE-WITH":
-        {
-          const attributeEntries = Object.entries(element.attributes)
-          const tagName = attributeEntries[0][0]
-          if (attributeEntries[0][1]) {
-            throw new QueryError(
-              500,
-              `replace-with first attribute must be a tagName with no value, got value ${attributeEntries[0][1]}`,
-            )
-          }
-
-          const replacementElement = new HTMLElement(tagName, {})
-          replacementElement.innerHTML = element.innerHTML
-
-          for (let i = 1; i < attributeEntries.length; i++) {
-            const [key, value] = attributeEntries[i]
-            const match = key.match(/^x(-escape)?-(.*)$/)
-            if (match) {
-              const isEscape = match[1] === "-escape"
-              const realKey = match[2]
-              const queryValue = await getQueryValue(value)
-              switch (realKey) {
-                case "content":
-                  let valueToSet
-                  if (typeof queryValue !== "string") {
-                    if (
-                      typeof (queryValue as object)?.["toString"] === "function"
-                    ) {
-                      valueToSet = (queryValue as object).toString()
-                    } else {
-                      valueToSet = "&lt;no textual representation&gt;"
-                    }
-                  } else {
-                    valueToSet = queryValue
-                  }
-
-                  if (isEscape) {
-                    replacementElement.innerHTML = escapeHtml(valueToSet)
-                  } else {
-                    replacementElement.innerHTML = valueToSet
-                  }
-                  break
-                default:
-                  replacementElement.setAttribute(
-                    realKey,
-                    typeof queryValue === "string"
-                      ? queryValue
-                      : String(queryValue),
-                  )
-                  break
-              }
-            } else {
-              replacementElement.setAttribute(key, value)
-            }
-          }
-          alreadySetForNextIteration = treeWalker.nextNodeNotChildren()
-          element.replaceWith(replacementElement)
         }
         break
       case "QUERY-CONTENT":

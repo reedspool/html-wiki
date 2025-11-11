@@ -37,11 +37,10 @@
               q="site.allFiles, (list)=>list.toSorted((a,b)=>b.modifiedTimeMs-a.modifiedTimeMs)"
             >
               <li>
-                <replace-with
-                  a
+                <a
                   x-href="parameters.currentListItem.contentPath"
                   x-content="or(parameters.currentListItem.meta.title,parameters.currentListItem.name)"
-                ></replace-with>
+                ></a>
               </li>
             </map-list>
           </ul>

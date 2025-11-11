@@ -47,10 +47,7 @@
       <center-column-layout class="relative lower">
         <keep-if truthy="topLevelParameters.statusMessage">
           <toast-message role="status">
-            <replace-with
-              span
-              x-content="topLevelParameters.statusMessage"
-            ></replace-with>
+            <span x-content="topLevelParameters.statusMessage"></span>
             <button
               clean
               type="button"
