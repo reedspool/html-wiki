@@ -11,7 +11,6 @@ export const configuredFiles = {
   coreDirectory,
   defaultPageTemplate: "/system/templates/global-page.html",
   rootIndexHtml: "/index.html",
-  logbook: "/project/logbook.md",
   testMarkdownFile: "/fixtures/test.md",
   testMarkdownFileWithSpaceInName: "/fixtures/file with a space in the name.md",
   testMarkdownFileWithYamlFrontmatter: "/fixtures/markdown with frontmatter.md",

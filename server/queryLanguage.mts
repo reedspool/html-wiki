@@ -81,19 +81,6 @@ export const renderer =
     contentPath: string,
     contentParameters?: ParameterValue,
   ): Promise<string> => {
-    const coreDirectory = maybeStringParameterValue(
-      topLevelParameters,
-      "coreDirectory",
-    )
-    const userDirectory = maybeStringParameterValue(
-      topLevelParameters,
-      "userDirectory",
-    )
-
-    if (!userDirectory || !coreDirectory) {
-      throw new Error("`render` requires userDirectory and coreDirectory")
-    }
-
     const contentFileReadResult = await fileCache.readFile(contentPath)
 
     log(

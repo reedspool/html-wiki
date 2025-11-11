@@ -165,20 +165,6 @@ export const createServer = async ({
       )
     }
 
-    // Set server configuration last so it's not overridden
-    setParameterWithSource(
-      parameters,
-      "coreDirectory",
-      coreDirectory,
-      "server configured",
-    )
-    setParameterWithSource(
-      parameters,
-      "userDirectory",
-      userDirectory,
-      "server configured",
-    )
-
     if (
       stringParameterValue(parameters, "command") == "read" &&
       maybeAtLeastEmptyStringParameterValue(parameters, "edit")
