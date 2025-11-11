@@ -85,12 +85,14 @@
       <h2>Results</h2>
       <ul>
         <map-list q="topLevelParameters.result" allow-one>
-          <set- ipath="parameters.currentListItem.contentPath"> </set->
           <set-
+            ipath="parameters.currentListItem.contentPath"
             ititle="or(parameters.currentListItem.meta.title,parameters.currentListItem.name)"
+            iname="parameters.currentListItem.name"
+            markdown-link='`[${topLevelParameters.ititle}](<${topLevelParameters.ipath}> "${topLevelParameters.iname}")`'
+            html-link='`<a href="${topLevelParameters.ipath}" title="${topLevelParameters.ititle}">${topLevelParameters.iname}</a>`'
           >
           </set->
-          <set- iname="parameters.currentListItem.name"> </set->
           <li copy-target-container>
             <div class="flex-row justify-between">
               <a
@@ -105,14 +107,14 @@
                   Copy
                   <button
                     type="button"
-                    x-copy='`<a href="${topLevelParameters.ipath}" title="${topLevelParameters.ititle}">${topLevelParameters.iname}</a>`'
+                    x-copy='topLevelParameters["html-link"]'
                     title="Copy HTML link"
                   >
                     <code>&lt;a&gt;</code>
                   </button>
                   <button
                     type="button"
-                    x-copy='`[${topLevelParameters.ititle}](<${topLevelParameters.ipath}> "${topLevelParameters.iname}")`'
+                    x-copy='topLevelParameters["markdown-link"]'
                     title="Copy Markdown link"
                   >
                     <code>[]()</code>
@@ -130,14 +132,14 @@
                     Insert
                     <button
                       type="button"
-                      x-insert='`<a href="${topLevelParameters.ipath}" title="${topLevelParameters.ititle}">${topLevelParameters.iname}</a>`'
+                      x-insert='topLevelParameters["html-link"]'
                       title="Insert HTML link"
                     >
                       <code>&lt;a&gt;</code>
                     </button>
                     <button
                       type="button"
-                      x-insert='`[${topLevelParameters.ititle}](<${topLevelParameters.ipath}> "${topLevelParameters.iname}")`'
+                      x-insert='topLevelParameters["markdown-link"]'
                       title="Insert Markdown link"
                     >
                       <code>[]()</code>

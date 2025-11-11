@@ -135,3 +135,26 @@ test(
     )
   },
 )
+
+test(
+  "<set-> sets multiple parameters for the rest of the document",
+  { concurrency: true },
+  async () => {
+    const input = html` <set-
+        foo="'foo value'"
+        bar="'bar value overwrites'"
+      ></set->
+      <span x-content="topLevelParameters.foo">Replaced</span>
+      <p x-class="topLevelParameters.bar">see attribute</p>`
+    const { $1 } = await applyTemplatingAndParse(
+      setEachParameterWithSource(
+        {},
+        { bar: "original value should be overwritten" },
+        "query param",
+      ),
+      input,
+    )
+    assert.match($1("span").innerText, /foo value/)
+    assert.match($1("p").getAttribute("class")!, /bar value overwrites/)
+  },
+)
