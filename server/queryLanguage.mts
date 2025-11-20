@@ -77,30 +77,27 @@ export const renderer =
     topLevelParameters: ParameterValue
     fileCache: FileCache
   }) =>
-  async (
-    contentPath: string,
-    contentParameters?: ParameterValue,
-  ): Promise<string> => {
+  async (contentPath: string, parameters?: ParameterValue): Promise<string> => {
     const contentFileReadResult = await fileCache.readFile(contentPath)
 
     log(
-      `Applying in-query templating for ${contentPath} original query content query ${JSON.stringify(contentParameters)}`,
+      `Applying in-query templating for ${contentPath} original query content query ${JSON.stringify(parameters)}`,
     )
     // TODO: I think "noApply" is more accurate than "raw", however can
     // probably come up with a better name. The point is "raw" implies too
     // much, or could mean several things, so I should pick some more narrow
     // concepts, even if they have to be mixed and matched
-    if (contentParameters?.raw !== undefined) {
-      if (contentParameters.escape !== undefined) {
+    if (parameters?.raw !== undefined) {
+      if (parameters.escape !== undefined) {
         return escapeHtml(contentFileReadResult.content)
       }
       return contentFileReadResult.content
     }
-    if (contentParameters?.renderMarkdown !== undefined) {
-      if (typeof contentParameters.contentPath !== "string") throw new Error()
+    if (parameters?.renderMarkdown !== undefined) {
+      if (typeof parameters.contentPath !== "string") throw new Error()
       return specialRenderMarkdown({
         content: contentFileReadResult.content,
-        contentPath: contentParameters.contentPath,
+        contentPath: parameters.contentPath,
         fileCache,
       })
     }
@@ -108,11 +105,7 @@ export const renderer =
       await applyTemplating({
         fileCache,
         content: contentFileReadResult.content,
-        parameters: setEachParameterWithSource(
-          {},
-          contentParameters ?? {},
-          "query param",
-        ),
+        parameters: parameters ?? {},
         topLevelParameters,
       })
     ).content

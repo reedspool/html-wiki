@@ -49,16 +49,14 @@
     </style>
     <h1>
       Editing
-      <keep-if truthy="parameters.contentParameters?.contentPath">
+      <keep-if truthy="parameters.editingContentPath">
         <a
-          x-href="parameters.contentParameters.contentPath"
-          x-content="parameters.contentParameters.contentPath"
+          x-href="parameters.editingContentPath"
+          x-content="parameters.editingContentPath"
           >[filename] :-/</a
         >
       </keep-if>
-      <drop-if truthy="parameters.contentParameters?.contentPath">
-        (Template)
-      </drop-if>
+      <drop-if truthy="parameters.editingContentPath"> (Template) </drop-if>
     </h1>
     <script>
       document.addEventListener("click", ({ target }) => {
@@ -71,13 +69,13 @@
         if (!wasOpen) dialog.show();
       });
     </script>
-    <drop-if truthy="parameters.contentParameters?.contentPath">
+    <drop-if truthy="parameters.editingContentPath">
       You are viewing the edit page directly. Maybe you meant to
       <a href="?edit">edit this page</a>
       (edit the edit page)? Or if you wanted to edit another page, go to that
       page and add <code>?edit</code> to the end of the URL.
     </drop-if>
-    <keep-if truthy="parameters.contentParameters?.contentPath">
+    <keep-if truthy="parameters.editingContentPath">
       <form method="POST">
         <div>
           Toolbox
@@ -133,23 +131,11 @@
         <textarea
           name="content"
           spellcheck="false"
-          x-content="render(parameters.contentParameters.contentPath,parameters.contentParameters)"
+          x-content="render(parameters.editingContentPath,{raw: true, escape: true})"
         ></textarea>
-        <slot name="keep" if="raw">
-          <button type="submit" formaction="?raw">Save</button>
-          <p>
-            This isn't implemented correctly. Need to add <code>?raw</code> to
-            query <code>q/query/contentParameters/contentPath</code>
-          </p>
-        </slot>
-        <slot name="remove" if="raw">
-          <button
-            type="submit"
-            x-formaction="parameters.contentParameters.contentPath"
-          >
-            Save
-          </button>
-        </slot>
+        <button type="submit" x-formaction="parameters.editingContentPath">
+          Save
+        </button>
       </form>
     </keep-if>
   </body>

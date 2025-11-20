@@ -65,9 +65,12 @@ export const execute = async ({
     )
   } else if (!parameters.contentPath) {
     // Try as title
-    parameters.contentPath = unpackContentPathOrContentTitle({
+    parameters.contentPath = await contentPathOrContentTitleToContentPath({
       fileCache,
-      parameters,
+      contentPathOrContentTitle: stringParameterValue(
+        parameters,
+        "contentPathOrContentTitle",
+      ),
     })
   }
 
@@ -110,7 +113,7 @@ export const execute = async ({
       }
     }
     case "read": {
-      validateReadParameters(validationIssues, parameters, fileCache)
+      await validateReadParameters(validationIssues, parameters, fileCache)
       if (validationIssues.length > 0)
         return validationErrorResponse(validationIssues)
       const getQueryValue = (query: string) =>
@@ -217,18 +220,16 @@ export const execute = async ({
   }
 }
 
-export const unpackContentPathOrContentTitle = ({
+export const contentPathOrContentTitleToContentPath = async ({
   fileCache,
-  parameters,
+  contentPathOrContentTitle,
 }: {
   fileCache: FileCache
-  parameters: ParameterValue
-}): string | undefined => {
+  contentPathOrContentTitle: string
+}): Promise<string | undefined> => {
   return (
-    fileCache.getByContentPathOrContentTitle(
-      stringParameterValue(parameters, "contentPathOrContentTitle"),
-    )?.contentPath ??
-    stringParameterValue(parameters, "contentPathOrContentTitle")
+    fileCache.getByContentPathOrContentTitle(contentPathOrContentTitle)
+      ?.contentPath ?? contentPathOrContentTitle
   )
 }
 
@@ -237,7 +238,7 @@ export const validationErrorResponse = (validationIssues: Array<string>) => ({
   content: `Templating engine request wasn't valid, issues: ${validationIssues.join("; ")}.`,
   contentType: staticContentTypes.plainText,
 })
-export const validateReadParameters = (
+export const validateReadParameters = async (
   validationIssues: Array<string>,
   parameters: ParameterValue,
   fileCache: FileCache,
@@ -249,31 +250,17 @@ export const validateReadParameters = (
     )
   } else if (!parameters.contentPath) {
     // Try as title
-    parameters.contentPath = unpackContentPathOrContentTitle({
+    parameters.contentPath = await contentPathOrContentTitleToContentPath({
       fileCache,
-      parameters,
+      contentPathOrContentTitle: stringParameterValue(
+        parameters,
+        "contentPathOrContentTitle",
+      ),
     })
   }
   // TODO: Really don't want this to be everywhere
   if (/\.md$/.test(stringParameterValue(parameters, "contentPath"))) {
     setParameterWithSource(parameters, "renderMarkdown", "true", "derived")
-  }
-  // TODO: Validate contentPath, something which says it's valid? Maybe check that the file exists?
-  if (
-    parameters.contentParameters &&
-    maybeRecordParameterValue(parameters.contentParameters)
-  ) {
-    if (typeof parameters.contentParameters !== "object") {
-      validationIssues.push("contentParameters should be a map of parameters")
-    } else {
-      validateReadParameters(
-        validationIssues,
-        // Casting because the hope is we're safely validating. Could
-        // probably use more tests
-        recordParameterValue(parameters.contentParameters) as ParameterValue,
-        fileCache,
-      )
-    }
   }
 }
 

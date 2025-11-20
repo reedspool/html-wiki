@@ -104,30 +104,12 @@ program
         {
           userDirectory: options.userDirectory,
           coreDirectory: options.coreDirectory,
-          contentPath: configuredFiles.defaultPageTemplate,
+          contentPath: contentPath,
           command: "read",
         },
         "query param",
       )
-      readParameters.contentParameters = {
-        value: {
-          contentPath: {
-            value: contentPath,
-            source: "query param",
-          },
-        },
-        source: "query param",
-      }
       let outputPath = contentPath
-      if (/\.md$/.test(contentPath)) {
-        outputPath = contentPath.replace(/\.md$/, ".html")
-        setParameterWithSource(
-          readParameters.contentParameters as ParameterValue,
-          "renderMarkdown",
-          "true",
-          "query param",
-        )
-      }
       const readResult = await execute({
         parameters: readParameters,
         fileCache,

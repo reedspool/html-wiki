@@ -14,6 +14,7 @@ import {
 } from "./serverUtilities.mts"
 import { MissingFileQueryError, QueryError } from "./error.mts"
 import {
+  contentPathOrContentTitleToContentPath,
   execute,
   maybeAtLeastEmptyStringParameterValue,
   maybeStringParameterValue,
@@ -127,44 +128,6 @@ export const createServer = async ({
 
     setParameterWithSource(parameters, "command", command, "derived")
 
-    // TODO: This should be placed somewhere it can act consistently at all levels
-    // if (
-    //   maybeStringParameterValue(parameters, "contentPathOrContentTitle") &&
-    //   /\.md$/.test(
-    //     stringParameterValue(parameters, "contentPathOrContentTitle"),
-    //   ) &&
-    //   maybeNonEmptyStringParameterValue(parameters, "renderMarkdown") === undefined
-    // ) {
-    //   setParameterWithSource(parameters, "renderMarkdown", "true", "derived")
-    // }
-
-    // TODO: Maybe not needed anymore? Would need to provide another simple
-    //       way to deliver these. But maybe the need isn't there. I could just
-    //       pass literal parameters to edit for example
-    if (
-      command === "read" &&
-      maybeStringParameterValue(parameters, "content")
-    ) {
-      // TODO: Seems silly that `content` is special and has this
-      // capability. Seems like I should be able to make this happen for
-      // any given parameter as a client
-      const decodedContent = decodeToContentParameters(
-        stringParameterValue(parameters, "content"),
-      )
-      setParameterChildrenWithSource(
-        parameters,
-        "contentParameters",
-        decodedContent,
-        "derived",
-      )
-      setParameterWithSource(
-        parameters,
-        "contentPathOrContentTitle",
-        req.path,
-        "derived",
-      )
-    }
-
     if (
       stringParameterValue(parameters, "command") == "read" &&
       maybeAtLeastEmptyStringParameterValue(parameters, "edit")
@@ -198,31 +161,18 @@ export const createServer = async ({
           },
           "derived",
         )
-      } else {
-        const whatToEditContentParameters: ParameterValue = {}
-        setEachParameterWithSource(
-          whatToEditContentParameters,
-          {
-            raw: "raw",
-            escape: "escape",
-            contentPathOrContentTitle: toEditContentPath,
-          },
-          "derived",
-        )
-        setParameterChildrenWithSource(
-          parameters,
-          "contentParameters",
-          whatToEditContentParameters,
-          "derived",
-        )
+      } else if (fileExistsResult) {
         setEachParameterWithSource(
           parameters,
           {
+            editingContentPath: fileExistsResult.contentPath,
             contentPath: configuredFiles.defaultEditTemplateFile,
             select: "body",
           },
           "derived",
         )
+      } else {
+        throw new MissingFileQueryError(toEditContentPath)
       }
     } else if (
       stringParameterValue(parameters, "command") == "read" &&
@@ -231,28 +181,28 @@ export const createServer = async ({
       const toDeleteContentPath =
         maybeStringParameterValue(parameters, "contentPathOrContentTitle") ||
         req.path
-      const whatToDeleteContentParameters: ParameterValue = {}
-      setEachParameterWithSource(
-        whatToDeleteContentParameters,
-        {
-          contentPathOrContentTitle: toDeleteContentPath,
-        },
-        "derived",
-      )
-      setParameterChildrenWithSource(
-        parameters,
-        "contentParameters",
-        whatToDeleteContentParameters,
-        "derived",
-      )
-      setEachParameterWithSource(
-        parameters,
-        {
-          contentPath: configuredFiles.defaultDeleteTemplateFile,
-          select: "body",
-        },
-        "derived",
-      )
+      const fileExistsResult =
+        fileCache.getByContentPathOrContentTitle(toDeleteContentPath)
+      if (
+        fileExistsResult &&
+        fileExistsResult.originalContent.foundInDirectory == coreDirectory
+      ) {
+        throw new Error(
+          `Can't delete core file ${fileExistsResult.contentPath}`,
+        )
+      } else if (fileExistsResult) {
+        setEachParameterWithSource(
+          parameters,
+          {
+            deletingContentPath: fileExistsResult.contentPath,
+            contentPath: configuredFiles.defaultDeleteTemplateFile,
+            select: "body",
+          },
+          "derived",
+        )
+      } else {
+        throw new MissingFileQueryError(toDeleteContentPath)
+      }
     }
 
     if (
@@ -443,38 +393,4 @@ export const createServer = async ({
   )
 
   return { cleanup: () => emitter.emit("cleanup") }
-}
-
-export const decodeToContentParameters = (content: string): ParameterValue => {
-  const url = `http://0.0.0.0${content}`
-  const urlParsed = URL.parse(url)
-  if (urlParsed == null) {
-    throw new Error(`Unable to parse url ${url}`)
-  }
-  const parameters: ParameterValue = {}
-  const fromParams = urlSearchParamsToRecord(urlParsed.searchParams)
-  setEachParameterWithSource(parameters, fromParams, "query param")
-  setParameterWithSource(
-    parameters,
-    "contentPathOrContentTitle",
-    urlParsed.pathname,
-    "query param",
-  )
-  if (parameters.content) {
-    // Only decode the second layer, since Express decodes `req.query` once automatically
-    const decodedSubParameters = decodeToContentParameters(
-      decodeURIComponent(stringParameterValue(parameters, "content")),
-    )
-    if (typeof decodedSubParameters == "string") {
-      throw new Error(`Couldn't parse sub parameters ${content}`)
-    }
-
-    setParameterChildrenWithSource(
-      parameters,
-      "contentParameters",
-      decodedSubParameters,
-      "derived",
-    )
-  }
-  return parameters
 }
