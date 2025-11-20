@@ -36,11 +36,24 @@
             <map-list
               q="site.allFiles, (list)=>list.toSorted((a,b)=>b.modifiedTimeMs-a.modifiedTimeMs)"
             >
+              <set-
+                ipath="parameters.currentListItem.contentPath"
+                iname="or(parameters.currentListItem.meta.title,parameters.currentListItem.name)"
+              >
+              </set->
               <li>
-                <a
-                  x-href="parameters.currentListItem.contentPath"
-                  x-content="or(parameters.currentListItem.meta.title,parameters.currentListItem.name)"
-                ></a>
+                <span>
+                  <a
+                    x-href="topLevelParameters.ipath"
+                    x-content="topLevelParameters.iname"
+                  ></a>
+                  -
+                  <a
+                    x-href="`${topLevelParameters.ipath}?edit`"
+                    x-title="`Edit ${topLevelParameters.iname}`"
+                    >Edit</a
+                  >
+                </span>
               </li>
             </map-list>
           </ul>

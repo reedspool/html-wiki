@@ -95,38 +95,56 @@
           </set->
           <li copy-target-container>
             <div class="flex-row justify-between">
-              <a
-                copy-target
-                x-href="topLevelParameters.ipath"
-                x-title="topLevelParameters.iname"
-                x-content="topLevelParameters.ititle"
-                target="_parent"
-              ></a>
+              <keep-if truthy="topLevelParameters.dialog===undefined">
+                <span>
+                  <a
+                    copy-target
+                    x-href="topLevelParameters.ipath"
+                    x-title="topLevelParameters.iname"
+                    x-content="topLevelParameters.ititle"
+                  />
+                  -
+                  <a
+                    copy-target
+                    x-href="`${topLevelParameters.ipath}?edit`"
+                    x-title="`Edit ${topLevelParameters.iname}`"
+                    >Edit</a
+                  >
+                </span>
+              </keep-if>
+              <keep-if truthy="topLevelParameters.dialog!==undefined">
+                <span
+                  x-title="topLevelParameters.iname"
+                  x-content="topLevelParameters.ititle"
+                />
+              </keep-if>
               <div>
-                <div>
-                  Copy
-                  <button
-                    type="button"
-                    x-copy='topLevelParameters["html-link"]'
-                    title="Copy HTML link"
-                  >
-                    <code>&lt;a&gt;</code>
-                  </button>
-                  <button
-                    type="button"
-                    x-copy='topLevelParameters["markdown-link"]'
-                    title="Copy Markdown link"
-                  >
-                    <code>[]()</code>
-                  </button>
-                  <button
-                    type="button"
-                    x-copy="topLevelParameters.ipath"
-                    title="Copy path"
-                  >
-                    Path
-                  </button>
-                </div>
+                <keep-if truthy="topLevelParameters.dialog===undefined">
+                  <div>
+                    Copy
+                    <button
+                      type="button"
+                      x-copy='topLevelParameters["html-link"]'
+                      title="Copy HTML link"
+                    >
+                      <code>&lt;a&gt;</code>
+                    </button>
+                    <button
+                      type="button"
+                      x-copy='topLevelParameters["markdown-link"]'
+                      title="Copy Markdown link"
+                    >
+                      <code>[]()</code>
+                    </button>
+                    <button
+                      type="button"
+                      x-copy="topLevelParameters.ipath"
+                      title="Copy path"
+                    >
+                      Path
+                    </button>
+                  </div>
+                </keep-if>
                 <keep-if truthy="topLevelParameters.dialog!==undefined">
                   <div>
                     Insert
