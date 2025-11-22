@@ -10,7 +10,11 @@
   <body>
     <keep-if truthy="topLevelParameters.originalPath">
       <p>While processing the request:</p>
-      <p><code x-content="topLevelParameters.originalPath"></code></p>
+      <p>
+        <a x-href="topLevelParameters.originalPath"
+          ><code x-content="topLevelParameters.originalPath"></code
+        ></a>
+      </p>
 
       <p>The server was unable to find a file at path</p>
       <p>

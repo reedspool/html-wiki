@@ -273,7 +273,7 @@ const getFileContentsAndMetadata = async ({
     createdTimeMs: stats.ctimeMs,
     modifiedTimeMs: stats.mtimeMs,
   }
-  if (/\.html$/.test(contentPath)) {
+  if (/\.html$/.test(contentPath) && !/\.fragment\.html$/.test(contentPath)) {
     try {
       const result = await applyTemplating({
         fileCache,

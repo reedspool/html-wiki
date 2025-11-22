@@ -223,12 +223,18 @@ export const buildMyServerPStringContext = ({
   }
 }
 
+// From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction/AsyncFunction
+// AsyncFunction isn't a global constructor but it works just like Function
+// Except TypeScript doesn't seem to think `new AsyncFunction` works, but it
+// does in Node console.
+const AsyncFunction = async function () {}.constructor
+
 export type PStringContext = Record<string, unknown>
 export const pString: (
   pArgList: string,
   context: PStringContext,
 ) => ReturnType<typeof p> = async (pArgList, context) => {
-  const fn = new Function(
+  const fn = AsyncFunction(
     "p",
     "context",
     [

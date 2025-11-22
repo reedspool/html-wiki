@@ -1,0 +1,73 @@
+<script>
+  document.addEventListener("click", ({ target }) => {
+    const button = target.closest("button");
+    if (!button || !button.hasAttribute("toggle-dialog-selector")) return;
+    const selector = button.getAttribute("toggle-dialog-selector");
+    const dialog = document.querySelector(selector);
+    const wasOpen = dialog.open;
+    document.querySelectorAll("dialog").forEach((dialog) => dialog.close());
+    if (!wasOpen) dialog.show();
+  });
+</script>
+<div>
+  Toolbox
+  <button
+    type="button"
+    title="Show Query Playground"
+    toggle-dialog-selector="[query-playground]"
+  >
+    <code> ?q= </code>
+  </button>
+  <dialog query-playground closedby="none">
+    <iframe
+      title="Query Playground Widget"
+      loading="lazy"
+      src="/?contentPath=/system/templates/query.html&dialog"
+    ></iframe>
+  </dialog>
+
+  <button
+    type="button"
+    title="Show Search and Link widget"
+    toggle-dialog-selector="[search-and-link]"
+  >
+    <code> []() </code>
+  </button>
+  <dialog search-and-link closedby="none">
+    <iframe
+      title="Query Playground Widget"
+      loading="lazy"
+      src="/?contentPath=/system/actions/search-and-link.html&dialog"
+    ></iframe>
+  </dialog>
+  <a href="?delete" title="Delete this page">Delete</a>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const textarea = document.querySelector("textarea");
+    // This comes from iframes
+    window.document.addEventListener("insertText", (event) => {
+      const { text } = event.detail;
+      const selectionStart = textarea.selectionStart;
+      textarea.value =
+        textarea.value.slice(0, selectionStart) +
+        text +
+        textarea.value.slice(textarea.selectionEnd);
+      // Set selection start and end to the inserted
+      textarea.selectionStart = selectionStart;
+      textarea.selectionEnd = selectionStart + text.length;
+    });
+  });
+</script>
+<textarea
+  name="content"
+  spellcheck="false"
+  x-content="or(parameters.editContent,'')"
+></textarea>
+<button
+  type="submit"
+  x-formaction="`${topLevelParameters.editingContentPath}?${parameters.saveParameters || ''}`"
+>
+  Save
+</button>

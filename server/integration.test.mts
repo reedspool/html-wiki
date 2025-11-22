@@ -359,9 +359,9 @@ test("Can get create page", { concurrency: true }, async () => {
   assert.match($1("textarea").innerHTML!, /^\s*$/)
 
   // Save button should have a basic formaction
-  assert.equal(
-    $1("form[method=POST] button[type=submit]").getAttribute("formaction"),
-    "/?create",
+  assert.match(
+    $1("form[method=POST] button[type=submit]").getAttribute("formaction")!,
+    /\?create/,
   )
 
   await validateAssertAndReport(responseText, url)
@@ -383,9 +383,9 @@ test("Can get create page with parameters", { concurrency: true }, async () => {
   assert.match($1("textarea").innerHTML!, /^my content$/)
 
   // Save button should have a basic formaction
-  assert.equal(
-    $1("form[method=POST] button[type=submit]").getAttribute("formaction"),
-    "/?create",
+  assert.match(
+    $1("form[method=POST] button[type=submit]").getAttribute("formaction")!,
+    /\?create/,
   )
 
   await validateAssertAndReport(responseText, url)
@@ -763,6 +763,22 @@ test(
     assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
     assert.match($1('footer nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+
+    await validateAssertAndReport(responseText, url)
+  },
+)
+
+test(
+  "Get the example HTML file (which gets the fragment)",
+  { concurrency: true },
+  async () => {
+    const { url, responseText, $1 } = await getPath(
+      configuredFiles.testHtmlFile,
+    )
+
+    assert.match($1("h1").innerHTML, /Fixture HTML Example File/)
+    assert.match($1("[test-query-content]").innerHTML, /query-content/)
+    assert.match($1("[test-query-content]").innerHTML, /54 \* 24 = 1296/)
 
     await validateAssertAndReport(responseText, url)
   },

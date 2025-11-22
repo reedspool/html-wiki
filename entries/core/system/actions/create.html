@@ -108,12 +108,9 @@
           <option value="md">Markdown</option>
         </select>
       </label>
-      <textarea
-        name="content"
-        x-content="or(topLevelParameters.fileContent,'')"
-      ></textarea>
-
-      <button type="submit" formaction="/?create">Save</button>
+      <query-content
+        q="render('/system/templates/editor.fragment.html', { editContent: topLevelParameters.fileContent || '', saveParameters: 'create' })"
+      ></query-content>
     </form>
   </body>
 </html>
