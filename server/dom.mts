@@ -14,7 +14,7 @@ export const applyTemplating = async (
     fileCache: FileCache
     parameters: ParameterValue
     topLevelParameters: ParameterValue
-    stopAtSelector?: string
+    rootSelector?: string
   } & (
     | {
         content: string
@@ -28,7 +28,7 @@ export const applyTemplating = async (
   meta: Meta
   links: Array<string>
 }> => {
-  const { parameters, topLevelParameters, stopAtSelector, fileCache } = params
+  const { parameters, topLevelParameters, rootSelector, fileCache } = params
   const getQueryValue = (query: string) => {
     return pString(
       query,
@@ -54,10 +54,11 @@ export const applyTemplating = async (
   let alreadySetForNextIteration: Node | null = null
   let stopAtElement: HTMLElement | null = null
 
-  if (stopAtSelector) {
-    stopAtElement = root.querySelector(stopAtSelector)
-    if (!stopAtElement)
-      throw new Error(`Could not find stopAtSelector '${stopAtSelector}'`)
+  if (rootSelector) {
+    const selectedRoot = root.querySelector(rootSelector)
+    if (!selectedRoot) return { content: "", meta, links }
+    root = selectedRoot
+    stopAtElement = root.nextElementSibling
   }
   do {
     alreadySetForNextIteration = null

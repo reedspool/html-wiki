@@ -280,10 +280,10 @@ const getFileContentsAndMetadata = async ({
         content: readResults.content,
         parameters: {},
         topLevelParameters: {},
-        stopAtSelector: "body",
+        rootSelector: "head",
       })
       return {
-        ...result,
+        meta: result.meta,
         originalContent: readResults,
         renderability: "html",
         links: result.links,
