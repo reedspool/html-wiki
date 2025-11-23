@@ -30,6 +30,7 @@ import { configuredFiles } from "./configuration.mts"
 import { buildCache } from "./fileCache.mts"
 import { contentType } from "mime-types"
 import Watcher from "watcher"
+import { randomUUID } from "node:crypto"
 const log = debug("server:server")
 const upload = multer()
 
@@ -281,32 +282,46 @@ export const createServer = async ({
   //
   // NOTE: Annoyingly, this error catcher in Express relies on the number of
   //       parameters defined. So you can't remove any of these parameters
-  app.use(function (
+  app.use(async function (
     error: unknown,
     req: express.Request,
     res: express.Response,
     _next: () => void,
   ) {
+    const parameters: ParameterValue = {
+      command: "read",
+      select: "body",
+      originalPath: decodeURIComponent(req.path),
+    }
+
     if (error instanceof QueryError) {
+      res.status(error.status)
+      parameters.statusCode = error.status
       if (error instanceof MissingFileQueryError) {
         log(`404: While processing request '${req.path}', ${error.message}`)
-
-        res.status(error.status)
-        res.redirect(
-          `${configuredFiles.fileMissingPageTemplate}?originalPath=${req.path}&missingPath=${error.missingPath}`,
-        )
-        return
+        parameters.missingPath = error.missingPath
+        parameters.contentPath = configuredFiles.fileMissingPageTemplate
       } else {
         log(`QueryError on ${req.path}:`, error)
+        parameters.errorUuid = randomUUID()
+        parameters.contentPath = configuredFiles.unknownErrorOccurredTemplate
+        parameters.errorMessage = error.message
       }
-      res.status(error.status)
-      res.write(error.message)
-      res.end()
-      return
+    } else {
+      log("5XX", { err: error })
+      parameters.errorUuid = randomUUID()
+      parameters.contentPath = configuredFiles.unknownErrorOccurredTemplate
+      parameters.statusCode = 500
+      res.status(500)
     }
-    log("5XX", { err: error })
-    res.status(500)
-    res.send("500")
+
+    if (parameters.errorUuid) console.log(`Error UUID: ${parameters.errorUuid}`)
+    const result = await execute({
+      parameters,
+      fileCache,
+    })
+    res.send(result.content)
+    return
   })
 
   app.use(function (req, res) {

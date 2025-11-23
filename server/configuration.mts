@@ -22,6 +22,7 @@ export const configuredFiles = {
   defaultCreateShadowTemplateFile: "/system/actions/create-shadow.html",
   defaultCssFile: "/system/global.css",
   fileMissingPageTemplate: "/404.html",
+  unknownErrorOccurredTemplate: "/system/templates/unknown-error.html",
   sitemapTemplate: "/sitemap.html",
   // NOTE: If you change this, must be updated in site.webmanifest
   // and that will require anyone who has installed the app to re-install

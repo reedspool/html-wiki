@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Unknown Error Occurred</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <keep-if truthy="topLevelParameters.originalPath">
+      <p>While processing the request:</p>
+      <p>
+        <a x-href="topLevelParameters.originalPath"
+          ><code x-content="topLevelParameters.originalPath"></code
+        ></a>
+      </p>
+
+      <p>
+        The server ran into an <em>unexpected error</em> resulting in a HTTP
+        Status Code of <code x-content="topLevelParameters.statusCode" />
+      </p>
+      <p>
+        The server recovered well enough to send this formatted message. It
+        didn't crash, yippee.
+      </p>
+      <drop-if truthy="topLevelParameters.errorMessage">
+        <p>
+          This is distinct from a well-defined error, such as when a file is
+          expected but missing, a 404. In this case, very limited information is
+          being conveyed to you because the error message may have revealed some
+          secure information. That information should be available in the server
+          logs, if you have access.
+          <keep-if truthy="topLevelParameters.errorUuid"
+            >The error logs should appear just before this searchable unique
+            identifier <code x-content="topLevelParameters.errorUuid"
+          /></keep-if>
+        </p>
+      </drop-if>
+
+      <keep-if truthy="topLevelParameters.errorMessage">
+        <p>
+          Error message: <code x-content="topLevelParameters.errorMessage" />
+        </p>
+      </keep-if>
+    </keep-if>
+  </body>
+</html>
