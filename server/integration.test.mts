@@ -252,7 +252,17 @@ test(
 
     // The markdown has been transformed!
     assert.match($1("h1").innerHTML, /Test markdown file with yaml frontmatter/)
-    assert.match($1("details:nth-of-type(2) summary").innerHTML, /Frontmatter/)
+
+    assert.match($1("details:nth-of-type(2) summary").innerHTML, /Keywords/)
+
+    assert.match(
+      $1(
+        'details:nth-of-type(2) ul li a[href="/system/templates/keyword.html?keyword=Media"]',
+      ).innerHTML,
+      /Media/,
+    )
+
+    assert.match($1("details:nth-of-type(3) summary").innerHTML, /Frontmatter/)
     assert.match(
       $1("details dd[data-frontmatter=title]").innerHTML,
       /\(title from frontmatter\)/,
@@ -783,3 +793,48 @@ test(
     await validateAssertAndReport(responseText, url)
   },
 )
+
+test("Get the keywords page with no query", { concurrency: true }, async () => {
+  const { url, responseText, $1, $ } = await getPath(
+    configuredFiles.keywordPageTemplate,
+  )
+
+  assert.equal($("h2").length, 2)
+  assert.match($("h2")[0].innerHTML, /Keyword Listing/)
+  assert.match(responseText, /No keyword queried./)
+  assert.match($("h2")[1].innerHTML, /All Keywords/)
+
+  assert.match(
+    $1('ul li a[href="/system/templates/keyword.html?keyword=Media"]')
+      .innerHTML,
+    /Media/,
+  )
+
+  await validateAssertAndReport(responseText, url)
+})
+
+test("Get the keywords page with a query", { concurrency: true }, async () => {
+  const { url, responseText, $1, $ } = await getPath(
+    `${configuredFiles.keywordPageTemplate}?keyword=Media`,
+  )
+
+  assert.equal($("h2").length, 2)
+  assert.match($("h2")[0].innerHTML, /Media/)
+  assert.doesNotMatch($("h2")[0].innerHTML, /Keyword Listing/)
+  assert.doesNotMatch(responseText, /No keyword queried./)
+
+  assert.match(
+    $1('ul li a[href="/fixtures/markdown with frontmatter.md"]').innerHTML,
+    /Test markdown with frontmatter/,
+  )
+  assert.match($("h2")[1].innerHTML, /All Keywords/)
+
+  // Still has the listings of all keywords
+  assert.match(
+    $1('ul li a[href="/system/templates/keyword.html?keyword=Media"]')
+      .innerHTML,
+    /Media/,
+  )
+
+  await validateAssertAndReport(responseText, url)
+})

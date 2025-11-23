@@ -30,10 +30,10 @@ type FileContentsAndMetaData = {
 export type FileContentsAndDetails = FileContentsAndMetaData & MyDirectoryEntry
 
 export type FileCache = {
-  rebuildBacklinks: () => Promise<void>
+  rebuildMetaCache: () => Promise<void>
   addFileToCacheData: (params: {
     contentPath: string
-    rebuildBacklinks?: boolean
+    rebuildMetaCache?: boolean
   }) => Promise<void>
   removeFileFromCacheData: (params: { contentPath: string }) => Promise<void>
   getListOfFilesAndDetails: () => Promise<Array<FileContentsAndDetails>>
@@ -55,6 +55,8 @@ export type FileCache = {
   }) => ReturnType<typeof updateFile>
   removeFile: (params: { contentPath: string }) => ReturnType<typeof removeFile>
   getBacklinksByContentPath: (path: string) => Promise<Array<string>>
+  getContentPathsForKeyword: (keyword: string) => Promise<Array<string>>
+  allKeywords: () => Promise<Array<string>>
 }
 
 export const buildEmptyCache = async (): ReturnType<typeof buildCache> => {
@@ -71,7 +73,7 @@ export const createFreshCache = async ({
   const filesByContentPath: Record<string, FileContentsAndDetails> = {}
   const addFileToCacheData: FileCache["addFileToCacheData"] = async ({
     contentPath,
-    rebuildBacklinks = true,
+    rebuildMetaCache = true,
   }) => {
     const everything: FileContentsAndDetails = {
       contentPath,
@@ -90,7 +92,7 @@ export const createFreshCache = async ({
     listOfFilesAndDetails.push(everything)
     filesByContentPath[everything.contentPath] = everything
 
-    if (rebuildBacklinks) await fileCache.rebuildBacklinks()
+    if (rebuildMetaCache) await fileCache.rebuildMetaCache()
 
     if (typeof everything.meta.title === "string") {
       filesByTitle[everything.meta.title] = everything
@@ -120,6 +122,7 @@ export const createFreshCache = async ({
   const getListOfFilesAndDetails = async () => [...listOfFilesAndDetails]
 
   let backLinksByContentPath: Record<string, Array<string>> = {}
+  let keywordsToContentPaths: Record<string, Array<string>> = {}
   const getBacklinksByContentPath: (
     path: string,
   ) => Promise<Array<string>> = async (path) => {
@@ -127,12 +130,28 @@ export const createFreshCache = async ({
     if (!backlinks) return []
     return [...backlinks]
   }
-  const rebuildBacklinks: FileCache["rebuildBacklinks"] = async () => {
+
+  const getContentPathsForKeyword: (
+    keyword: string,
+  ) => Promise<(typeof keywordsToContentPaths)[string]> = async (keyword) => {
+    const paths = keywordsToContentPaths[keyword]
+    if (!paths) return []
+    return [...paths]
+  }
+  const allKeywords = async () => Object.keys(keywordsToContentPaths)
+  const rebuildMetaCache: FileCache["rebuildMetaCache"] = async () => {
+    keywordsToContentPaths = {}
     backLinksByContentPath = {}
     for (const {
       contentPath: sourceContentPath,
       links,
+      meta: { keywords },
     } of await getListOfFilesAndDetails()) {
+      for (const keyword of keywords ?? []) {
+        if (!keywordsToContentPaths[keyword])
+          keywordsToContentPaths[keyword] = []
+        keywordsToContentPaths[keyword].push(sourceContentPath)
+      }
       for (const link of links) {
         const byTitle = fileCache.getByContentPathOrContentTitle(link)
         const destinationContentPath = byTitle ? byTitle.contentPath : link
@@ -144,9 +163,11 @@ export const createFreshCache = async ({
   }
 
   const fileCache: FileCache = {
-    rebuildBacklinks,
+    rebuildMetaCache,
     getListOfFilesAndDetails,
+    getContentPathsForKeyword,
     getBacklinksByContentPath,
+    allKeywords,
     addFileToCacheData,
     removeFileFromCacheData,
     getByContentPath: (path) => filesByContentPath[decodeURIComponent(path)],
@@ -242,11 +263,11 @@ export const buildCache = async ({
 
   await Promise.all(
     allFiles.map(({ contentPath }) =>
-      fileCache.addFileToCacheData({ contentPath, rebuildBacklinks: false }),
+      fileCache.addFileToCacheData({ contentPath, rebuildMetaCache: false }),
     ),
   )
 
-  await fileCache.rebuildBacklinks()
+  await fileCache.rebuildMetaCache()
 
   return fileCache
 }

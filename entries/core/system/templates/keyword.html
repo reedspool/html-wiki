@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>
+      <query-content q="topLevelParameters.keyword"> Keyword Listing
+      </query-content>
+    </title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+
+  <body>
+    <h2>
+      <query-content q="topLevelParameters.keyword">
+        Keyword Listing
+      </query-content>
+    </h2>
+
+    <drop-if truthy="topLevelParameters.keyword">
+      <p>No keyword queried.</p>
+    </drop-if>
+
+    <p>Keywords listing. Query for a given keyword below:</p>
+
+    <form method="GET" action="/system/templates/keyword.html">
+      <label>
+        Keyword
+        <input
+          type="text"
+          name="keyword"
+          x-value="or(topLevelParameters.keyword, '')"
+        />
+      </label>
+      <button type="submit">Query</button>
+    </form>
+
+    <keep-if truthy="topLevelParameters.keyword">
+      <ul>
+        <map-list
+          q="fileCache.getContentPathsForKeyword(topLevelParameters.keyword)"
+        >
+          <set-
+            ipath="parameters.currentListItem"
+            iname="fileCache.getByContentPath(topLevelParameters.ipath)?.meta?.title ?? topLevelParameters.ipath"
+          >
+          </set->
+          <li>
+            <span>
+              <a
+                x-href="topLevelParameters.ipath"
+                x-content="topLevelParameters.iname"
+              ></a>
+              -
+              <a
+                x-href="`${topLevelParameters.ipath}?edit`"
+                x-title="`Edit ${topLevelParameters.iname}`"
+                >Edit</a
+              >
+            </span>
+          </li>
+        </map-list>
+      </ul>
+    </keep-if>
+
+    <h2>All Keywords</h2>
+    <ul>
+      <map-list q="fileCache.allKeywords">
+        <set-
+          ipath="`/system/templates/keyword.html?keyword=${parameters.currentListItem}`"
+          icount="fileCache.getContentPathsForKeyword(parameters.currentListItem),(p)=>p?.length?.toString()"
+        >
+        </set->
+        <li>
+          <span>
+            <a
+              x-href="topLevelParameters.ipath"
+              x-content="parameters.currentListItem"
+            ></a
+            >&nbsp;(<span x-content="topLevelParameters.icount" />)
+          </span>
+        </li>
+      </map-list>
+    </ul>
+  </body>
+</html>

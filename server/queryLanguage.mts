@@ -16,6 +16,7 @@ import {
 import { applyTemplating } from "./dom.mts"
 import { type FileCache } from "./fileCache.mts"
 import { cleanFilePath } from "./filesystem.mts"
+import { configuredFiles } from "./configuration.mts"
 const log = debug("server:queryLanguage")
 
 // `p` is for "pipeline". Accepts functions and calls them with the previous result
@@ -159,6 +160,36 @@ export const specialRenderMarkdown = async ({
   }
 
   {
+    // Keywords
+    const fileStuff = fileCache.getByContentPath(contentPath)
+    const originalKeywords = fileStuff?.meta?.keywords ?? []
+    const keywords =
+      typeof originalKeywords === "string"
+        ? originalKeywords.split(",")
+        : originalKeywords
+    content += "\n"
+    content += "\n"
+    content += html`<details open>
+      <summary>Keywords</summary>
+      <ul>
+        ${keywords.length
+          ? keywords
+              .map(
+                (keyword) =>
+                  html`<li>
+                    <a
+                      href="${configuredFiles.keywordPageTemplate}?keyword=${keyword}"
+                      >${keyword}</a
+                    >
+                  </li>`,
+              )
+              .join("\n")
+          : "No keywords"}
+      </ul>
+    </details>`
+  }
+
+  {
     // Frontmatter
     const parsed = parseFrontmatter(content)
     content = parsed.restOfContent
@@ -197,6 +228,7 @@ export const buildMyServerPStringContext = ({
   topLevelParameters: ParameterValue
 }): PStringContext => {
   return {
+    fileCache,
     escapeHtml,
     cleanFilePath,
     Temporal,

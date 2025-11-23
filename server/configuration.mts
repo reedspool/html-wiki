@@ -16,6 +16,7 @@ export const configuredFiles = {
   testMarkdownFileWithYamlFrontmatter: "/fixtures/markdown with frontmatter.md",
   testFixtureHtmlFragmentFile: "/fixtures/fixture.fragment.html",
   testHtmlFile: "/fixtures/example.html",
+  keywordPageTemplate: "/system/templates/keyword.html",
   defaultDeleteTemplateFile: "/system/templates/delete.html",
   defaultEditTemplateFile: "/system/templates/edit.html",
   defaultCreateTemplateFile: "/system/actions/create.html",
