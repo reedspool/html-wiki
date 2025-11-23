@@ -9,44 +9,6 @@
   </head>
 
   <body>
-    <style type="text/css" media="screen">
-      /* Must be within <body> because of `select: body` parameter */
-      textarea {
-        height: 30rem;
-        min-height: 10rem;
-        resize: block;
-      }
-
-      form {
-        position: relative;
-      }
-
-      button {
-        max-width: max-content;
-      }
-
-      h1 {
-        font-size: 1rem;
-      }
-
-      dialog {
-        padding: 0;
-        position: absolute;
-        inset: unset; /* reset preset offset, upset */
-        right: var(--space-phi);
-        margin-top: var(--space-half);
-        border: none;
-
-        background-color: var(--bg);
-        box-shadow: 0px 0px 12px -1px rgba(0, 0, 0, 0.48);
-
-        iframe {
-          border: none;
-          display: block; /* maybe this should be called a bframe, amiright? */
-          height: 10rem;
-        }
-      }
-    </style>
     <h1>
       Editing
       <keep-if truthy="parameters.editingContentPath">

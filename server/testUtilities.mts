@@ -18,6 +18,10 @@ const htmlvalidate = new HtmlValidate({
 
     // TODO: Added only because micromark makes checkboxes with disabled=""
     "attribute-boolean-style": "off",
+
+    // Can't put a <style> tag under a <form> tag? Wtf?
+    // Been this way forever, https://stackoverflow.com/a/5439155
+    "element-permitted-content": "off",
   },
 })
 
