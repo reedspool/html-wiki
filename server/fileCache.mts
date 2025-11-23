@@ -134,7 +134,7 @@ export const createFreshCache = async ({
       links,
     } of await getListOfFilesAndDetails()) {
       for (const link of links) {
-        const byTitle = fileCache.getByTitle(link)
+        const byTitle = fileCache.getByContentPathOrContentTitle(link)
         const destinationContentPath = byTitle ? byTitle.contentPath : link
         if (!backLinksByContentPath[destinationContentPath])
           backLinksByContentPath[destinationContentPath] = []
