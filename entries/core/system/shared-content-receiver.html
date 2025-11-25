@@ -95,7 +95,7 @@
       </file-details>
       <p>
         <a
-          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.text})%0A%0AShared from Chrome as %22${topLevelParameters.title}%22 from %3C${topLevelParameters.text}%3E`"
+          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md&fileContent=%23 [${topLevelParameters.title}](encodeURIComponent(${topLevelParameters.text}))%0A%0AShared from Chrome as %22${topLevelParameters.title}%22 from %3C${encodeURIComponent(topLevelParameters.text)}%3E`"
           >Go to Create the above</a
         >
       </p>
@@ -109,7 +109,7 @@
       <h4>fileContent</h4>
       <file-details>
         <span
-          x-content="`# [${topLevelParameters.title}](${topLevelParameters.url})`"
+          x-content="`# [${topLevelParameters.title}](${encodeURIComponent(topLevelParameters.url)})`"
         ></span>
         <br />
         <br />
@@ -117,7 +117,7 @@
       </file-details>
       <p>
         <a
-          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md&fileContent=%23 [${topLevelParameters.title}](${topLevelParameters.url})%0A%0A${topLevelParameters.text}`"
+          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md&fileContent=%23 [${topLevelParameters.title}](${encodeURIComponent(topLevelParameters.url)})%0A%0A${topLevelParameters.text}`"
           >Go to Create the above</a
         >
       </p>
