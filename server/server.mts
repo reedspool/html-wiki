@@ -316,11 +316,18 @@ export const createServer = async ({
     }
 
     if (parameters.errorUuid) console.log(`Error UUID: ${parameters.errorUuid}`)
-    const result = await execute({
-      parameters,
-      fileCache,
-    })
-    res.send(result.content)
+    try {
+      const result = await execute({
+        parameters,
+        fileCache,
+      })
+      res.send(result.content)
+    } catch (executeErrorPageError) {
+      console.log("Executing error page error: ", executeErrorPageError)
+      res.send(
+        `500 Something went seriously wrong :-/${parameters.errorUuid ? ` Error UUID: ${parameters.errorUuid}` : ""}`,
+      )
+    }
     return
   })
 
