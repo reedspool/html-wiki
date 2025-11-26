@@ -30,7 +30,7 @@
     <keep-if truthy="parameters.editingContentPath">
       <form method="POST">
         <query-content
-          q="render('/system/templates/editor.fragment.html', { editContent: await render(parameters.editingContentPath,{raw: true, escape: true}) })"
+          q="render('/system/templates/editor.fragment.html', { editContent: await render(parameters.editingContentPath,{raw: true, escape: true }), editingContentPath: parameters.editingContentPath })"
         ></query-content>
       </form>
     </keep-if>

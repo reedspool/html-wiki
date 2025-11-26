@@ -121,7 +121,6 @@ export const execute = async ({
           query,
           buildMyServerPStringContext({
             parameters,
-            topLevelParameters: parameters,
             fileCache,
           }),
         )
@@ -150,7 +149,6 @@ export const execute = async ({
           fileCache,
           content: readResult.content,
           parameters: parameters,
-          topLevelParameters: parameters,
         })
         content = templateApplicationResults.content
         if (templateApplicationResults.meta.nocontainer) nocontainer = true

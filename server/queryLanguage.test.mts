@@ -101,7 +101,6 @@ test("pString() can get a current timestamp", o, async () => {
 
     buildMyServerPStringContext({
       parameters: {},
-      topLevelParameters: {},
       fileCache,
     }),
   )
@@ -114,31 +113,31 @@ test("pString() can get a current timestamp", o, async () => {
 })
 
 test("pString() can access parameters", o, async () => {
-  const topLevelParameters = setEachParameterWithSource(
+  const parameters = setEachParameterWithSource(
     {},
     { title: "Hello World!" },
     "query param",
   )
   const result = await pString("parameters.title", {
-    parameters: topLevelParameters,
+    parameters,
   })
   assert.equal(result, "Hello World!")
 })
 
 test("pString() can get a non-string parameter as a string", o, async () => {
-  const topLevelParameters = setEachParameterWithSource(
+  const parameters = setEachParameterWithSource(
     {},
     { someNumber: 51234 },
     "query param",
   )
   const result = await pString("parameters.someNumber", {
-    parameters: topLevelParameters,
+    parameters,
   })
   assert.equal(result, "51234")
 })
 
 test("pString() can get a deeper parameter", o, async () => {
-  const topLevelParameters = setParameterChildrenWithSource(
+  const parameters = setParameterChildrenWithSource(
     {},
     "levelOne",
     setParameterChildrenWithSource(
@@ -150,7 +149,7 @@ test("pString() can get a deeper parameter", o, async () => {
     "query param",
   )
   const result = await pString("parameters.levelOne.levelTwo.levelThree", {
-    parameters: topLevelParameters,
+    parameters,
   })
   assert.equal(result, "level four")
 })
@@ -159,20 +158,20 @@ test(
   "pString() with a non-existent parameter returns undefined",
   o,
   async () => {
-    const topLevelParameters = setEachParameterWithSource(
+    const parameters = setEachParameterWithSource(
       {},
       { someNumber: 51234 },
       "query param",
     )
     const result = await pString("parameters.nonExistant", {
-      parameters: topLevelParameters,
+      parameters,
     })
     assert.equal(result, undefined)
   },
 )
 
 test("site.allFiles gets all the files", o, async () => {
-  const topLevelParameters = setEachParameterWithSource(
+  const parameters = setEachParameterWithSource(
     {},
     {
       userDirectory: configuredFiles.testDirectory,
@@ -183,8 +182,7 @@ test("site.allFiles gets all the files", o, async () => {
   const result = await pString(
     "site.allFiles",
     buildMyServerPStringContext({
-      parameters: topLevelParameters,
-      topLevelParameters,
+      parameters,
       fileCache,
     }),
   )
@@ -203,7 +201,7 @@ test("site.allFiles gets all the files", o, async () => {
 })
 
 test("site.search(<exact title>) gets that page", o, async () => {
-  const topLevelParameters = setEachParameterWithSource(
+  const parameters = setEachParameterWithSource(
     {},
     {
       userDirectory: configuredFiles.testDirectory,
@@ -214,8 +212,7 @@ test("site.search(<exact title>) gets that page", o, async () => {
   const result = await pString(
     "site.search('HTML Wiki')",
     buildMyServerPStringContext({
-      parameters: topLevelParameters,
-      topLevelParameters,
+      parameters,
       fileCache,
     }),
   )
@@ -231,7 +228,7 @@ test("site.search(<exact title>) gets that page", o, async () => {
 })
 
 test("site.search(<fuzzy>) gets that page", o, async () => {
-  const topLevelParameters = setEachParameterWithSource(
+  const parameters = setEachParameterWithSource(
     {},
     {
       userDirectory: configuredFiles.testDirectory,
@@ -242,8 +239,7 @@ test("site.search(<fuzzy>) gets that page", o, async () => {
   const result = await pString(
     "site.search('ht wi')",
     buildMyServerPStringContext({
-      parameters: topLevelParameters,
-      topLevelParameters,
+      parameters,
       fileCache,
     }),
   )
@@ -259,7 +255,7 @@ test("site.search(<fuzzy>) gets that page", o, async () => {
 })
 
 test("site.search(<anything>) searches body of pages", o, async () => {
-  const topLevelParameters = setEachParameterWithSource(
+  const parameters = setEachParameterWithSource(
     {},
     {
       userDirectory: configuredFiles.testDirectory,
@@ -270,8 +266,7 @@ test("site.search(<anything>) searches body of pages", o, async () => {
   const result = await pString(
     "site.search('home page')",
     buildMyServerPStringContext({
-      parameters: topLevelParameters,
-      topLevelParameters,
+      parameters,
       fileCache,
     }),
   )
@@ -287,7 +282,7 @@ test("site.search(<anything>) searches body of pages", o, async () => {
 })
 
 test("site.search(<anything>) gets titles of Markdown pages", o, async () => {
-  const topLevelParameters = setEachParameterWithSource(
+  const parameters = setEachParameterWithSource(
     {},
     {
       userDirectory: configuredFiles.testDirectory,
@@ -298,8 +293,7 @@ test("site.search(<anything>) gets titles of Markdown pages", o, async () => {
   const result = await pString(
     "site.search('Markdown File Title')",
     buildMyServerPStringContext({
-      parameters: topLevelParameters,
-      topLevelParameters,
+      parameters,
       fileCache,
     }),
   )
@@ -319,7 +313,7 @@ test("site.search(<anything>) gets titles of Markdown pages", o, async () => {
 })
 
 test("site.search(<anything>) gets contents of Markdown pages", o, async () => {
-  const topLevelParameters = setEachParameterWithSource(
+  const parameters = setEachParameterWithSource(
     {},
     {
       userDirectory: configuredFiles.testDirectory,
@@ -330,8 +324,7 @@ test("site.search(<anything>) gets contents of Markdown pages", o, async () => {
   const result = await pString(
     "site.search('simple markdown file')",
     buildMyServerPStringContext({
-      parameters: topLevelParameters,
-      topLevelParameters,
+      parameters,
       fileCache,
     }),
   )
@@ -355,7 +348,7 @@ test("site.search(<anything>) gets contents of Markdown pages", o, async () => {
 })
 
 test("render(parameters.contentPath) renders a page", o, async () => {
-  const topLevelParameters = setEachParameterWithSource(
+  const parameters = setEachParameterWithSource(
     {},
     {
       userDirectory: configuredFiles.testDirectory,
@@ -367,8 +360,7 @@ test("render(parameters.contentPath) renders a page", o, async () => {
   const result = await pString(
     "render(parameters.contentPath)",
     buildMyServerPStringContext({
-      parameters: topLevelParameters,
-      topLevelParameters,
+      parameters,
       fileCache,
     }),
   )

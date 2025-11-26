@@ -1,8 +1,10 @@
 import { Temporal } from "temporal-polyfill"
 import Fuse from "fuse.js"
 import {
+  maybeAtLeastEmptyStringParameterValue,
   maybeStringParameterValue,
   setEachParameterWithSource,
+  setParameterWithSource,
   stringParameterValue,
   type ParameterValue,
 } from "./engine.mts"
@@ -72,13 +74,16 @@ export const siteProxy = ({ fileCache }: { fileCache: FileCache }) =>
 
 export const renderer =
   ({
-    topLevelParameters,
+    parameters: originalParameters,
     fileCache,
   }: {
-    topLevelParameters: ParameterValue
+    parameters: ParameterValue
     fileCache: FileCache
   }) =>
-  async (contentPath: string, parameters?: ParameterValue): Promise<string> => {
+  async (
+    contentPath: string,
+    parameters: ParameterValue = {},
+  ): Promise<string> => {
     const contentFileReadResult = await fileCache.readFile(contentPath)
 
     log(
@@ -88,13 +93,13 @@ export const renderer =
     // probably come up with a better name. The point is "raw" implies too
     // much, or could mean several things, so I should pick some more narrow
     // concepts, even if they have to be mixed and matched
-    if (parameters?.raw !== undefined) {
+    if (parameters.raw !== undefined) {
       if (parameters.escape !== undefined) {
         return escapeHtml(contentFileReadResult.content)
       }
       return contentFileReadResult.content
     }
-    if (parameters?.renderMarkdown !== undefined) {
+    if (parameters.renderMarkdown !== undefined) {
       if (typeof parameters.contentPath !== "string") throw new Error()
       return specialRenderMarkdown({
         content: contentFileReadResult.content,
@@ -102,12 +107,18 @@ export const renderer =
         fileCache,
       })
     }
+
+    setParameterWithSource(
+      parameters,
+      "originalParameters",
+      originalParameters,
+      "derived",
+    )
     return (
       await applyTemplating({
         fileCache,
         content: contentFileReadResult.content,
-        parameters: parameters ?? {},
-        topLevelParameters,
+        parameters,
       })
     ).content
   }
@@ -219,13 +230,11 @@ export const or = (...args: unknown[]) => args.reduce((a, b) => a || b)
 export const and = (...args: unknown[]) => args.reduce((a, b) => a && b)
 
 export const buildMyServerPStringContext = ({
-  topLevelParameters,
   parameters,
   fileCache,
 }: {
   fileCache: FileCache
   parameters: ParameterValue
-  topLevelParameters: ParameterValue
 }): PStringContext => {
   return {
     fileCache,
@@ -233,13 +242,12 @@ export const buildMyServerPStringContext = ({
     cleanFilePath,
     Temporal,
     parameters,
-    topLevelParameters,
     site: siteProxy({
       fileCache,
     }),
     render: renderer({
       fileCache,
-      topLevelParameters,
+      parameters,
     }),
     or,
     and,
@@ -248,7 +256,6 @@ export const buildMyServerPStringContext = ({
         input,
         buildMyServerPStringContext({
           parameters,
-          topLevelParameters,
           fileCache,
         }),
       ),

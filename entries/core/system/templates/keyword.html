@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>
-      <query-content q="topLevelParameters.keyword"> Keyword Listing
+      <query-content q="parameters.keyword"> Keyword Listing
       </query-content>
     </title>
     <meta name="description" content="" />
@@ -13,12 +13,12 @@
 
   <body>
     <h2>
-      <query-content q="topLevelParameters.keyword">
+      <query-content q="parameters.keyword">
         Keyword Listing
       </query-content>
     </h2>
 
-    <drop-if truthy="topLevelParameters.keyword">
+    <drop-if truthy="parameters.keyword">
       <p>No keyword queried.</p>
     </drop-if>
 
@@ -30,32 +30,32 @@
         <input
           type="text"
           name="keyword"
-          x-value="or(topLevelParameters.keyword, '')"
+          x-value="or(parameters.keyword, '')"
         />
       </label>
       <button type="submit">Query</button>
     </form>
 
-    <keep-if truthy="topLevelParameters.keyword">
+    <keep-if truthy="parameters.keyword">
       <ul>
         <map-list
-          q="fileCache.getContentPathsForKeyword(topLevelParameters.keyword)"
+          q="fileCache.getContentPathsForKeyword(parameters.keyword)"
         >
           <set-
             ipath="parameters.currentListItem"
-            iname="fileCache.getByContentPath(topLevelParameters.ipath)?.meta?.title ?? topLevelParameters.ipath"
+            iname="fileCache.getByContentPath(parameters.ipath)?.meta?.title ?? parameters.ipath"
           >
           </set->
           <li>
             <span>
               <a
-                x-href="topLevelParameters.ipath"
-                x-content="topLevelParameters.iname"
+                x-href="parameters.ipath"
+                x-content="parameters.iname"
               ></a>
               -
               <a
-                x-href="`${topLevelParameters.ipath}?edit`"
-                x-title="`Edit ${topLevelParameters.iname}`"
+                x-href="`${parameters.ipath}?edit`"
+                x-title="`Edit ${parameters.iname}`"
                 >Edit</a
               >
             </span>
@@ -75,10 +75,10 @@
         <li>
           <span>
             <a
-              x-href="topLevelParameters.ipath"
+              x-href="parameters.ipath"
               x-content="parameters.currentListItem"
             ></a
-            >&nbsp;(<span x-content="topLevelParameters.icount" />)
+            >&nbsp;(<span x-content="parameters.icount" />)
           </span>
         </li>
       </map-list>

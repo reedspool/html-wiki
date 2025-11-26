@@ -371,7 +371,7 @@ test("Can get create page", { concurrency: true }, async () => {
   // Save button should have a basic formaction
   assert.match(
     $1("form[method=POST] button[type=submit]").getAttribute("formaction")!,
-    /\?create/,
+    /\/\?create/,
   )
 
   await validateAssertAndReport(responseText, url)

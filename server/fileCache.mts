@@ -300,7 +300,6 @@ const getFileContentsAndMetadata = async ({
         fileCache,
         content: readResults.content,
         parameters: {},
-        topLevelParameters: {},
         rootSelector: "head",
       })
       return {

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <keep-if truthy="topLevelParameters.dialog!==undefined">
+    <keep-if truthy="parameters.dialog!==undefined">
       <meta itemprop="nocontainer" />
     </keep-if>
     <title>Search and Link</title>
@@ -12,7 +12,7 @@
   </head>
 
   <body>
-    <keep-if truthy="topLevelParameters.dialog!==undefined">
+    <keep-if truthy="parameters.dialog!==undefined">
       <link
         rel="stylesheet"
         href="/system/global.css"
@@ -62,7 +62,7 @@
     </style>
     <script src="/system/scripts/copy-and-insert.js"></script>
     <form method="GET">
-      <keep-if truthy="topLevelParameters.dialog!==undefined">
+      <keep-if truthy="parameters.dialog!==undefined">
         <input type="hidden" name="select" value="body" />
         <input type="hidden" name="dialog" value="dialog" />
         <input
@@ -74,97 +74,97 @@
       <textarea
         autofocus
         name="query"
-        x-content="or(topLevelParameters.query,'')"
+        x-content="or(parameters.query,'')"
         placeholder="Search here"
       >
       </textarea>
       <button type="submit" x-formaction="parameters.contentPath">Go</button>
     </form>
-    <keep-if truthy="topLevelParameters.query!==undefined">
-      <set- result="site.search(topLevelParameters.query.trim())"> </set->
+    <keep-if truthy="parameters.query!==undefined">
+      <set- result="site.search(parameters.query.trim())"> </set->
       <h2>Results</h2>
       <ul>
-        <map-list q="topLevelParameters.result" allow-one>
+        <map-list q="parameters.result" allow-one>
           <set-
             ipath="parameters.currentListItem.contentPath"
             ititle="or(parameters.currentListItem.meta.title,parameters.currentListItem.name)"
             iname="parameters.currentListItem.name"
-            markdown-link='`[${topLevelParameters.ititle}](<${topLevelParameters.ipath}> "${topLevelParameters.iname}")`'
-            html-link='`<a href="${topLevelParameters.ipath}" title="${topLevelParameters.ititle}">${topLevelParameters.iname}</a>`'
+            markdown-link='`[${parameters.ititle}](<${parameters.ipath}> "${parameters.iname}")`'
+            html-link='`<a href="${parameters.ipath}" title="${parameters.ititle}">${parameters.iname}</a>`'
           >
           </set->
           <li copy-target-container>
             <div class="flex-row justify-between">
-              <keep-if truthy="topLevelParameters.dialog===undefined">
+              <keep-if truthy="parameters.dialog===undefined">
                 <span>
                   <a
                     copy-target
-                    x-href="topLevelParameters.ipath"
-                    x-title="topLevelParameters.iname"
-                    x-content="topLevelParameters.ititle"
+                    x-href="parameters.ipath"
+                    x-title="parameters.iname"
+                    x-content="parameters.ititle"
                   />
                   -
                   <a
                     copy-target
-                    x-href="`${topLevelParameters.ipath}?edit`"
-                    x-title="`Edit ${topLevelParameters.iname}`"
+                    x-href="`${parameters.ipath}?edit`"
+                    x-title="`Edit ${parameters.iname}`"
                     >Edit</a
                   >
                 </span>
               </keep-if>
-              <keep-if truthy="topLevelParameters.dialog!==undefined">
+              <keep-if truthy="parameters.dialog!==undefined">
                 <span
-                  x-title="topLevelParameters.iname"
-                  x-content="topLevelParameters.ititle"
+                  x-title="parameters.iname"
+                  x-content="parameters.ititle"
                 />
               </keep-if>
               <div>
-                <keep-if truthy="topLevelParameters.dialog===undefined">
+                <keep-if truthy="parameters.dialog===undefined">
                   <div>
                     Copy
                     <button
                       type="button"
-                      x-copy='topLevelParameters["html-link"]'
+                      x-copy='parameters["html-link"]'
                       title="Copy HTML link"
                     >
                       <code>&lt;a&gt;</code>
                     </button>
                     <button
                       type="button"
-                      x-copy='topLevelParameters["markdown-link"]'
+                      x-copy='parameters["markdown-link"]'
                       title="Copy Markdown link"
                     >
                       <code>[]()</code>
                     </button>
                     <button
                       type="button"
-                      x-copy="topLevelParameters.ipath"
+                      x-copy="parameters.ipath"
                       title="Copy path"
                     >
                       Path
                     </button>
                   </div>
                 </keep-if>
-                <keep-if truthy="topLevelParameters.dialog!==undefined">
+                <keep-if truthy="parameters.dialog!==undefined">
                   <div>
                     Insert
                     <button
                       type="button"
-                      x-insert='topLevelParameters["html-link"]'
+                      x-insert='parameters["html-link"]'
                       title="Insert HTML link"
                     >
                       <code>&lt;a&gt;</code>
                     </button>
                     <button
                       type="button"
-                      x-insert='topLevelParameters["markdown-link"]'
+                      x-insert='parameters["markdown-link"]'
                       title="Insert Markdown link"
                     >
                       <code>[]()</code>
                     </button>
                     <button
                       type="button"
-                      x-insert="topLevelParameters.ipath"
+                      x-insert="parameters.ipath"
                       title="Insert path"
                     >
                       Path
@@ -177,7 +177,7 @@
         </map-list>
       </ul>
     </keep-if>
-    <drop-if truthy="topLevelParameters.query!==undefined">
+    <drop-if truthy="parameters.query!==undefined">
       <p>Type a query and hit "Go" to see the results here</p>
     </drop-if>
   </body>

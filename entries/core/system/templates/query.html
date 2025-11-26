@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>Query Playground</title>
-    <keep-if truthy="topLevelParameters.dialog!==undefined">
+    <keep-if truthy="parameters.dialog!==undefined">
       <meta itemprop="nocontainer" />
     </keep-if>
     <meta name="description" content="" />
@@ -12,7 +12,7 @@
   </head>
 
   <body>
-    <keep-if truthy="topLevelParameters.dialog!==undefined">
+    <keep-if truthy="parameters.dialog!==undefined">
       <link
         rel="stylesheet"
         href="/system/global.css"
@@ -58,7 +58,7 @@
     </style>
     <script src="/system/scripts/copy-and-insert.js"></script>
     <form method="GET">
-      <keep-if truthy="topLevelParameters.dialog!==undefined">
+      <keep-if truthy="parameters.dialog!==undefined">
         <input type="hidden" name="select" value="body" />
         <input type="hidden" name="dialog" value="dialog" />
         <input
@@ -70,32 +70,32 @@
       <textarea
         autofocus
         name="query"
-        x-content="or(topLevelParameters.query,'')"
+        x-content="or(parameters.query,'')"
         placeholder="Temporal.Now.plainDateTimeISO()"
       >
       </textarea>
       <button type="submit" x-formaction="parameters.contentPath">Go</button>
     </form>
-    <keep-if truthy="topLevelParameters.query!==undefined">
-      <set- result="query(topLevelParameters.query)"> </set->
+    <keep-if truthy="parameters.query!==undefined">
+      <set- result="query(parameters.query)"> </set->
       <h2>Complete result</h2>
       <div copy-target-container>
         <pre
-          x-content="topLevelParameters.result,(p)=>typeof p === 'string'?p:JSON.stringify(p,null,2),(p)=>`<code
+          x-content="parameters.result,(p)=>typeof p === 'string'?p:JSON.stringify(p,null,2),(p)=>`<code
             copy-target>${p}</code>`"
         ></pre>
         <div>
           <button type="button" copy>Copy</button>
 
-          <keep-if truthy="topLevelParameters.dialog!==undefined">
+          <keep-if truthy="parameters.dialog!==undefined">
             <button type="button" insert>Insert</button>
           </keep-if>
         </div>
       </div>
-      <keep-if truthy="Array.isArray(topLevelParameters.result)">
+      <keep-if truthy="Array.isArray(parameters.result)">
         <h2>List view</h2>
         <ul>
-          <map-list q="topLevelParameters.result" allow-one>
+          <map-list q="parameters.result" allow-one>
             <li copy-target-container>
               <div class="flex-row justify-between">
                 <span copy-target x-content="parameters.currentListItem"></span>
@@ -109,7 +109,7 @@
         </ul>
       </keep-if>
     </keep-if>
-    <drop-if truthy="topLevelParameters.query!==undefined">
+    <drop-if truthy="parameters.query!==undefined">
       <p>Type a query and hit "Go" to see the results here</p>
     </drop-if>
   </body>

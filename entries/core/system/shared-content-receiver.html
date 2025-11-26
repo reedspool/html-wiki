@@ -63,7 +63,7 @@
         type="button"
         copy
         copy-target
-        x-content="`[${topLevelParameters.title}](${topLevelParameters.text})`"
+        x-content="`[${parameters.title}](${parameters.text})`"
       ></button>
     </shared-link-entry>
     <shared-link-entry copy-target-container>
@@ -72,7 +72,7 @@
         type="button"
         copy
         copy-target
-        x-content="`[${topLevelParameters.title}](${topLevelParameters.url})`"
+        x-content="`[${parameters.title}](${parameters.url})`"
       ></button>
     </shared-link-entry>
     <a href="actions/search-and-link.html">Search</a>
@@ -80,22 +80,22 @@
       <h3>Template: From Chrome Android</h3>
       <h4>filename</h4>
       <file-details
-        x-content="`${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md`"
+        x-content="`${cleanFilePath(or(parameters.title,'undefined'))}.md`"
       ></file-details>
       <h4>fileContent</h4>
       <file-details>
         <span
-          x-content="`# [${topLevelParameters.title}](${topLevelParameters.text})`"
+          x-content="`# [${parameters.title}](${parameters.text})`"
         ></span>
         <br />
         <br />
         <span
-          x-escape-content='`Shared from Chrome as "${topLevelParameters.title}" from &lt;${topLevelParameters.text}&gt;`'
+          x-escape-content='`Shared from Chrome as "${parameters.title}" from &lt;${parameters.text}&gt;`'
         ></span>
       </file-details>
       <p>
         <a
-          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md&fileContent=%23 [${topLevelParameters.title}](encodeURIComponent(${topLevelParameters.text}))%0A%0AShared from Chrome as %22${topLevelParameters.title}%22 from %3C${encodeURIComponent(topLevelParameters.text)}%3E`"
+          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(parameters.title,'undefined'))}.md&fileContent=%23 [${parameters.title}](encodeURIComponent(${parameters.text}))%0A%0AShared from Chrome as %22${parameters.title}%22 from %3C${encodeURIComponent(parameters.text)}%3E`"
           >Go to Create the above</a
         >
       </p>
@@ -104,20 +104,20 @@
       <h3>Template: Trusting the API</h3>
       <h4>filename</h4>
       <file-details
-        x-content="`${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md`"
+        x-content="`${cleanFilePath(or(parameters.title,'undefined'))}.md`"
       ></file-details>
       <h4>fileContent</h4>
       <file-details>
         <span
-          x-content="`# [${topLevelParameters.title}](${encodeURIComponent(topLevelParameters.url)})`"
+          x-content="`# [${parameters.title}](${encodeURIComponent(parameters.url)})`"
         ></span>
         <br />
         <br />
-        <span x-content="topLevelParameters.text"></span>
+        <span x-content="parameters.text"></span>
       </file-details>
       <p>
         <a
-          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(topLevelParameters.title,'undefined'))}.md&fileContent=%23 [${topLevelParameters.title}](${encodeURIComponent(topLevelParameters.url)})%0A%0A${topLevelParameters.text}`"
+          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(parameters.title,'undefined'))}.md&fileContent=%23 [${parameters.title}](${encodeURIComponent(parameters.url)})%0A%0A${parameters.text}`"
           >Go to Create the above</a
         >
       </p>
@@ -143,7 +143,7 @@
         <input
           type="text"
           name="title"
-          x-value="or(topLevelParameters.title,'')"
+          x-value="or(parameters.title,'')"
           placeholder="None supplied"
         />
       </label>
@@ -152,7 +152,7 @@
         <input
           type="text"
           name="url"
-          x-value="or(topLevelParameters.url,'')"
+          x-value="or(parameters.url,'')"
           placeholder="None supplied"
         >
       </label>
@@ -161,7 +161,7 @@
         <input
           type="text"
           name="text"
-          x-value="or(topLevelParameters.text,'')"
+          x-value="or(parameters.text,'')"
           placeholder="None supplied"
         >
         </input>

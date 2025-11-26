@@ -46,9 +46,9 @@
         </center-column-layout>
       </header>
       <center-column-layout class="relative lower">
-        <keep-if truthy="topLevelParameters.statusMessage">
+        <keep-if truthy="parameters.statusMessage">
           <toast-message role="status">
-            <span x-content="topLevelParameters.statusMessage"></span>
+            <span x-content="parameters.statusMessage"></span>
             <button
               clean
               type="button"

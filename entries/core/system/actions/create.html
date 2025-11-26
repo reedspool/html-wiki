@@ -30,12 +30,12 @@
       <input
         type="hidden"
         name="filename"
-        x-value="topLevelParameters.timestamp.replace(/[:.]/g,'-'),_=>_+'.md'"
+        x-value="parameters.timestamp.replace(/[:.]/g,'-'),_=>_+'.md'"
       />
       <input
         type="hidden"
         name="fileContent"
-        x-value="topLevelParameters.timestamp,_=>'# '+_+'\n\n'"
+        x-value="parameters.timestamp,_=>'# '+_+'\n\n'"
       />
       <button type="submit">Template: Timestamp</button>
     </form>
@@ -52,7 +52,7 @@
       <button type="submit">Template: Markdown</button>
     </form>
     <form method="POST">
-      <drop-if truthy="topLevelParameters.filename">
+      <drop-if truthy="parameters.filename">
         <input
           input
           type="text"
@@ -61,11 +61,11 @@
           placeholder="Leave blank to generate from title"
         />
       </drop-if>
-      <keep-if truthy="topLevelParameters.filename">
+      <keep-if truthy="parameters.filename">
         <input
           type="text"
           name="contentPath"
-          x-value="topLevelParameters.filename"
+          x-value="parameters.filename"
           placeholder="posts/New Page"
         />
       </keep-if>
@@ -77,7 +77,7 @@
         </select>
       </label>
       <query-content
-        q="render('/system/templates/editor.fragment.html', { editContent: topLevelParameters.fileContent || '', saveParameters: 'create' })"
+        q="render('/system/templates/editor.fragment.html', { editContent: parameters.fileContent || '', saveParameters: 'create', editingContentPath: '/' })"
       ></query-content>
     </form>
   </body>

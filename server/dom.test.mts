@@ -18,7 +18,6 @@ async function applyTemplatingAndParse(
     fileCache: await buildEmptyCache(),
     content,
     parameters,
-    topLevelParameters: parameters,
   })
   const dom = parse(result.content)
   return {
@@ -144,8 +143,8 @@ test(
         foo="'foo value'"
         bar="'bar value overwrites'"
       ></set->
-      <span x-content="topLevelParameters.foo">Replaced</span>
-      <p x-class="topLevelParameters.bar">see attribute</p>`
+      <span x-content="parameters.foo">Replaced</span>
+      <p x-class="parameters.bar">see attribute</p>`
     const { $1 } = await applyTemplatingAndParse(
       setEachParameterWithSource(
         {},

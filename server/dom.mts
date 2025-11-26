@@ -13,7 +13,6 @@ export const applyTemplating = async (
   params: {
     fileCache: FileCache
     parameters: ParameterValue
-    topLevelParameters: ParameterValue
     rootSelector?: string
   } & (
     | {
@@ -28,13 +27,12 @@ export const applyTemplating = async (
   meta: Meta
   links: Array<string>
 }> => {
-  const { parameters, topLevelParameters, rootSelector, fileCache } = params
+  const { parameters, rootSelector, fileCache } = params
   const getQueryValue = (query: string) => {
     return pString(
       query,
       buildMyServerPStringContext({
         parameters,
-        topLevelParameters,
         fileCache,
       }),
     )
@@ -250,8 +248,7 @@ export const applyTemplating = async (
               const { content } = await applyTemplating({
                 fileCache,
                 element: childElementClone,
-                parameters: parameters,
-                topLevelParameters,
+                parameters,
               })
               toPlace.push(content)
             }
@@ -301,7 +298,7 @@ export const applyTemplating = async (
             // and this could createa new scope only for the processing
             // of the contents of this tag
             setParameterWithSource(
-              topLevelParameters,
+              parameters,
               parameterName,
               queryValue,
               "query param",
