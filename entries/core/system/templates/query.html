@@ -61,44 +61,40 @@
       <keep-if truthy="parameters.dialog!==undefined">
         <input type="hidden" name="select" value="body" />
         <input type="hidden" name="dialog" value="dialog" />
-        <input
-          type="hidden"
-          name="contentPath"
-          x-value="parameters.contentPath"
-        />
+        <input type="hidden" name="contentPath" x-value="contentPath" />
       </keep-if>
       <textarea
         autofocus
         name="query"
-        x-content="or(parameters.query,'')"
+        x-content="or(query,'')"
         placeholder="Temporal.Now.plainDateTimeISO()"
       >
       </textarea>
-      <button type="submit" x-formaction="parameters.contentPath">Go</button>
+      <button type="submit" x-formaction="contentPath">Go</button>
     </form>
-    <keep-if truthy="parameters.query!==undefined">
-      <set- result="query(parameters.query)"> </set->
+    <keep-if truthy="query!==undefined">
+      <set- result="query(query)"> </set->
       <h2>Complete result</h2>
       <div copy-target-container>
         <pre
-          x-content="parameters.result,(p)=>typeof p === 'string'?p:JSON.stringify(p,null,2),(p)=>`<code
+          x-content="result,(p)=>typeof p === 'string'?p:JSON.stringify(p,null,2),(p)=>`<code
             copy-target>${p}</code>`"
         ></pre>
         <div>
           <button type="button" copy>Copy</button>
 
-          <keep-if truthy="parameters.dialog!==undefined">
+          <keep-if truthy="dialog!==undefined">
             <button type="button" insert>Insert</button>
           </keep-if>
         </div>
       </div>
-      <keep-if truthy="Array.isArray(parameters.result)">
+      <keep-if truthy="Array.isArray(result)">
         <h2>List view</h2>
         <ul>
-          <map-list q="parameters.result" allow-one>
+          <map-list q="result" allow-one>
             <li copy-target-container>
               <div class="flex-row justify-between">
-                <span copy-target x-content="parameters.currentListItem"></span>
+                <span copy-target x-content="currentListItem"></span>
                 <div>
                   <button type="button" copy>Copy</button>
                   <button type="button" insert>Insert</button>
@@ -109,7 +105,7 @@
         </ul>
       </keep-if>
     </keep-if>
-    <drop-if truthy="parameters.query!==undefined">
+    <drop-if truthy="query!==undefined">
       <p>Type a query and hit "Go" to see the results here</p>
     </drop-if>
   </body>

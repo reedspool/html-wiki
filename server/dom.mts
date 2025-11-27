@@ -158,7 +158,7 @@ export const applyTemplating = async (
               let shouldRemove = element.attributes.name === "remove"
               switch (element.attributes.if) {
                 case "raw":
-                  if ((await getQueryValue("parameters.raw")) === undefined) {
+                  if (parameters.raw === undefined) {
                     shouldRemove = !shouldRemove
                   }
                   break
@@ -287,6 +287,31 @@ export const applyTemplating = async (
           element.remove()
         }
         break
+
+      case "DEBUGGER-":
+        debugger
+        break
+      case "DECLARE-":
+        {
+          for (const [parameterName, _] of Object.entries(element.attributes)) {
+            // TODO: This sets the parameter for everything after this,
+            // but it would be cool if parameters were a scope concept
+            // and this could createa new scope only for the processing
+            // of the contents of this tag
+            if (!(parameterName in parameters)) {
+              setParameterWithSource(
+                parameters,
+                parameterName,
+                undefined,
+                "declared",
+              )
+            }
+          }
+          // Ignore children completely
+          alreadySetForNextIteration = treeWalker.nextNodeNotChildren()
+          element.remove()
+        }
+        break
       case "SET-":
         {
           for (const [parameterName, query] of Object.entries(
@@ -350,7 +375,7 @@ export const applyTemplating = async (
     }
   } while (alreadySetForNextIteration || treeWalker.nextNode())
 
-  const selector = await getQueryValue("parameters.select")
+  const selector = parameters.select
   if (selector) {
     if (typeof selector !== "string") {
       throw new Error("query value expected string")

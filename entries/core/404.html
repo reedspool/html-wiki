@@ -8,23 +8,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
   <body>
-    <keep-if truthy="parameters.originalPath">
+    <keep-if truthy="originalPath">
       <p>While processing the request:</p>
       <p>
-        <a x-href="parameters.originalPath"
-          ><code x-content="parameters.originalPath"></code
-        ></a>
+        <a x-href="originalPath"><code x-content="originalPath"></code></a>
       </p>
 
       <p>The server was unable to find a file at path</p>
       <p>
-        <code x-content="parameters.missingPath"></code>
+        <code x-content="missingPath"></code>
       </p>
 
       <p>
         Do you want to
-        <a
-          x-href="`/system/actions/create.html?filename=${parameters.missingPath}`"
+        <a x-href="`/system/actions/create.html?filename=${missingPath}`"
           >create it?</a
         >
       </p>

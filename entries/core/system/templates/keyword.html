@@ -1,24 +1,20 @@
 <!doctype html>
 <html lang="en-US">
   <head>
+    <declare- keyword></declare->
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title>
-      <query-content q="parameters.keyword"> Keyword Listing
-      </query-content>
-    </title>
+    <title><query-content q="keyword"> Keyword Listing </query-content></title>
     <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
 
   <body>
     <h2>
-      <query-content q="parameters.keyword">
-        Keyword Listing
-      </query-content>
+      <query-content q="keyword"> Keyword Listing </query-content>
     </h2>
 
-    <drop-if truthy="parameters.keyword">
+    <drop-if truthy="keyword">
       <p>No keyword queried.</p>
     </drop-if>
 
@@ -27,37 +23,24 @@
     <form method="GET" action="/system/templates/keyword.html">
       <label>
         Keyword
-        <input
-          type="text"
-          name="keyword"
-          x-value="or(parameters.keyword, '')"
-        />
+        <input type="text" name="keyword" x-value="or(keyword, '')" />
       </label>
       <button type="submit">Query</button>
     </form>
 
-    <keep-if truthy="parameters.keyword">
+    <keep-if truthy="keyword">
       <ul>
-        <map-list
-          q="fileCache.getContentPathsForKeyword(parameters.keyword)"
-        >
+        <map-list q="fileCache.getContentPathsForKeyword(keyword)">
           <set-
-            ipath="parameters.currentListItem"
-            iname="fileCache.getByContentPath(parameters.ipath)?.meta?.title ?? parameters.ipath"
+            ipath="currentListItem"
+            iname="fileCache.getByContentPath(ipath)?.meta?.title ?? ipath"
           >
           </set->
           <li>
             <span>
-              <a
-                x-href="parameters.ipath"
-                x-content="parameters.iname"
-              ></a>
+              <a x-href="ipath" x-content="iname"></a>
               -
-              <a
-                x-href="`${parameters.ipath}?edit`"
-                x-title="`Edit ${parameters.iname}`"
-                >Edit</a
-              >
+              <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
             </span>
           </li>
         </map-list>
@@ -68,17 +51,15 @@
     <ul>
       <map-list q="fileCache.allKeywords">
         <set-
-          ipath="`/system/templates/keyword.html?keyword=${parameters.currentListItem}`"
-          icount="fileCache.getContentPathsForKeyword(parameters.currentListItem),(p)=>p?.length?.toString()"
+          ipath="`/system/templates/keyword.html?keyword=${currentListItem}`"
+          icount="fileCache.getContentPathsForKeyword(currentListItem),(p)=>p?.length?.toString()"
         >
         </set->
         <li>
           <span>
-            <a
-              x-href="parameters.ipath"
-              x-content="parameters.currentListItem"
-            ></a
-            >&nbsp;(<span x-content="parameters.icount" />)
+            <a x-href="ipath" x-content="currentListItem"></a>&nbsp;(<span
+              x-content="icount"
+            />)
           </span>
         </li>
       </map-list>

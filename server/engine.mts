@@ -129,15 +129,13 @@ export const execute = async ({
       )
       let content
       let nocontainer = parameters.nocontainer !== undefined
-      if ((await getQueryValue("parameters.raw")) !== undefined) {
-        if ((await getQueryValue("parameters.escape")) !== undefined) {
+      if (parameters.raw !== undefined) {
+        if (parameters.escape !== undefined) {
           content = escapeHtml(readResult.content)
         } else {
           content = readResult.content
         }
-      } else if (
-        (await getQueryValue("parameters.renderMarkdown")) !== undefined
-      ) {
+      } else if (parameters.renderMarkdown !== undefined) {
         if (typeof parameters.contentPath !== "string") throw new Error()
         content = await specialRenderMarkdown({
           contentPath: parameters.contentPath,
@@ -280,6 +278,7 @@ export type ParameterSources =
   | "request body"
   | "url facts"
   | "server configured"
+  | "declared"
 export const setParameterWithSource = (
   parameters: ParameterValue | string,
   key: keyof ParameterValue,

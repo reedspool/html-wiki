@@ -13,7 +13,7 @@
 
     <p>
       You're attempting to edit file
-      <code x-content="parameters.editContentPath"
+      <code x-content="editContentPath"
         >&lt;no file supplied&gt;</code
       >
       which only exists in the core directory. You cannot edit that file
@@ -25,23 +25,23 @@
       <input
         type="hidden"
         name="contentPath"
-        x-value="parameters.editContentPath"
+        x-value="editContentPath"
       />
       <input
         type="hidden"
         name="redirect"
-        x-value="parameters.editContentPath + '?edit'"
+        x-value="editContentPath + '?edit'"
       />
       <input
         type="hidden"
         name="content"
-        x-value="render(parameters.editContentPath,{raw:'raw'}),p=>escapeHtml(p)"
+        x-value="render(editContentPath,{raw:'raw'}),p=>escapeHtml(p)"
       />
       <button type="submit">Create and edit shadow copy</button>
     </form>
 
     <p>
-      <a x-href="parameters.editContentPath">Go back to the original</a>
+      <a x-href="editContentPath">Go back to the original</a>
     </p>
   </body>
 </html>

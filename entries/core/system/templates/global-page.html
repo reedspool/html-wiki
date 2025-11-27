@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="en-US">
   <head>
+    <declare- title content statusMessage></declare->
     <meta charset="utf-8" />
     <meta itemprop="nocontainer" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>
-      <query-content q="parameters.title"> HTML Wiki </query-content> <drop-if
-      truthy="parameters.content"> (Global Template) </drop-if>
+      <query-content q="title"> HTML Wiki </query-content> <drop-if
+      truthy="content"> (Global Template) </drop-if>
     </title>
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="icon" href="/assets/code-icon-512x512.png" />
@@ -46,9 +47,9 @@
         </center-column-layout>
       </header>
       <center-column-layout class="relative lower">
-        <keep-if truthy="parameters.statusMessage">
+        <keep-if truthy="statusMessage">
           <toast-message role="status">
-            <span x-content="parameters.statusMessage"></span>
+            <span x-content="statusMessage"></span>
             <button
               clean
               type="button"
@@ -63,7 +64,7 @@
     </div>
     <main>
       <center-column-layout>
-        <query-content q="parameters.content">
+        <query-content q="content">
           <p>
             This is the global page template. Usually, this text would be
             replaced with the HTML content of another entry in the wiki. But I

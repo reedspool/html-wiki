@@ -1,9 +1,10 @@
 <!doctype html>
 <html lang="en-US">
   <head>
+    <declare- dialog></declare->
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <keep-if truthy="parameters.dialog!==undefined">
+    <keep-if truthy="dialog!==undefined">
       <meta itemprop="nocontainer" />
     </keep-if>
     <title>Search and Link</title>
@@ -12,7 +13,7 @@
   </head>
 
   <body>
-    <keep-if truthy="parameters.dialog!==undefined">
+    <keep-if truthy="dialog!==undefined">
       <link
         rel="stylesheet"
         href="/system/global.css"
@@ -62,64 +63,57 @@
     </style>
     <script src="/system/scripts/copy-and-insert.js"></script>
     <form method="GET">
-      <keep-if truthy="parameters.dialog!==undefined">
+      <keep-if truthy="dialog!==undefined">
         <input type="hidden" name="select" value="body" />
         <input type="hidden" name="dialog" value="dialog" />
-        <input
-          type="hidden"
-          name="contentPath"
-          x-value="parameters.contentPath"
-        />
+        <input type="hidden" name="contentPath" x-value="contentPath" />
       </keep-if>
       <textarea
         autofocus
         name="query"
-        x-content="or(parameters.query,'')"
+        x-content="or(query,'')"
         placeholder="Search here"
       >
       </textarea>
-      <button type="submit" x-formaction="parameters.contentPath">Go</button>
+      <button type="submit" x-formaction="contentPath">Go</button>
     </form>
-    <keep-if truthy="parameters.query!==undefined">
-      <set- result="site.search(parameters.query.trim())"> </set->
+    <keep-if truthy="query!==undefined">
+      <set- result="site.search(query.trim())"> </set->
       <h2>Results</h2>
       <ul>
-        <map-list q="parameters.result" allow-one>
+        <map-list q="result" allow-one>
           <set-
-            ipath="parameters.currentListItem.contentPath"
-            ititle="or(parameters.currentListItem.meta.title,parameters.currentListItem.name)"
-            iname="parameters.currentListItem.name"
-            markdown-link='`[${parameters.ititle}](<${parameters.ipath}> "${parameters.iname}")`'
-            html-link='`<a href="${parameters.ipath}" title="${parameters.ititle}">${parameters.iname}</a>`'
+            ipath="currentListItem.contentPath"
+            ititle="or(currentListItem.meta.title,currentListItem.name)"
+            iname="currentListItem.name"
+            markdown-link='`[${ititle}](<${ipath}> "${iname}")`'
+            html-link='`<a href="${ipath}" title="${ititle}">${iname}</a>`'
           >
           </set->
           <li copy-target-container>
             <div class="flex-row justify-between">
-              <keep-if truthy="parameters.dialog===undefined">
+              <keep-if truthy="dialog===undefined">
                 <span>
                   <a
                     copy-target
-                    x-href="parameters.ipath"
-                    x-title="parameters.iname"
-                    x-content="parameters.ititle"
+                    x-href="ipath"
+                    x-title="iname"
+                    x-content="ititle"
                   />
                   -
                   <a
                     copy-target
-                    x-href="`${parameters.ipath}?edit`"
-                    x-title="`Edit ${parameters.iname}`"
+                    x-href="`${ipath}?edit`"
+                    x-title="`Edit ${iname}`"
                     >Edit</a
                   >
                 </span>
               </keep-if>
-              <keep-if truthy="parameters.dialog!==undefined">
-                <span
-                  x-title="parameters.iname"
-                  x-content="parameters.ititle"
-                />
+              <keep-if truthy="dialog!==undefined">
+                <span x-title="iname" x-content="ititle" />
               </keep-if>
               <div>
-                <keep-if truthy="parameters.dialog===undefined">
+                <keep-if truthy="dialog===undefined">
                   <div>
                     Copy
                     <button
@@ -136,16 +130,12 @@
                     >
                       <code>[]()</code>
                     </button>
-                    <button
-                      type="button"
-                      x-copy="parameters.ipath"
-                      title="Copy path"
-                    >
+                    <button type="button" x-copy="ipath" title="Copy path">
                       Path
                     </button>
                   </div>
                 </keep-if>
-                <keep-if truthy="parameters.dialog!==undefined">
+                <keep-if truthy="dialog!==undefined">
                   <div>
                     Insert
                     <button
@@ -162,11 +152,7 @@
                     >
                       <code>[]()</code>
                     </button>
-                    <button
-                      type="button"
-                      x-insert="parameters.ipath"
-                      title="Insert path"
-                    >
+                    <button type="button" x-insert="ipath" title="Insert path">
                       Path
                     </button>
                   </div>
@@ -177,7 +163,7 @@
         </map-list>
       </ul>
     </keep-if>
-    <drop-if truthy="parameters.query!==undefined">
+    <drop-if truthy="query!==undefined">
       <p>Type a query and hit "Go" to see the results here</p>
     </drop-if>
   </body>

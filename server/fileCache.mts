@@ -310,6 +310,7 @@ const getFileContentsAndMetadata = async ({
         ...myStats,
       }
     } catch (error) {
+      console.error("Templating error:", error)
       throw new Error(
         `Couldn't apply templating for '${contentPath}': ${error}`,
       )

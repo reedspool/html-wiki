@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en-US">
   <head>
+    <declare- filename fileContent></declare->
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>Create Page</title>
@@ -30,12 +31,12 @@
       <input
         type="hidden"
         name="filename"
-        x-value="parameters.timestamp.replace(/[:.]/g,'-'),_=>_+'.md'"
+        x-value="timestamp.replace(/[:.]/g,'-'),_=>_+'.md'"
       />
       <input
         type="hidden"
         name="fileContent"
-        x-value="parameters.timestamp,_=>'# '+_+'\n\n'"
+        x-value="timestamp,_=>'# '+_+'\n\n'"
       />
       <button type="submit">Template: Timestamp</button>
     </form>
@@ -52,7 +53,7 @@
       <button type="submit">Template: Markdown</button>
     </form>
     <form method="POST">
-      <drop-if truthy="parameters.filename">
+      <drop-if truthy="filename">
         <input
           input
           type="text"
@@ -61,11 +62,11 @@
           placeholder="Leave blank to generate from title"
         />
       </drop-if>
-      <keep-if truthy="parameters.filename">
+      <keep-if truthy="filename">
         <input
           type="text"
           name="contentPath"
-          x-value="parameters.filename"
+          x-value="filename"
           placeholder="posts/New Page"
         />
       </keep-if>
@@ -77,7 +78,7 @@
         </select>
       </label>
       <query-content
-        q="render('/system/templates/editor.fragment.html', { editContent: parameters.fileContent || '', saveParameters: 'create', editingContentPath: '/' })"
+        q="render('/system/templates/editor.fragment.html', { editContent: fileContent || '', saveParameters: 'create', editingContentPath: '/' })"
       ></query-content>
     </form>
   </body>

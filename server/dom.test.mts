@@ -77,9 +77,7 @@ test(
   "keep-if truthy replaces itself with its content",
   { concurrency: true },
   async () => {
-    const input = html`
-      <keep-if truthy="parameters.title"><h1>Keep me!</h1></keep-if>
-    `
+    const input = html` <keep-if truthy="title"><h1>Keep me!</h1></keep-if> `
     const { $1 } = await applyTemplatingAndParse(
       setParameterWithSource({}, "title", "Test title", "query param"),
       input,
@@ -111,8 +109,8 @@ test(
   { concurrency: true },
   async () => {
     const input = html`
-      <a x-href="parameters.myHref">Test link</a>
-      <span x-content="parameters.spanContent">Not here</span>
+      <a x-href="myHref">Test link</a>
+      <span x-content="spanContent">Not here</span>
     `
     const { $1 } = await applyTemplatingAndParse(
       setEachParameterWithSource(
@@ -143,8 +141,8 @@ test(
         foo="'foo value'"
         bar="'bar value overwrites'"
       ></set->
-      <span x-content="parameters.foo">Replaced</span>
-      <p x-class="parameters.bar">see attribute</p>`
+      <span x-content="foo">Replaced</span>
+      <p x-class="bar">see attribute</p>`
     const { $1 } = await applyTemplatingAndParse(
       setEachParameterWithSource(
         {},

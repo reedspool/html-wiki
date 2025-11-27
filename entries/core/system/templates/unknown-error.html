@@ -8,17 +8,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
   <body>
-    <keep-if truthy="parameters.originalPath">
+    <keep-if truthy="originalPath">
       <p>While processing the request:</p>
       <p>
-        <a x-href="parameters.originalPath"
-          ><code x-content="parameters.originalPath"></code
-        ></a>
+        <a x-href="originalPath"><code x-content="originalPath"></code></a>
       </p>
 
       <p>
         The server ran into an <em>unexpected error</em> resulting in a HTTP
-        Status Code of <code x-content="parameters.statusCode" />
+        Status Code of <code x-content="statusCode" />
       </p>
       <p>
         The server recovered well enough to send this formatted message. It
@@ -31,17 +29,15 @@
           being conveyed to you because the error message may have revealed some
           secure information. That information should be available in the server
           logs, if you have access.
-          <keep-if truthy="parameters.errorUuid"
+          <keep-if truthy="errorUuid"
             >The error logs should appear just before this searchable unique
-            identifier <code x-content="parameters.errorUuid"
+            identifier <code x-content="errorUuid"
           /></keep-if>
         </p>
       </drop-if>
 
       <keep-if truthy="parameters.errorMessage">
-        <p>
-          Error message: <code x-content="parameters.errorMessage" />
-        </p>
+        <p>Error message: <code x-content="errorMessage" /></p>
       </keep-if>
     </keep-if>
   </body>

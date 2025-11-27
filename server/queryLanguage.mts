@@ -10,6 +10,7 @@ import {
 } from "./engine.mts"
 import debug from "debug"
 import {
+  disallowedParameterNames,
   escapeHtml,
   html,
   parseFrontmatter,
@@ -236,12 +237,11 @@ export const buildMyServerPStringContext = ({
   fileCache: FileCache
   parameters: ParameterValue
 }): PStringContext => {
-  return {
+  const utilities = {
     fileCache,
     escapeHtml,
     cleanFilePath,
     Temporal,
-    parameters,
     site: siteProxy({
       fileCache,
     }),
@@ -259,6 +259,17 @@ export const buildMyServerPStringContext = ({
           fileCache,
         }),
       ),
+  }
+
+  return {
+    ...utilities,
+    ...parameters,
+
+    // Non-overide-able reference to these things to avoid possible conflicts
+    // and possibly undefined parameters
+    parameters,
+    utilities,
+    delete: undefined,
   }
 }
 
@@ -287,7 +298,9 @@ export const pString: (
       // TODO: What I realized is that doing the above probably would mean
       // avoiding adding a name to the environment. Here I need the variable
       // name for the object parameter.
-      Object.keys(context).join(","),
+      Object.keys(context)
+        .filter((key) => !disallowedParameterNames.includes(key))
+        .join(","),
       `} = context;`,
       `return p(${pArgList});`,
     ].join("\n"),

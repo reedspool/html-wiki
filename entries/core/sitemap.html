@@ -37,19 +37,15 @@
               q="site.allFiles, (list)=>list.toSorted((a,b)=>b.modifiedTimeMs-a.modifiedTimeMs)"
             >
               <set-
-                ipath="parameters.currentListItem.contentPath"
-                iname="or(parameters.currentListItem.meta.title,parameters.currentListItem.name)"
+                ipath="currentListItem.contentPath"
+                iname="or(currentListItem.meta.title,currentListItem.name)"
               >
               </set->
               <li>
                 <span>
-                  <a x-href="parameters.ipath" x-content="parameters.iname"></a>
+                  <a x-href="ipath" x-content="iname"></a>
                   -
-                  <a
-                    x-href="`${parameters.ipath}?edit`"
-                    x-title="`Edit ${parameters.iname}`"
-                    >Edit</a
-                  >
+                  <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
                 </span>
               </li>
             </map-list>

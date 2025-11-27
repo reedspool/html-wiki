@@ -1,3 +1,4 @@
+<declare- editingContentPath saveParameters></declare->
 <style type="text/css" media="screen">
   textarea {
     height: 30rem;
@@ -100,11 +101,11 @@
 <textarea
   name="content"
   spellcheck="false"
-  x-content="or(parameters.editContent,'')"
+  x-content="or(editContent,'')"
 ></textarea>
 <button
   type="submit"
-  x-formaction="`${parameters.editingContentPath}?${parameters.saveParameters || ''}`"
+  x-formaction="`${editingContentPath}?${saveParameters || ''}`"
 >
   Save
 </button>

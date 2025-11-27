@@ -11,26 +11,24 @@
   <body>
     <h1>
       Editing
-      <keep-if truthy="parameters.editingContentPath">
-        <a
-          x-href="parameters.editingContentPath"
-          x-content="parameters.editingContentPath"
+      <keep-if truthy="editingContentPath">
+        <a x-href="editingContentPath" x-content="editingContentPath"
           >[filename] :-/</a
         >
       </keep-if>
-      <drop-if truthy="parameters.editingContentPath"> (Template) </drop-if>
+      <drop-if truthy="editingContentPath"> (Template) </drop-if>
     </h1>
 
-    <drop-if truthy="parameters.editingContentPath">
+    <drop-if truthy="editingContentPath">
       You are viewing the edit page directly. Maybe you meant to
       <a href="?edit">edit this page</a>
       (edit the edit page)? Or if you wanted to edit another page, go to that
       page and add <code>?edit</code> to the end of the URL.
     </drop-if>
-    <keep-if truthy="parameters.editingContentPath">
+    <keep-if truthy="editingContentPath">
       <form method="POST">
         <query-content
-          q="render('/system/templates/editor.fragment.html', { editContent: await render(parameters.editingContentPath,{raw: true, escape: true }), editingContentPath: parameters.editingContentPath })"
+          q="render('/system/templates/editor.fragment.html', { editContent: await render(editingContentPath,{raw: true, escape: true }), editingContentPath: editingContentPath })"
         ></query-content>
       </form>
     </keep-if>
