@@ -88,10 +88,13 @@ program
       )
       process.exit(1)
     }
-    const fileCache = await buildCache({
+    const sourceFileCache = await buildCache({
       searchDirectories: [options.userDirectory, options.coreDirectory],
     })
-    const files = (await fileCache.getListOfFilesAndDetails()).map(
+    const destinationFileCache = await buildCache({
+      searchDirectories: [options.outDirectory],
+    })
+    const files = (await sourceFileCache.getListOfFilesAndDetails()).map(
       ({ contentPath }) => contentPath,
     )
 
@@ -102,8 +105,6 @@ program
       setEachParameterWithSource(
         readParameters,
         {
-          userDirectory: options.userDirectory,
-          coreDirectory: options.coreDirectory,
           contentPath: contentPath,
           command: "read",
         },
@@ -112,23 +113,27 @@ program
       let outputPath = contentPath
       const readResult = await execute({
         parameters: readParameters,
-        fileCache,
+        fileCache: sourceFileCache,
       })
+
+      if (/\.md$/.test(outputPath)) {
+        outputPath = outputPath.replace(/\.md$/, ".html")
+      }
 
       const writeParameters: ParameterValue = {}
       setEachParameterWithSource(
         writeParameters,
         {
-          // Don't give a core directory so we don't ever try to
-          // write to it.
-          userDirectory: options.outDirectory,
           contentPath: outputPath,
           content: readResult.content,
           command: "create",
         },
         "query param",
       )
-      await execute({ parameters: writeParameters, fileCache })
+      await execute({
+        parameters: writeParameters,
+        fileCache: destinationFileCache,
+      })
     })
   })
 
