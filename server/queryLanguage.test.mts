@@ -170,6 +170,17 @@ test(
   },
 )
 
+test(
+  "pString() given a string template with funky characters returns the string",
+  o,
+  async () => {
+    const result = await pString("`this works ${invalidJSString}`", {
+      invalidJSString: "abcd-efgh",
+    })
+    assert.equal(result, "this works abcd-efgh")
+  },
+)
+
 test("site.allFiles gets all the files", o, async () => {
   const parameters = setEachParameterWithSource(
     {},

@@ -296,6 +296,7 @@ export const createServer = async ({
 
     if (error instanceof QueryError) {
       res.status(error.status)
+      parameters.originalError = error.originalError
       parameters.statusCode = error.status
       if (error instanceof MissingFileQueryError) {
         log(`404: While processing request '${req.path}', ${error.message}`)

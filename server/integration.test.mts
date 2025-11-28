@@ -838,3 +838,91 @@ test("Get the keywords page with a query", { concurrency: true }, async () => {
 
   await validateAssertAndReport(responseText, url)
 })
+
+test(
+  "Search and link page without a query",
+  { concurrency: true },
+  async () => {
+    const { url, responseText, $1, $ } = await getPath(
+      `${configuredFiles.searchAndLinkPageTemplate}`,
+    )
+
+    assert.equal($1("h2"), undefined, "no results header is shown")
+
+    assert.doesNotMatch($1("textarea").innerHTML, /\S/, "text area is empty")
+
+    assert.match(responseText, /type a query/i)
+
+    assert.equal($1("main ul"), undefined, "no result list is shown")
+
+    await validateAssertAndReport(responseText, url)
+  },
+)
+
+test("Search and link page with a query", { concurrency: true }, async () => {
+  const query = "markdown"
+  const { url, responseText, $1, $ } = await getPath(
+    `${configuredFiles.searchAndLinkPageTemplate}?query=${query}`,
+  )
+
+  assert.match($1("h2").innerHTML, /Results/, "results header")
+
+  assert.match(
+    $1("textarea").innerHTML,
+    new RegExp(query),
+    "text area has query contents",
+  )
+
+  assert.doesNotMatch(responseText, /type a query/i)
+
+  assert.match(
+    $1(`li a[href=${configuredFiles.testMarkdownFile}][title="test.md"]`)
+      .innerHTML,
+    /Markdown Fixture File Title/,
+    "result link",
+  )
+  assert.match(
+    $1(
+      `li a[href=${configuredFiles.testMarkdownFile}?edit][title="Edit test.md"]`,
+    ).innerHTML,
+    /Edit/,
+    "edit result link",
+  )
+
+  await validateAssertAndReport(responseText, url)
+})
+
+test("Query page with no query", { concurrency: true }, async () => {
+  const { url, responseText, $1, $ } = await getPath(
+    `${configuredFiles.queryPageTemplate}`,
+  )
+
+  assert.equal($1("h2"), undefined, "No result header is shown")
+
+  assert.doesNotMatch($1("textarea").innerHTML, /\S/, "text area is empty")
+
+  assert.match(responseText, /type a query/i)
+
+  await validateAssertAndReport(responseText, url)
+})
+
+test("Query page query", { concurrency: true }, async () => {
+  const query = "55 * 33"
+  const { url, responseText, $1, $ } = await getPath(
+    `${configuredFiles.queryPageTemplate}?query=${query}`,
+  )
+
+  assert.match($1("h2").innerHTML, /Complete result/i, "result header is shown")
+
+  assert.match(
+    $1("textarea").innerHTML,
+    new RegExp(query.replace("*", "\\*")),
+    "text area has query contents",
+  )
+  console.log(responseText)
+  assert.match($1("main pre").innerHTML, /1815/, "query result is displayed")
+
+  assert.doesNotMatch(responseText, /type a query/i)
+
+  await validateAssertAndReport(responseText, url)
+})

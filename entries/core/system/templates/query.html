@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en-US">
+  <declare- dialog query></declare->
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
@@ -73,7 +74,7 @@
       <button type="submit" x-formaction="contentPath">Go</button>
     </form>
     <keep-if truthy="query!==undefined">
-      <set- result="query(query)"> </set->
+      <set- result="answer(query)"> </set->
       <h2>Complete result</h2>
       <div copy-target-container>
         <pre

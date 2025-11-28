@@ -251,7 +251,7 @@ export const buildMyServerPStringContext = ({
     }),
     or,
     and,
-    query: (input: string) =>
+    answer: (input: string) =>
       pString(
         input,
         buildMyServerPStringContext({

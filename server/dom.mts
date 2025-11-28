@@ -1,6 +1,10 @@
 import { type Node, NodeType, HTMLElement } from "node-html-parser"
 import { parse as parseHtml } from "node-html-parser"
-import { QueryError } from "./error.mts"
+import {
+  AnswerError,
+  type AnswerErrorFileLocation,
+  QueryError,
+} from "./error.mts"
 import { buildMyServerPStringContext, pString } from "./queryLanguage.mts"
 import { escapeHtml } from "./utilities.mts"
 import { type ParameterValue, setParameterWithSource } from "./engine.mts"
@@ -28,14 +32,42 @@ export const applyTemplating = async (
   links: Array<string>
 }> => {
   const { parameters, rootSelector, fileCache } = params
-  const getQueryValue = (query: string) => {
-    return pString(
-      query,
-      buildMyServerPStringContext({
-        parameters,
-        fileCache,
-      }),
-    )
+  const getQueryValue = async (query: string) => {
+    try {
+      return await pString(
+        query,
+        buildMyServerPStringContext({
+          parameters,
+          fileCache,
+        }),
+      )
+    } catch (error) {
+      const location: AnswerErrorFileLocation = { line: -1 }
+      if (element?.range) {
+        // TODO: I don't think this makes sense for passed-in element but...
+        const stringifiedContent =
+          "content" in params ? params.content : root.toString()
+        const [startPos, _endPos] = element.range
+        // The count of all new lines before startPos
+        location.line =
+          stringifiedContent.slice(0, startPos).matchAll(/\n/g).toArray()
+            .length + 1
+        // Column is the distance between startPos and the most recent newline
+        const lastNewline = stringifiedContent
+          .slice(0, startPos)
+          .lastIndexOf("\n")
+        location.column =
+          lastNewline === -1 ? startPos : startPos - lastNewline - 1
+      }
+      throw new AnswerError(
+        ((parameters.contentPath ?? parameters.contentPathOrContentTitle) as
+          | string
+          | undefined) ?? "anonymous",
+        location,
+        query,
+        error,
+      )
+    }
   }
   const meta: Meta = {}
   const links: Array<string> = []
@@ -52,12 +84,15 @@ export const applyTemplating = async (
   let alreadySetForNextIteration: Node | null = null
   let stopAtElement: HTMLElement | null = null
 
+  // TODO: If root selector is body, this prevents all processing in head which
+  // disallows "declare" to be safely put there. Hum but this isn't an issue yet?
   if (rootSelector) {
     const selectedRoot = root.querySelector(rootSelector)
     if (!selectedRoot) return { content: "", meta, links }
     root = selectedRoot
     stopAtElement = root.nextElementSibling
   }
+  let element: HTMLElement
   do {
     alreadySetForNextIteration = null
     if (treeWalker.currentNode.nodeType !== NodeType.ELEMENT_NODE) {
@@ -65,7 +100,7 @@ export const applyTemplating = async (
         `Treewalker showed a non-HTMLElement Node '${treeWalker.currentNode}'`,
       )
     }
-    const element = treeWalker.currentNode as HTMLElement
+    element = treeWalker.currentNode as HTMLElement
     if (stopAtElement && element === stopAtElement) break
 
     const attributeEntries = Object.entries(element.attributes)
@@ -209,10 +244,13 @@ export const applyTemplating = async (
             throw new Error("Shouldn't have gotten here")
           }
           alreadySetForNextIteration = treeWalker.nextNodeNotChildren()
-          // TODO: apply templating here to children
+          const topLevelParameters = parameters
           for (const index in queryValue.reverse()) {
             const current = queryValue[index]
-            const parameters: ParameterValue = {}
+            const parameters: ParameterValue = {
+              ...topLevelParameters,
+              select: undefined,
+            }
             setParameterWithSource(
               parameters,
               "list",
@@ -384,7 +422,7 @@ export const applyTemplating = async (
     if (!selected)
       throw new QueryError(
         400,
-        `selector ${selector} did not match any elements`,
+        `parameters.select: '${selector}' did not match any elements`,
       )
     return { content: selected.innerHTML.toString(), meta, links }
   }

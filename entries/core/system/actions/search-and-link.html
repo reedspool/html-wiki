@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en-US">
   <head>
-    <declare- dialog></declare->
+    <declare- dialog query></declare->
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <keep-if truthy="dialog!==undefined">
@@ -86,8 +86,8 @@
             ipath="currentListItem.contentPath"
             ititle="or(currentListItem.meta.title,currentListItem.name)"
             iname="currentListItem.name"
-            markdown-link='`[${ititle}](<${ipath}> "${iname}")`'
-            html-link='`<a href="${ipath}" title="${ititle}">${iname}</a>`'
+            markdownlink='`[${ititle}](<${ipath}> "${iname}")`'
+            atag='`<a href="${ipath}" title="${ititle}">${iname}</a>`'
           >
           </set->
           <li copy-target-container>
@@ -116,16 +116,12 @@
                 <keep-if truthy="dialog===undefined">
                   <div>
                     Copy
-                    <button
-                      type="button"
-                      x-copy='parameters["html-link"]'
-                      title="Copy HTML link"
-                    >
+                    <button type="button" x-copy="atag" title="Copy HTML link">
                       <code>&lt;a&gt;</code>
                     </button>
                     <button
                       type="button"
-                      x-copy='parameters["markdown-link"]'
+                      x-copy="markdownlink"
                       title="Copy Markdown link"
                     >
                       <code>[]()</code>
@@ -140,14 +136,14 @@
                     Insert
                     <button
                       type="button"
-                      x-insert='parameters["html-link"]'
+                      x-insert="atag"
                       title="Insert HTML link"
                     >
                       <code>&lt;a&gt;</code>
                     </button>
                     <button
                       type="button"
-                      x-insert='parameters["markdown-link"]'
+                      x-insert="markdownlink"
                       title="Insert Markdown link"
                     >
                       <code>[]()</code>

@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
   <head>
+    <declare- errorMessage originalError></declare->
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>Unknown Error Occurred</title>
@@ -22,7 +23,7 @@
         The server recovered well enough to send this formatted message. It
         didn't crash, yippee.
       </p>
-      <drop-if truthy="parameters.errorMessage">
+      <drop-if truthy="errorMessage">
         <p>
           This is distinct from a well-defined error, such as when a file is
           expected but missing, a 404. In this case, very limited information is
@@ -36,8 +37,13 @@
         </p>
       </drop-if>
 
-      <keep-if truthy="parameters.errorMessage">
-        <p>Error message: <code x-content="errorMessage" /></p>
+      <keep-if truthy="errorMessage">
+        <p>Error message: <code x-escape-content="errorMessage" /></p>
+        <keep-if truthy="originalError">
+          <p>
+            Original error message: <code x-escape-content="originalError" />
+          </p>
+        </keep-if>
       </keep-if>
     </keep-if>
   </body>
