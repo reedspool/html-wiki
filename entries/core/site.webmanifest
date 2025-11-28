@@ -16,7 +16,7 @@
   ],
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
-  "display": "minimal-ui",
+  "display": "browser",
   "share_target": {
     "action": "/system/shared-content-receiver.html",
     "method": "POST",
