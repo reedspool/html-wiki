@@ -13,6 +13,7 @@ import {
 import debug from "debug"
 import { configuredFiles } from "./configuration.mts"
 import { buildCache } from "./fileCache.mts"
+import { writeFile } from "fs/promises"
 const log = debug("cli:main")
 
 let server: Awaited<ReturnType<typeof createServer>>
@@ -111,13 +112,27 @@ program
         "query param",
       )
       let outputPath = contentPath
-      const readResult = await execute({
-        parameters: readParameters,
-        fileCache: sourceFileCache,
-      })
-
-      if (/\.md$/.test(outputPath)) {
-        outputPath = outputPath.replace(/\.md$/, ".html")
+      let outputContent: Buffer | string
+      const { renderability } = sourceFileCache.getByContentPath(contentPath)!
+      switch (renderability) {
+        case "static":
+          outputContent =
+            sourceFileCache.getByContentPath(contentPath)?.originalContent
+              .buffer!
+          break
+        case "html":
+        case "markdown":
+          const readResult = await execute({
+            parameters: readParameters,
+            fileCache: sourceFileCache,
+          })
+          outputContent = readResult.content
+          if (renderability === "markdown")
+            outputPath = outputPath.replace(/\.md$/, ".html")
+          break
+        default:
+          const _exhaustiveCheck: never = renderability
+          throw new Error(`Renderability unaccounted for: ${_exhaustiveCheck}`)
       }
 
       const writeParameters: ParameterValue = {}
@@ -125,7 +140,7 @@ program
         writeParameters,
         {
           contentPath: outputPath,
-          content: readResult.content,
+          content: outputContent,
           command: "create",
         },
         "query param",

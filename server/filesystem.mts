@@ -28,7 +28,7 @@ export const createFileAndDirectories = async ({
 }: {
   contentPath: string
   directory: string
-  content: string
+  content: string | Buffer
 }) => {
   assertHappyFilePath(contentPath)
   let fd
@@ -37,7 +37,7 @@ export const createFileAndDirectories = async ({
       recursive: true,
     })
     fd = await open(filePath({ contentPath, directory }), "wx")
-    content = cleanContent({ content })
+    if (typeof content === "string") content = cleanContent({ content })
     await writeFile(fd, content)
     return content
   } catch (error) {

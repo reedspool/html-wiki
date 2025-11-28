@@ -47,7 +47,7 @@ export type FileCache = {
   fileExists: (path: string) => ReturnType<typeof fileExists>
   createFileAndDirectories: (params: {
     contentPath: string
-    content: string
+    content: string | Buffer
   }) => ReturnType<typeof createFileAndDirectories>
   updateFile: (params: {
     contentPath: string

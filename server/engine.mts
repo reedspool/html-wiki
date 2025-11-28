@@ -103,7 +103,7 @@ export const execute = async ({
 
       await fileCache.createFileAndDirectories({
         contentPath: stringParameterValue(parameters, "contentPath"),
-        content: stringParameterValue(parameters, "content"),
+        content: stringOrBufferParameterValue(parameters, "content"),
       })
       return {
         status: Status.OK,
@@ -337,6 +337,18 @@ export const stringParameterValue = (
   const parameter = property in parameterVCasted && parameterVCasted[property]
   if (typeof parameter !== "string")
     throw new Error(`String required for property '${property}'`)
+  return parameter
+}
+
+export const stringOrBufferParameterValue = (
+  parameterV: unknown,
+  property: string,
+): string | Buffer => {
+  // Temporarily and carefully cast
+  const parameterVCasted = parameterV as ParameterValue
+  const parameter = property in parameterVCasted && parameterVCasted[property]
+  if (typeof parameter !== "string" && !(parameter instanceof Buffer))
+    throw new Error(`String or Buffer required for property '${property}'`)
   return parameter
 }
 
