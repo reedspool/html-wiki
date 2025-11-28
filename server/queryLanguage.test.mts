@@ -389,3 +389,23 @@ test("render(parameters.contentPath) renders a page", o, async () => {
     /Home/,
   )
 })
+
+test(
+  "in pString, undeclared variables are all undefined instead of an error",
+  o,
+  async () => {
+    assert.equal(await pString("foo", {}), undefined)
+    assert.equal(await pString("(() => foo)", {}), undefined)
+    assert.equal(await pString("foo = 3", {}), 3)
+    // It doesn't hurt anything for the already-declared special values
+    const parameters = {}
+    assert.equal(await pString("parameters", { parameters }), parameters)
+    assert.equal(await pString("() => p", {}), p)
+    // It doesn't hurt globals
+    assert.equal(await pString("JSON", {}), JSON)
+  },
+)
+
+test("in pString, can await a top-level function", o, async () => {
+  assert.equal(await pString("await fn()", { fn: async () => 3 }), 3)
+})

@@ -329,27 +329,6 @@ export const applyTemplating = async (
       case "DEBUGGER-":
         debugger
         break
-      case "DECLARE-":
-        {
-          for (const [parameterName, _] of Object.entries(element.attributes)) {
-            // TODO: This sets the parameter for everything after this,
-            // but it would be cool if parameters were a scope concept
-            // and this could createa new scope only for the processing
-            // of the contents of this tag
-            if (!(parameterName in parameters)) {
-              setParameterWithSource(
-                parameters,
-                parameterName,
-                undefined,
-                "declared",
-              )
-            }
-          }
-          // Ignore children completely
-          alreadySetForNextIteration = treeWalker.nextNodeNotChildren()
-          element.remove()
-        }
-        break
       case "SET-":
         {
           for (const [parameterName, query] of Object.entries(

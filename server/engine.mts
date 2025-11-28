@@ -278,7 +278,6 @@ export type ParameterSources =
   | "request body"
   | "url facts"
   | "server configured"
-  | "declared"
 export const setParameterWithSource = (
   parameters: ParameterValue | string,
   key: keyof ParameterValue,
