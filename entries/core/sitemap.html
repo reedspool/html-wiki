@@ -17,39 +17,58 @@
           line-height: 1.2em; /* Empirically largest w no gap */
           padding-inline-start: 0;
           & ul {
-            list-style-type: "├─";
             & li {
+              padding-inline-start: 1rem;
               &:last-child {
-                list-style-type: "└─";
               }
             }
           }
         }
       }
     </style>
-    <p>Ordered by last modified</p>
+    <p>Ordered by directory structure</p>
     <site-map>
+      <drop-if truthy="true">
+        This is always dropped, unless `rootSelector: 'template-'`. So this
+        works with no custom DOM manipulation. Will probably make it a
+        first-level thing at some point.
+        <ul id="my-template-li">
+          <map-list
+            q="Object.entries(directoryContents).map(([dir, contents]) => ({ dir, contents, fileDetails: typeof contents === 'string' && fileCache.getByContentPath(contents) }))"
+          >
+            <li>
+              <keep-if truthy="typeof currentListItem.contents === 'string'">
+                <set-
+                  ipath="currentListItem.contents"
+                  iname="or(currentListItem.fileDetails?.meta?.title,currentListItem.fileDetails.name)"
+                >
+                </set->
+                <a x-href=" ipath" x-content="iname"></a>
+                -
+                <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
+              </keep-if>
+              <drop-if truthy="typeof currentListItem.contents === 'string'">
+                <details>
+                  <summary x-content="`/${currentListItem.dir}/`"></summary>
+                  <ul>
+                    <query-content
+                      q="render(contentPath, {rootSelector: '#my-template-li', directoryContents: currentListItem.contents, contentPath })"
+                    >
+                    </query-content>
+                  </ul>
+                </details>
+              </drop-if>
+            </li>
+          </map-list>
+        </ul>
+      </drop-if>
       <ul>
         <li>
           <a href="/">/</a>
-          <ul>
-            <map-list
-              q="site.allFiles, (list)=>list.toSorted((a,b)=>b.modifiedTimeMs-a.modifiedTimeMs)"
-            >
-              <set-
-                ipath="currentListItem.contentPath"
-                iname="or(currentListItem.meta.title,currentListItem.name)"
-              >
-              </set->
-              <li>
-                <span>
-                  <a x-href="ipath" x-content="iname"></a>
-                  -
-                  <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
-                </span>
-              </li>
-            </map-list>
-          </ul>
+          <query-content
+            q="render(contentPath, {rootSelector: '#my-template-li', directoryContents: (await site.fileTree), contentPath })"
+          >
+          </query-content>
         </li>
       </ul>
     </site-map>

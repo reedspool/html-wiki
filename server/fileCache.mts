@@ -16,7 +16,8 @@ import {
 } from "./filesystem.mts"
 import debug from "debug"
 import { MissingFileQueryError } from "./error.mts"
-import { parseFrontmatter, renderMarkdown } from "./utilities.mts"
+import { deepFreeze, parseFrontmatter, renderMarkdown } from "./utilities.mts"
+import type { ReadonlyDeep } from "type-fest"
 const log = debug("server:fileCache")
 type FileContentsAndMetaData = {
   originalContent: ReadResults
@@ -37,6 +38,9 @@ export type FileCache = {
   }) => Promise<void>
   removeFileFromCacheData: (params: { contentPath: string }) => Promise<void>
   getListOfFilesAndDetails: () => Promise<Array<FileContentsAndDetails>>
+  getContentPathsByDirectoryStructure: () => Promise<
+    ReadonlyDeep<ContentPathsByDirectoryStructure>
+  >
   getByContentPath: (path: string) => FileContentsAndDetails | undefined
   getByTitle: (title: string) => FileContentsAndDetails | undefined
   getByContentPathOrContentTitle: (
@@ -63,12 +67,24 @@ export const buildEmptyCache = async (): ReturnType<typeof buildCache> => {
   return createFreshCache({ searchDirectories: [] })
 }
 
+export type ContentPathsByDirectoryStructureEntry =
+  | string
+  | { [key in string]: ContentPathsByDirectoryStructureEntry }
+export type ContentPathsByDirectoryStructure = Record<
+  string,
+  ContentPathsByDirectoryStructureEntry
+>
+
 export const createFreshCache = async ({
   searchDirectories,
 }: {
   searchDirectories: string[]
 }): Promise<FileCache> => {
   let listOfFilesAndDetails: FileContentsAndDetails[] = []
+  let contentPathsByDirectoryStructure: ReadonlyDeep<ContentPathsByDirectoryStructure> =
+    {}
+  let backLinksByContentPath: Record<string, Array<string>> = {}
+  let keywordsToContentPaths: Record<string, Array<string>> = {}
   const filesByTitle: Record<string, FileContentsAndDetails> = {}
   const filesByContentPath: Record<string, FileContentsAndDetails> = {}
   const addFileToCacheData: FileCache["addFileToCacheData"] = async ({
@@ -120,9 +136,6 @@ export const createFreshCache = async ({
   }
 
   const getListOfFilesAndDetails = async () => [...listOfFilesAndDetails]
-
-  let backLinksByContentPath: Record<string, Array<string>> = {}
-  let keywordsToContentPaths: Record<string, Array<string>> = {}
   const getBacklinksByContentPath: (
     path: string,
   ) => Promise<Array<string>> = async (path) => {
@@ -140,6 +153,8 @@ export const createFreshCache = async ({
   }
   const allKeywords = async () => Object.keys(keywordsToContentPaths)
   const rebuildMetaCache: FileCache["rebuildMetaCache"] = async () => {
+    let contentPathsByDirectoryStructureTmp: ContentPathsByDirectoryStructure =
+      {}
     keywordsToContentPaths = {}
     backLinksByContentPath = {}
     for (const {
@@ -159,12 +174,45 @@ export const createFreshCache = async ({
           backLinksByContentPath[destinationContentPath] = []
         backLinksByContentPath[destinationContentPath].push(sourceContentPath)
       }
+      // All entries have a leading slash, so discard that, and the end filename
+      const directoryStructure = sourceContentPath.split("/").slice(1, -1)
+      if (directoryStructure.length < 1) {
+        contentPathsByDirectoryStructureTmp[sourceContentPath] =
+          sourceContentPath
+      } else {
+        let currentDirectoryLevel = contentPathsByDirectoryStructureTmp
+        for (const directory of directoryStructure) {
+          if (directory in currentDirectoryLevel) {
+            if (typeof currentDirectoryLevel[directory] === "string") {
+              console.error({
+                message: "Expected directory to be object",
+                directory,
+                currentDirectoryLevel,
+              })
+              throw new Error("Name conflict between directory and filename")
+            } else {
+              currentDirectoryLevel = currentDirectoryLevel[directory]
+            }
+          } else {
+            currentDirectoryLevel = currentDirectoryLevel[directory] = {}
+          }
+        }
+        currentDirectoryLevel[sourceContentPath] = sourceContentPath
+      }
     }
+
+    contentPathsByDirectoryStructure = deepFreeze(
+      contentPathsByDirectoryStructureTmp,
+    )
   }
+
+  const getContentPathsByDirectoryStructure = async () =>
+    contentPathsByDirectoryStructure
 
   const fileCache: FileCache = {
     rebuildMetaCache,
     getListOfFilesAndDetails,
+    getContentPathsByDirectoryStructure,
     getContentPathsForKeyword,
     getBacklinksByContentPath,
     allKeywords,
@@ -299,8 +347,7 @@ const getFileContentsAndMetadata = async ({
       const result = await applyTemplating({
         fileCache,
         content: readResults.content,
-        parameters: {},
-        rootSelector: "head",
+        parameters: { rootSelector: "head" },
       })
       return {
         meta: result.meta,

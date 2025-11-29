@@ -7,7 +7,12 @@ import {
 } from "./error.mts"
 import { buildMyServerPStringContext, pString } from "./queryLanguage.mts"
 import { escapeHtml } from "./utilities.mts"
-import { type ParameterValue, setParameterWithSource } from "./engine.mts"
+import {
+  maybeStringParameterValue,
+  type ParameterValue,
+  setParameterWithSource,
+  stringParameterValue,
+} from "./engine.mts"
 import debug from "debug"
 import { type FileCache } from "./fileCache.mts"
 const log = debug("server:dom")
@@ -31,7 +36,7 @@ export const applyTemplating = async (
   meta: Meta
   links: Array<string>
 }> => {
-  const { parameters, rootSelector, fileCache } = params
+  const { parameters, fileCache } = params
   const getQueryValue = async (query: string) => {
     try {
       return await pString(
@@ -79,19 +84,21 @@ export const applyTemplating = async (
   } else {
     throw new Error("element or content is required")
   }
-  const treeWalker = new TreeWalker(root, NodeFilter.SHOW_ELEMENT)
 
   let alreadySetForNextIteration: Node | null = null
-  let stopAtElement: HTMLElement | null = null
 
   // TODO: If root selector is body, this prevents all processing in head which
   // disallows "declare" to be safely put there. Hum but this isn't an issue yet?
-  if (rootSelector) {
-    const selectedRoot = root.querySelector(rootSelector)
+  if (maybeStringParameterValue(parameters, "rootSelector")) {
+    const selectedRoot = root.querySelector(
+      stringParameterValue(parameters, "rootSelector"),
+    )
     if (!selectedRoot) return { content: "", meta, links }
     root = selectedRoot
-    stopAtElement = root.nextElementSibling
   }
+
+  const treeWalker = new TreeWalker(root, NodeFilter.SHOW_ELEMENT)
+
   let element: HTMLElement
   do {
     alreadySetForNextIteration = null
@@ -101,7 +108,6 @@ export const applyTemplating = async (
       )
     }
     element = treeWalker.currentNode as HTMLElement
-    if (stopAtElement && element === stopAtElement) break
 
     const attributeEntries = Object.entries(element.attributes)
     for (let i = 0; i < attributeEntries.length; i++) {
@@ -245,10 +251,12 @@ export const applyTemplating = async (
           }
           alreadySetForNextIteration = treeWalker.nextNodeNotChildren()
           const topLevelParameters = parameters
+          const originalElementChildren = [...element.children]
           for (const index in queryValue.reverse()) {
             const current = queryValue[index]
             const parameters: ParameterValue = {
               ...topLevelParameters,
+              rootSelector: undefined,
               select: undefined,
             }
             setParameterWithSource(
@@ -268,7 +276,7 @@ export const applyTemplating = async (
             // reverse order (with .after()), start in-order for
             // imperative templating logic like `set-`
             const toPlace = []
-            for (const childElement of element.children) {
+            for (const childElement of originalElementChildren) {
               // This needs to be a clone for two reasons.
               // First it needs to be detached from the parent
               // so that it doesn't continue to try to
@@ -281,8 +289,7 @@ export const applyTemplating = async (
               // item's data), it works.
               const childElementClone = childElement.clone() as HTMLElement
               // This typing is just wrong. Null is perfectly valid
-              //@ts-expect-error
-              childElementClone.parentNode = null
+              childElementClone.parentNode = element.parentNode
               const { content } = await applyTemplating({
                 fileCache,
                 element: childElementClone,
@@ -417,6 +424,7 @@ export type Filter = (
   | NodeFilter["FILTER_SKIP"]
 // Playing with implementing Treewalker https://developer.mozilla.org/en-US/docs/Web/API/TreeWalker
 export class TreeWalker {
+  root: Node
   currentNode: Node
   whatToShow: number
   filter: Filter
@@ -425,12 +433,14 @@ export class TreeWalker {
     whatToShow: number = NodeFilter.SHOW_ALL,
     filter: Filter = () => NodeFilter.FILTER_ACCEPT,
   ) {
+    this.root = root
     this.currentNode = root
     this.whatToShow = whatToShow
     this.filter = filter
   }
 
   parentNode() {
+    if (this.currentNode === this.root) return null
     let node = this.currentNode.parentNode
     while (node) {
       if (this.visible(node)) {
@@ -466,6 +476,7 @@ export class TreeWalker {
   }
 
   nextSibling(): Node | null {
+    if (this.currentNode === this.root) return null
     let i = 0
     if (!this.currentNode.parentNode) return null
     const generation = this.currentNode.parentNode.childNodes
@@ -485,6 +496,7 @@ export class TreeWalker {
   }
 
   previousSibling(): Node | null {
+    if (this.currentNode === this.root) return null
     let i = 0
     if (!this.currentNode.parentNode) return null
     const generation = this.currentNode.parentNode.childNodes.reverse()

@@ -116,14 +116,6 @@ export const execute = async ({
       await validateReadParameters(validationIssues, parameters, fileCache)
       if (validationIssues.length > 0)
         return validationErrorResponse(validationIssues)
-      const getQueryValue = (query: string) =>
-        pString(
-          query,
-          buildMyServerPStringContext({
-            parameters,
-            fileCache,
-          }),
-        )
       const readResult = await fileCache.readFile(
         stringParameterValue(parameters, "contentPath"),
       )

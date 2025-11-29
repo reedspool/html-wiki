@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Recently Modified Files</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+
+  <body>
+    <style>
+      site-map {
+        ul {
+          list-style-position: inside;
+          list-style-type: none;
+          line-height: 1.2em; /* Empirically largest w no gap */
+          padding-inline-start: 0;
+          & ul {
+            list-style-type: "├─";
+            & li {
+              &:last-child {
+                list-style-type: "└─";
+              }
+            }
+          }
+        }
+      }
+    </style>
+    <p>Files ordered by last modified</p>
+    <site-map>
+      <ul>
+        <li>
+          <a href="/">/</a>
+          <ul>
+            <map-list
+              q="site.allFiles, (list)=>list.toSorted((a,b)=>b.modifiedTimeMs-a.modifiedTimeMs)"
+            >
+              <set-
+                ipath="currentListItem.contentPath"
+                iname="or(currentListItem.meta.title,currentListItem.name)"
+              >
+              </set->
+              <li>
+                <span>
+                  <a x-href="ipath" x-content="iname"></a>
+                  -
+                  <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
+                </span>
+              </li>
+            </map-list>
+          </ul>
+        </li>
+      </ul>
+    </site-map>
+  </body>
+</html>

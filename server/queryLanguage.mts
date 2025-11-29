@@ -1,13 +1,6 @@
 import { Temporal } from "temporal-polyfill"
 import Fuse from "fuse.js"
-import {
-  maybeAtLeastEmptyStringParameterValue,
-  maybeStringParameterValue,
-  setEachParameterWithSource,
-  setParameterWithSource,
-  stringParameterValue,
-  type ParameterValue,
-} from "./engine.mts"
+import { setParameterWithSource, type ParameterValue } from "./engine.mts"
 import debug from "debug"
 import {
   disallowedParameterNames,
@@ -46,6 +39,8 @@ export const siteProxy = ({ fileCache }: { fileCache: FileCache }) =>
         switch (prop) {
           case "allFiles":
             return fileCache.getListOfFilesAndDetails()
+          case "fileTree":
+            return fileCache.getContentPathsByDirectoryStructure()
           case "search":
             return async (query: string) => {
               const list = await fileCache.getListOfFilesAndDetails()

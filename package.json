@@ -37,6 +37,7 @@
     "multer": "^2.0.2",
     "node-html-parser": "^7.0.1",
     "temporal-polyfill": "^0.3.0",
+    "type-fest": "^5.2.0",
     "watcher": "^2.3.1",
     "yaml": "^2.8.1"
   },

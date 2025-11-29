@@ -8,12 +8,10 @@ import {
   execute,
   type ParameterValue,
   setEachParameterWithSource,
-  setParameterWithSource,
 } from "./engine.mts"
 import debug from "debug"
 import { configuredFiles } from "./configuration.mts"
 import { buildCache } from "./fileCache.mts"
-import { writeFile } from "fs/promises"
 const log = debug("cli:main")
 
 let server: Awaited<ReturnType<typeof createServer>>

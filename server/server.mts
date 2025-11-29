@@ -23,7 +23,6 @@ import debug from "debug"
 import { configuredFiles } from "./configuration.mts"
 import { buildCache } from "./fileCache.mts"
 import { contentType } from "mime-types"
-import Watcher from "watcher"
 import { randomUUID } from "node:crypto"
 const log = debug("server:server")
 const upload = multer()
@@ -357,57 +356,5 @@ export const createServer = async ({
   emitter.on("cleanup", () => {
     listener.close(() => {})
   })
-
-  const watcher = new Watcher([userDirectory, coreDirectory], {
-    recursive: true,
-    ignoreInitial: true,
-  })
-  watcher.on(
-    "all",
-    (event: string, targetPath: string, targetPathNext: string) => {
-      // TODO: Maybe should allow the watcher to do the initial scan?
-      const directory = targetPath.startsWith(userDirectory)
-        ? userDirectory
-        : coreDirectory
-      const contentPath = targetPath.slice(directory.length)
-      log("Watcher event: %o", {
-        event,
-        targetPath,
-        targetPathNext,
-        directory,
-        contentPath,
-      })
-      switch (event) {
-        case "add":
-          fileCache.addFileToCacheData({
-            contentPath,
-          })
-          break
-        case "unlink":
-          // TODO: Just realized I don't have any way to not do this when
-          // the server internals cause these changes. i initially added this
-          // file watcher for editing based on outside edits, but duh it happens
-          // always. So if those are occurring, then this is doubled.
-          // I don't understand why this doesn't occur in my integration tests...
-          // True for add and change but this is more problematic could result in removing a shadowed version
-          fileCache.removeFileFromCacheData({
-            contentPath,
-          })
-          break
-        case "change":
-          fileCache.addFileToCacheData({
-            contentPath,
-          })
-          break
-        default:
-          log("Watcher unhandled event: %o", {
-            event,
-            targetPath,
-            targetPathNext,
-          })
-      }
-    },
-  )
-
   return { cleanup: () => emitter.emit("cleanup") }
 }

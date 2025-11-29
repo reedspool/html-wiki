@@ -2,6 +2,7 @@ import { type Request } from "express"
 import YAML from "yaml"
 import { micromark } from "micromark"
 import { gfmHtml, gfm } from "micromark-extension-gfm"
+import type { ReadonlyDeep } from "type-fest"
 
 // Stolen from NakedJSX https://github.com/NakedJSX/core
 export const escapeHtml = (text: string) => {
@@ -106,3 +107,25 @@ undefined
 `
   .split("\n")
   .map((word) => word.trim())
+
+/**
+ * Deeply freezes an object by recursively freezing all of its properties.
+ *
+ * - https://gist.github.com/tkrotoff/e997cd6ff8d6cf6e51e6bb6146407fc3
+ * - https://stackoverflow.com/a/69656011
+ *
+ * FIXME Should be part of Lodash and related: https://github.com/Maggi64/moderndash/issues/139
+ *
+ * Does not work with Set and Map: https://stackoverflow.com/q/31509175
+ */
+export function deepFreeze<
+  T,
+  // Can cause: "Type instantiation is excessively deep and possibly infinite."
+  //extends Jsonifiable
+>(obj: T): ReadonlyDeep<T> {
+  // @ts-expect-error
+  Object.values(obj).forEach(
+    (value) => Object.isFrozen(value) || deepFreeze(value),
+  )
+  return Object.freeze(obj) as ReadonlyDeep<T>
+}
