@@ -142,11 +142,11 @@ test(
     // All the global page stuff is there
     assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('header nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+    assert.match($1('header nav a[href="/recent.html"]').innerHTML, /Recent/)
 
     assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('footer nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+    assert.match($1('footer nav a[href="/recent.html"]').innerHTML, /Recent/)
 
     // And the content is there
     assert.match($1("h1").innerHTML, /HTML Wiki/)

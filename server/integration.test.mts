@@ -559,8 +559,8 @@ test(
       /Home/,
     )
     assert.match(
-      getEditResponse.$1('header nav a[href="/sitemap.html"]').innerHTML,
-      /Sitemap/,
+      getEditResponse.$1('header nav a[href="/recent.html"]').innerHTML,
+      /Recent/,
     )
 
     assert.match(
@@ -572,8 +572,8 @@ test(
       /Home/,
     )
     assert.match(
-      getEditResponse.$1('footer nav a[href="/sitemap.html"]').innerHTML,
-      /Sitemap/,
+      getEditResponse.$1('footer nav a[href="/recent.html"]').innerHTML,
+      /Recent/,
     )
 
     // TODO: This is an example where this integration test should really
@@ -713,11 +713,11 @@ test(
 
     assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('header nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+    assert.match($1('header nav a[href="/recent.html"]').innerHTML, /Recent/)
 
     assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('footer nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+    assert.match($1('footer nav a[href="/recent.html"]').innerHTML, /Recent/)
 
     await validateAssertAndReport(responseText, url)
   },
@@ -731,11 +731,11 @@ test(
 
     assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('header nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+    assert.match($1('header nav a[href="/recent.html"]').innerHTML, /Recent/)
 
     assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('footer nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+    assert.match($1('footer nav a[href="/recent.html"]').innerHTML, /Recent/)
 
     await validateAssertAndReport(responseText, url)
   },
@@ -768,11 +768,11 @@ test(
 
     assert.match($1("header nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('header nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+    assert.match($1('header nav a[href="/recent.html"]').innerHTML, /Recent/)
 
     assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
-    assert.match($1('footer nav a[href="/sitemap.html"]').innerHTML, /Sitemap/)
+    assert.match($1('footer nav a[href="/recent.html"]').innerHTML, /Recent/)
 
     await validateAssertAndReport(responseText, url)
   },
@@ -919,7 +919,6 @@ test("Query page query", { concurrency: true }, async () => {
     new RegExp(query.replace("*", "\\*")),
     "text area has query contents",
   )
-  console.log(responseText)
   assert.match($1("main pre").innerHTML, /1815/, "query result is displayed")
 
   assert.doesNotMatch(responseText, /type a query/i)
