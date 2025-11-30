@@ -21,7 +21,7 @@ export const escapeHtml = (text: string) => {
 export const urlFromReq = (req: Request) =>
   `${req.protocol}://${req.get("host")}${req.originalUrl}`
 
-export const renderMarkdown = (content: string) =>
+export const renderMarkdown = (content: string): string =>
   micromark(content, {
     allowDangerousHtml: true,
     extensions: [gfm()],

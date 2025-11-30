@@ -21,8 +21,18 @@ And some `inline code` as well as a codeblock:
 const log = () => console.log("log!");
 ```
 
+<p class="static-html">Here's some <em>static</em> HTML content</p>
+
 Now here's some HTML content within inline code `<code><pre>`.
 
 - [ ] Here's a list item with a checkbox
+
+<drop-if truthy="dropit !== undefined">
+  <p class="dropped">This would be dropped if templating is applied AND the dropit query is supplied</p>
+</drop-if>
+
+<keep-if truthy="dropit !== undefined">
+  <p class="kept">This would be kept when templating is applied AND the dropit query is supplied</p>
+</keep-if>
 
 [index]: /index "Reference link to index"

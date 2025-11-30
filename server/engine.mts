@@ -127,17 +127,19 @@ export const execute = async ({
         } else {
           content = originalContent.content
         }
-      } else if (parameters.renderMarkdown !== undefined) {
-        if (typeof parameters.contentPath !== "string") throw new Error()
-        content = await specialRenderMarkdown({
-          contentPath: parameters.contentPath,
-          fileCache,
-          content: originalContent.content,
-        })
       } else {
+        let originalContentContent = originalContent.content
+        if (parameters.renderMarkdown !== undefined) {
+          if (typeof parameters.contentPath !== "string") throw new Error()
+          originalContentContent = await specialRenderMarkdown({
+            contentPath: parameters.contentPath,
+            fileCache,
+            content: originalContentContent,
+          })
+        }
         const templateApplicationResults = await applyTemplating({
           fileCache,
-          content: originalContent.content,
+          content: originalContentContent,
           parameters: parameters,
         })
         content = templateApplicationResults.content

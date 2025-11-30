@@ -97,10 +97,11 @@ export const renderer =
       }
       return contentFileReadResult.content
     }
+    let content = contentFileReadResult.content
     if (parameters.renderMarkdown !== undefined) {
       if (typeof parameters.contentPath !== "string") throw new Error()
-      return specialRenderMarkdown({
-        content: contentFileReadResult.content,
+      content = await specialRenderMarkdown({
+        content,
         contentPath: parameters.contentPath,
         fileCache,
       })
@@ -115,7 +116,7 @@ export const renderer =
     return (
       await applyTemplating({
         fileCache,
-        content: contentFileReadResult.content,
+        content,
         parameters,
       })
     ).content
@@ -129,7 +130,7 @@ export const specialRenderMarkdown = async ({
   content: string
   contentPath: string
   fileCache: FileCache
-}) => {
+}): Promise<string> => {
   {
     // Find all reference link definitions
     const labels = Array.from(content.matchAll(/\[([^\]]+)\]([^(:]|$)/g))

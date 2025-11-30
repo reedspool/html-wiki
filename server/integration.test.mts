@@ -188,6 +188,17 @@ test(
     assert.match(inlineCode[0].innerHTML, /inline code/)
     assert.match(inlineCode[1].innerHTML, /&lt;code&gt;&lt;pre&gt;/)
     assert.equal(inlineCode[2], undefined)
+    assert.match(
+      $1("p.static-html").innerText,
+      /Here's some static HTML content/i,
+    )
+    assert.match(
+      $1("p.dropped").innerText,
+      /This would be dropped if templating is applied AND the dropit query is supplied/i,
+    )
+    assert.equal($1("p.kept"), null)
+
+    assert.match($1("p.static-html em").innerText, /static/i)
     // Don't know why `pre code` doesn't work, but meh, probably
     // idiosyncracy with the parser library
     assert.match($1("pre").innerHTML, /<code/)
@@ -199,6 +210,38 @@ test(
     // The page should be exactly the same if we get it via its title
     const { responseText: byTitleResponseText } = await getPath(
       `/Markdown Fixture File Title`,
+    )
+    assert.strictEqual(responseText, byTitleResponseText)
+  },
+)
+
+test(
+  "Can get markdown entry rendered as HTML and query parameter affects output",
+  { concurrency: true },
+  async () => {
+    const { url, responseText, $1, $ } = await getPath(
+      `${configuredFiles.testMarkdownFile}?dropit`,
+    )
+
+    // Some markdown has been transformed!
+    assert.match($1("h1").innerHTML, /Markdown Fixture File Title/)
+    assert.match($1("h2").innerHTML, /Second heading/)
+    assert.equal($1("input[type=checkbox]").getAttribute("disabled")!, "")
+    assert.match(
+      $1("p.static-html").innerText,
+      /Here's some static HTML content/i,
+    )
+    assert.equal($1("p.dropped"), null)
+    assert.match(
+      $1("p.kept").innerHTML,
+      /This would be kept when templating is applied AND the dropit query is supplied/i,
+    )
+
+    await validateAssertAndReport(responseText, url)
+
+    // The page should be exactly the same if we get it via its title
+    const { responseText: byTitleResponseText } = await getPath(
+      `/Markdown Fixture File Title?dropit`,
     )
     assert.strictEqual(responseText, byTitleResponseText)
   },
@@ -296,6 +339,14 @@ test(
     assert.equal($1("h1"), null)
     assert.equal($1("h2"), null)
     assert.equal($1("input[type=checkbox]"), null)
+    // TODO: "raw" is a little ambiguous if HTML should work. Maybe a
+    // `plaintext` query vs a `norender` (dont render markdown) and `noapply`
+    // (dont apply HTML templates) are all separate concepts
+    assert.match(
+      $1("p.static-html").innerText,
+      /Here's some static HTML content/i,
+    )
+    assert.match($1("p.static-html em").innerText, /static/i)
 
     // One of the links has not been transformed
     assert.match(responseText, /[Google][https:\/\/www.google.com]/)

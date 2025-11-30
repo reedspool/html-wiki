@@ -334,53 +334,57 @@ const getFileContentsAndMetadata = async ({
     createdTimeMs: stats.ctimeMs,
     modifiedTimeMs: stats.mtimeMs,
   }
-  if (/\.html$/.test(contentPath) && !/\.fragment\.html$/.test(contentPath)) {
+  const isMarkdown = /\.md$/.test(contentPath)
+  if (
+    isMarkdown ||
+    (/\.html$/.test(contentPath) && !/\.fragment\.html$/.test(contentPath))
+  ) {
+    let content = readResults.content
+    const returnVal: FileContentsAndMetaData = {
+      meta: {},
+      originalContent: readResults,
+      renderability: "html",
+      links: [],
+      ...myStats,
+    }
+    if (isMarkdown) {
+      try {
+        returnVal.renderability = "markdown"
+        const parsedFrontmatter = parseFrontmatter(content)
+        if (parsedFrontmatter.frontmatter) {
+          Object.assign(returnVal.meta, parsedFrontmatter.frontmatter)
+        }
+        const markdownContent = renderMarkdown(content)
+        const root = parseHtml(markdownContent)
+        const h1 = root.querySelector("h1")
+        if (!returnVal.meta.title && h1) {
+          returnVal.meta.title = h1.innerText
+        }
+        root.querySelectorAll("a").forEach((a) => {
+          const href = a.getAttribute("href")
+          if (href) returnVal.links.push(href)
+        })
+      } catch (error) {
+        throw new Error(
+          `Couldn't apply templating for '${contentPath}': ${error}`,
+        )
+      }
+    }
+
     try {
       const result = await applyTemplating({
         fileCache,
         content: readResults.content,
         parameters: { rootSelector: "head", noselect: true },
       })
-      return {
-        meta: result.meta,
-        originalContent: readResults,
-        renderability: "html",
-        links: result.links,
-        ...myStats,
-      }
+
+      Object.assign(returnVal.meta, result.meta)
+      // TODO: This is going to double all the markdown-discovered links :-/ Maybe just don't get links from Markdown?
+      returnVal.links.push(...result.links)
+
+      return returnVal
     } catch (error) {
       console.error("Templating error:", error)
-      throw new Error(
-        `Couldn't apply templating for '${contentPath}': ${error}`,
-      )
-    }
-  } else if (/\.md$/.test(contentPath)) {
-    try {
-      const meta: Meta = {}
-
-      const parsedFrontmatter = parseFrontmatter(readResults.content)
-      if (parsedFrontmatter.frontmatter) {
-        Object.assign(meta, parsedFrontmatter.frontmatter)
-      }
-      const markdownContent = renderMarkdown(readResults.content)
-      const root = parseHtml(markdownContent)
-      const h1 = root.querySelector("h1")
-      if (!meta.title && h1) {
-        meta.title = h1.innerText
-      }
-      const links: string[] = []
-      root.querySelectorAll("a").forEach((a) => {
-        const href = a.getAttribute("href")
-        if (href) links.push(href)
-      })
-      return {
-        meta,
-        originalContent: readResults,
-        renderability: "markdown",
-        links,
-        ...myStats,
-      }
-    } catch (error) {
       throw new Error(
         `Couldn't apply templating for '${contentPath}': ${error}`,
       )
