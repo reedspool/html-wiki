@@ -21,7 +21,7 @@ import {
 } from "./engine.mts"
 import debug from "debug"
 import { configuredFiles } from "./configuration.mts"
-import { buildCache } from "./fileCache.mts"
+import { type FileCache } from "./fileCache.mts"
 import { contentType } from "mime-types"
 import { randomUUID } from "node:crypto"
 const log = debug("server:server")
@@ -30,11 +30,12 @@ const upload = multer()
 export const createServer = async ({
   port,
   coreDirectory,
-  userDirectory,
+  fileCache,
 }: {
   port: number
   coreDirectory: string
   userDirectory: string
+  fileCache: FileCache
 }) => {
   // Create an event emitter to handle cross-cutting communications
   const emitter = new EventEmitter()
@@ -42,10 +43,6 @@ export const createServer = async ({
   // Only be warned if the number of listeners for a specific event goes above
   // this number. The warning will come in logs (MaxListenersExceededWarning)
   emitter.setMaxListeners(100)
-
-  const fileCache = await buildCache({
-    searchDirectories: [userDirectory, coreDirectory],
-  })
 
   const app = express()
   const baseURL = `localhost:${port}`

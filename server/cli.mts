@@ -1,6 +1,7 @@
 // Catch and snuff all uncaught exceptions and uncaught promise rejections.
 // We can manually restart the server if it gets into a bad state, but we want
 
+import Watcher from "watcher"
 import { normalize } from "path"
 import { createServer } from "./server.mts"
 import { Command } from "@commander-js/extra-typings"
@@ -11,7 +12,8 @@ import {
 } from "./engine.mts"
 import debug from "debug"
 import { configuredFiles } from "./configuration.mts"
-import { buildCache } from "./fileCache.mts"
+import { buildCache, type FileCache } from "./fileCache.mts"
+import { removeFile } from "./filesystem.mts"
 const log = debug("cli:main")
 
 let server: Awaited<ReturnType<typeof createServer>>
@@ -43,6 +45,7 @@ program
     if (!options.userDirectory) {
       throw new Error("--user-directory option is required")
     }
+    const { userDirectory, coreDirectory } = options
     let port: number
     if (process.env.PORT !== undefined) {
       port = Number(process.env.PORT)
@@ -55,8 +58,60 @@ program
       log(`Using default port ${port}`)
     }
     if (options.ignoreErrors) ignoreErrors()
+    const searchDirectories = [userDirectory, coreDirectory]
+    const fileCache = await buildCache({
+      searchDirectories,
+    })
+    setupWatcher({ searchDirectories }).on(
+      "all",
+      (event: string, targetPath: string, targetPathNext: string) => {
+        // TODO: Maybe should allow the watcher to do the initial scan?
+        const directory = targetPath.startsWith(userDirectory)
+          ? userDirectory
+          : coreDirectory
+        const contentPath = targetPath.slice(directory.length)
+        log("Watcher event: %o", {
+          event,
+          targetPath,
+          targetPathNext,
+          directory,
+          contentPath,
+        })
+        switch (event) {
+          case "add":
+            fileCache.addFileToCacheData({
+              contentPath,
+            })
+            break
+          case "unlink":
+            // TODO: Just realized I don't have any way to not do this when
+            // the server internals cause these changes. i initially added this
+            // file watcher for editing based on outside edits, but duh it happens
+            // always. So if those are occurring, then this is doubled.
+            // I don't understand why this doesn't occur in my integration tests...
+            // True for add and change but this is more problematic could result in removing a shadowed version
+            fileCache.removeFileFromCacheData({
+              contentPath,
+            })
+            break
+          case "change":
+            fileCache.addFileToCacheData({
+              contentPath,
+            })
+            break
+          default:
+            log("Watcher unhandled event: %o", {
+              event,
+              targetPath,
+              targetPathNext,
+            })
+        }
+      },
+    )
+
     server = await createServer({
       port,
+      fileCache,
       coreDirectory: normalize(options.coreDirectory),
       userDirectory: normalize(options.userDirectory),
     })
@@ -68,6 +123,7 @@ program
   .option("-c, --core-directory <string>", "where to read core files", "")
   .option("-u, --user-directory <string>", "where to read user files")
   .option("-o, --out-directory <string>", "where to write files", "./build")
+  .option("-w, --watch", "watch source files and rebuild", false)
   .action(async (options) => {
     log(options)
     if (!options.coreDirectory) {
@@ -87,19 +143,21 @@ program
       )
       process.exit(1)
     }
+    const { coreDirectory, userDirectory, outDirectory } = options
+    const searchDirectories = [userDirectory, coreDirectory]
     const sourceFileCache = await buildCache({
-      searchDirectories: [options.userDirectory, options.coreDirectory],
+      searchDirectories,
     })
     const destinationFileCache = await buildCache({
-      searchDirectories: [options.outDirectory],
+      searchDirectories: [outDirectory],
     })
     const files = (await sourceFileCache.getListOfFilesAndDetails()).map(
       ({ contentPath }) => contentPath,
     )
 
-    log(`Writing files to ${options.outDirectory}:`, "\n" + files.join("\n"))
+    log(`Writing files to ${outDirectory}:`, "\n" + files.join("\n"))
     log(`Using default page template '${configuredFiles.defaultPageTemplate}'`)
-    files.forEach(async (contentPath) => {
+    const writeFile = async (contentPath: string) => {
       const readParameters: ParameterValue = {}
       setEachParameterWithSource(
         readParameters,
@@ -147,7 +205,90 @@ program
         parameters: writeParameters,
         fileCache: destinationFileCache,
       })
-    })
+    }
+    const fileWritingPromises = files.map(writeFile)
+
+    await Promise.all(fileWritingPromises)
+
+    if (options.watch) {
+      searchDirectories.forEach((dir) =>
+        console.log(`Watching files in ${normalize(dir)}`),
+      )
+      setupWatcher({ searchDirectories }).on(
+        "all",
+        async (event: string, targetPath: string, targetPathNext: string) => {
+          // TODO: Maybe should allow the watcher to do the initial scan?
+          const directory = targetPath.startsWith(userDirectory)
+            ? userDirectory
+            : coreDirectory
+          const contentPath = targetPath.slice(directory.length)
+          log("Watcher event: %o", {
+            event,
+            targetPath,
+            targetPathNext,
+            directory,
+            contentPath,
+          })
+          switch (event) {
+            case "add":
+              await sourceFileCache.addFileToCacheData({
+                contentPath,
+              })
+              await writeFile(contentPath)
+              break
+            case "unlink":
+              // TODO: Just realized I don't have any way to not do this when
+              // the server internals cause these changes. i initially added this
+              // file watcher for editing based on outside edits, but duh it happens
+              // always. So if those are occurring, then this is doubled.
+              // I don't understand why this doesn't occur in my integration tests...
+              // True for add and change but this is more problematic could result in removing a shadowed version
+              await execute({
+                fileCache: sourceFileCache,
+                parameters: {
+                  command: "delete",
+                  contentPath,
+                },
+              })
+              await execute({
+                fileCache: destinationFileCache,
+                parameters: {
+                  command: "delete",
+                  contentPath,
+                },
+              })
+
+              // If shadow was uncovered
+              if (sourceFileCache.getByContentPath(contentPath)) {
+                await writeFile(contentPath)
+              }
+              break
+            case "change":
+              // TODO: Engine "update" command takes the new content as parametre and writes the file,
+              // maybe server should do that and then this could be execute "update"
+              await sourceFileCache.removeFileFromCacheData({ contentPath })
+              await sourceFileCache.addFileToCacheData({ contentPath })
+
+              await execute({
+                fileCache: destinationFileCache,
+                parameters: {
+                  command: "delete",
+                  contentPath,
+                },
+              })
+
+              writeFile(contentPath)
+              break
+            default:
+              log("Watcher unhandled event: %o", {
+                event,
+                targetPath,
+                targetPathNext,
+              })
+          }
+        },
+      )
+    }
   })
 
 program.parse()
@@ -167,3 +308,13 @@ function ignoreErrors() {
     )
   })
 }
+
+const setupWatcher = ({
+  searchDirectories,
+}: {
+  searchDirectories: Array<string>
+}) =>
+  new Watcher(searchDirectories, {
+    recursive: true,
+    ignoreInitial: true,
+  })
