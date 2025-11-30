@@ -131,7 +131,6 @@ test(
       parameters,
       {
         command: "read",
-        select: "body",
         contentPath: "/index.html",
       },
       "derived",

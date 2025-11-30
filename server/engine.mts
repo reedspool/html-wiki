@@ -116,28 +116,28 @@ export const execute = async ({
       await validateReadParameters(validationIssues, parameters, fileCache)
       if (validationIssues.length > 0)
         return validationErrorResponse(validationIssues)
-      const readResult = await fileCache.readFile(
+      const { originalContent, meta } = fileCache.ensureByContentPath(
         stringParameterValue(parameters, "contentPath"),
       )
       let content
       let nocontainer = parameters.nocontainer !== undefined
       if (parameters.raw !== undefined) {
         if (parameters.escape !== undefined) {
-          content = escapeHtml(readResult.content)
+          content = escapeHtml(originalContent.content)
         } else {
-          content = readResult.content
+          content = originalContent.content
         }
       } else if (parameters.renderMarkdown !== undefined) {
         if (typeof parameters.contentPath !== "string") throw new Error()
         content = await specialRenderMarkdown({
           contentPath: parameters.contentPath,
           fileCache,
-          content: readResult.content,
+          content: originalContent.content,
         })
       } else {
         const templateApplicationResults = await applyTemplating({
           fileCache,
-          content: readResult.content,
+          content: originalContent.content,
           parameters: parameters,
         })
         content = templateApplicationResults.content

@@ -42,12 +42,11 @@ export type FileCache = {
     ReadonlyDeep<ContentPathsByDirectoryStructure>
   >
   getByContentPath: (path: string) => FileContentsAndDetails | undefined
+  ensureByContentPath: (path: string) => FileContentsAndDetails
   getByTitle: (title: string) => FileContentsAndDetails | undefined
   getByContentPathOrContentTitle: (
     pathOrTitle: string,
   ) => FileContentsAndDetails | undefined
-  readFile: (path: string) => ReturnType<typeof readFile>
-  readFileRaw: (path: string) => ReturnType<typeof readFileRaw>
   fileExists: (path: string) => ReturnType<typeof fileExists>
   createFileAndDirectories: (params: {
     contentPath: string
@@ -226,19 +225,12 @@ export const createFreshCache = async ({
         : (filesByTitle[decodeURIComponent(pathOrTitle).replace(/^\//, "")] ??
             filesByContentPath[decodeURIComponent(pathOrTitle)])
     },
-    readFile: async (path) => {
-      const entry = filesByContentPath[path]
+    ensureByContentPath: (path) => {
+      const entry = filesByContentPath[decodeURIComponent(path)]
       if (!entry) {
         throw new MissingFileQueryError(path)
       }
-      return entry.originalContent
-    },
-    readFileRaw: async (path) => {
-      const entry = filesByContentPath[path]
-      if (!entry) {
-        throw new MissingFileQueryError(path)
-      }
-      return entry.originalContent
+      return entry
     },
     fileExists: async (path) =>
       filesByContentPath[path]
@@ -347,7 +339,7 @@ const getFileContentsAndMetadata = async ({
       const result = await applyTemplating({
         fileCache,
         content: readResults.content,
-        parameters: { rootSelector: "head" },
+        parameters: { rootSelector: "head", noselect: true },
       })
       return {
         meta: result.meta,

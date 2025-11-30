@@ -52,7 +52,10 @@ test(
         </body>
       </html>
     `
-    const { content } = await applyTemplatingAndParse({}, input)
+    const { content } = await applyTemplatingAndParse(
+      { nocontainer: true },
+      input,
+    )
     // They're the same minus whitespace changes caused from parsing
     // and re-stringifying
     assert.equal(content, parse(input).toString())

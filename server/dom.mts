@@ -399,18 +399,35 @@ export const applyTemplating = async (
     }
   } while (alreadySetForNextIteration || treeWalker.nextNode())
 
-  const selector = parameters.select
+  // TODO: Probably at this stage shuold just Object.assign(parameters, meta)
+  let selector: string | null =
+    meta.noselect !== undefined || parameters.noselect !== undefined
+      ? null
+      : (maybeStringParameterValue(meta, "select") ??
+        maybeStringParameterValue(parameters, "select") ??
+        null)
+  // Auto-select body if there will be a container
+  const autoSelectBody =
+    !selector &&
+    !(meta.nocontainer !== undefined || parameters.nocontainer !== undefined)
+  selector = !selector && autoSelectBody ? "body" : null
   if (selector) {
     if (typeof selector !== "string") {
       throw new Error("query value expected string")
     }
     const selected = root.querySelector(selector)
-    if (!selected)
+    if (selected) {
+      // TODO: It doesn't really make sense that `select` actually
+      // gets the inner HTML. So maybe autoSelect should be selectAll('body>*') and it shuold always get the outerHTML
+      return { content: selected.innerHTML.toString(), meta, links }
+    }
+    if (!autoSelectBody) {
       throw new QueryError(
         400,
         `parameters.select: '${selector}' did not match any elements`,
       )
-    return { content: selected.innerHTML.toString(), meta, links }
+    }
+    return { content: root.toString(), meta, links }
   }
 
   return { content: root.toString(), meta, links }

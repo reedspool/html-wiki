@@ -82,8 +82,8 @@ export const renderer =
     contentPath: string,
     parameters: ParameterValue = {},
   ): Promise<string> => {
-    const contentFileReadResult = await fileCache.readFile(contentPath)
-
+    const contentFileReadResult =
+      fileCache.ensureByContentPath(contentPath).originalContent
     log(
       `Applying in-query templating for ${contentPath} original query content query ${JSON.stringify(parameters)}`,
     )

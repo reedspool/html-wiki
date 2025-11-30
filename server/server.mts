@@ -93,7 +93,6 @@ export const createServer = async ({
           setEachParameterWithSource(
             parameters,
             {
-              select: "body",
               contentPathOrContentTitle: req.path,
             },
             "derived",
@@ -149,7 +148,6 @@ export const createServer = async ({
         setEachParameterWithSource(
           parameters,
           {
-            select: "body",
             contentPath: configuredFiles.defaultCreateShadowTemplateFile,
             editContentPath: toEditContentPath,
           },
@@ -161,7 +159,6 @@ export const createServer = async ({
           {
             editingContentPath: fileExistsResult.contentPath,
             contentPath: configuredFiles.defaultEditTemplateFile,
-            select: "body",
           },
           "derived",
         )
@@ -190,7 +187,6 @@ export const createServer = async ({
           {
             deletingContentPath: fileExistsResult.contentPath,
             contentPath: configuredFiles.defaultDeleteTemplateFile,
-            select: "body",
           },
           "derived",
         )
@@ -220,7 +216,9 @@ export const createServer = async ({
         fileCache.getByContentPath(req.path)?.renderability === "static"
       ) {
         log("Serving static file %s", req.path)
-        const readResults = await fileCache.readFileRaw(req.path)
+        const readResults = fileCache.ensureByContentPath(
+          req.path,
+        ).originalContent
         res.setHeader(
           "Content-Type",
           contentType(req.path.match(/\.[^.]+$/)![0]) ||
@@ -233,7 +231,6 @@ export const createServer = async ({
       setEachParameterWithSource(
         parameters,
         {
-          select: "body",
           contentPathOrContentTitle: req.path,
         },
         "derived",
@@ -283,7 +280,6 @@ export const createServer = async ({
   ) {
     const parameters: ParameterValue = {
       command: "read",
-      select: "body",
       originalPath: decodeURIComponent(req.path),
     }
 
