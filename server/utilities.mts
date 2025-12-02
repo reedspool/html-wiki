@@ -1,7 +1,20 @@
 import { type Request } from "express"
 import YAML from "yaml"
 import { micromark } from "micromark"
-import { gfmHtml, gfm } from "micromark-extension-gfm"
+import {
+  gfmAutolinkLiteral,
+  gfmAutolinkLiteralHtml,
+} from "micromark-extension-gfm-autolink-literal"
+import { gfmFootnote, gfmFootnoteHtml } from "micromark-extension-gfm-footnote"
+import {
+  gfmStrikethrough,
+  gfmStrikethroughHtml,
+} from "micromark-extension-gfm-strikethrough"
+import { gfmTable, gfmTableHtml } from "micromark-extension-gfm-table"
+import {
+  gfmTaskListItem,
+  gfmTaskListItemHtml,
+} from "micromark-extension-gfm-task-list-item"
 import type { ReadonlyDeep } from "type-fest"
 
 // Stolen from NakedJSX https://github.com/NakedJSX/core
@@ -24,8 +37,22 @@ export const urlFromReq = (req: Request) =>
 export const renderMarkdown = (content: string): string =>
   micromark(content, {
     allowDangerousHtml: true,
-    extensions: [gfm()],
-    htmlExtensions: [gfmHtml()],
+    // Using all the separate components of https://github.com/micromark/micromark-extension-gfm
+    // to avoid tagfilter because I want to allow script and style tags
+    extensions: [
+      gfmAutolinkLiteral(),
+      gfmFootnote(),
+      gfmStrikethrough(),
+      gfmTable(),
+      gfmTaskListItem(),
+    ],
+    htmlExtensions: [
+      gfmAutolinkLiteralHtml(),
+      gfmFootnoteHtml(),
+      gfmStrikethroughHtml(),
+      gfmTableHtml(),
+      gfmTaskListItemHtml(),
+    ],
   })
 
 // For IDE formatting. See https://prettier.io/blog/2020/08/24/2.1.0.html
