@@ -4,6 +4,7 @@ import {
   AnswerError,
   type AnswerErrorFileLocation,
   QueryError,
+  UsageError,
 } from "./error.mts"
 import { buildMyServerPStringContext, pString } from "./queryLanguage.mts"
 import { escapeHtml } from "./utilities.mts"
@@ -377,7 +378,7 @@ export const applyTemplating = async (
               }
               break
             default:
-              throw new Error(
+              throw new UsageError(
                 `Couldn't comprehend conditional attribute ${conditionalKey}`,
               )
           }

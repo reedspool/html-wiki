@@ -16,6 +16,12 @@ export class MissingFileQueryError extends QueryError {
   }
 }
 
+export class UsageError extends QueryError {
+  constructor(message: string, originalError?: unknown) {
+    super(522, message, originalError)
+  }
+}
+
 export type AnswerErrorFileLocation = { line: number; column?: number }
 export class AnswerError extends QueryError {
   filePath: string
