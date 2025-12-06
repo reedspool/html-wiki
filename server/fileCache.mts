@@ -227,7 +227,8 @@ export const createFreshCache = async ({
       return pathOrTitle === "/"
         ? filesByContentPath["/index.html"]
         : (filesByTitle[decodeURIComponent(pathOrTitle).replace(/^\//, "")] ??
-            filesByContentPath[decodeURIComponent(pathOrTitle)])
+            filesByContentPath[decodeURIComponent(pathOrTitle)] ??
+            filesByContentPath[decodeURIComponent(pathOrTitle + "/index.html")])
     },
     ensureByContentPath: (path) => {
       const entry = filesByContentPath[decodeURIComponent(path)]

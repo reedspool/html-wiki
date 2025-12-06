@@ -19,6 +19,7 @@ export const configuredFiles = {
   keywordPageTemplate: "/system/templates/keyword.html",
   searchAndLinkPageTemplate: "/system/actions/search-and-link.html",
   queryPageTemplate: "/system/templates/query.html",
+  shortDirectoryName: "/fixtures/shortname",
   defaultDeleteTemplateFile: "/system/templates/delete.html",
   defaultEditTemplateFile: "/system/templates/edit.html",
   defaultCreateTemplateFile: "/system/actions/create.html",

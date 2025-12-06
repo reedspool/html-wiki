@@ -976,3 +976,17 @@ test("Query page query", { concurrency: true }, async () => {
 
   await validateAssertAndReport(responseText, url)
 })
+
+test("Short name under directory", { concurrency: true }, async () => {
+  const { url, responseText, $1, $ } = await getPath(
+    `${configuredFiles.shortDirectoryName}`,
+  )
+
+  assert.match(
+    $1("h1").innerHTML,
+    /Test index.html under a short directory name/i,
+    "main header is there",
+  )
+
+  await validateAssertAndReport(responseText, url)
+})
