@@ -29,12 +29,9 @@ const upload = multer()
 
 export const createServer = async ({
   port,
-  coreDirectory,
   fileCache,
 }: {
   port: number
-  coreDirectory: string
-  userDirectory: string
   fileCache: FileCache
 }) => {
   // Create an event emitter to handle cross-cutting communications
@@ -130,10 +127,7 @@ export const createServer = async ({
       const fileExistsResult =
         fileCache.getByContentPathOrContentTitle(toEditContentPath)
       // File not existing at all is handled in the engine
-      if (
-        fileExistsResult &&
-        fileExistsResult.originalContent.foundInDirectory == coreDirectory
-      ) {
+      if (fileExistsResult && fileCache.isCoreFile(fileExistsResult)) {
         // If requesting to edit a core file, prompt to create shadow first
         setParameterWithSource(
           parameters,
@@ -171,10 +165,7 @@ export const createServer = async ({
         req.path
       const fileExistsResult =
         fileCache.getByContentPathOrContentTitle(toDeleteContentPath)
-      if (
-        fileExistsResult &&
-        fileExistsResult.originalContent.foundInDirectory == coreDirectory
-      ) {
+      if (fileExistsResult && fileCache.isCoreFile(fileExistsResult)) {
         throw new Error(
           `Can't delete core file ${fileExistsResult.contentPath}`,
         )

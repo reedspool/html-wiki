@@ -42,6 +42,7 @@ export type FileCache = {
     ReadonlyDeep<ContentPathsByDirectoryStructure>
   >
   getByContentPath: (path: string) => FileContentsAndDetails | undefined
+  isCoreFile: (fileContentsAndDetails: FileContentsAndDetails) => boolean
   ensureByContentPath: (path: string) => FileContentsAndDetails
   getByTitle: (title: string) => FileContentsAndDetails | undefined
   getByContentPathOrContentTitle: (
@@ -213,6 +214,9 @@ export const createFreshCache = async ({
     getListOfFilesAndDetails,
     getContentPathsByDirectoryStructure,
     getContentPathsForKeyword,
+    isCoreFile: (fileContentsAndDetails) =>
+      fileContentsAndDetails.originalContent.foundInDirectory !==
+      searchDirectories.at(0),
     getBacklinksByContentPath,
     allKeywords,
     addFileToCacheData,

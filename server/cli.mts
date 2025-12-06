@@ -58,7 +58,10 @@ program
       log(`Using default port ${port}`)
     }
     if (options.ignoreErrors) ignoreErrors()
-    const searchDirectories = [userDirectory, coreDirectory]
+    const searchDirectories = [
+      normalize(userDirectory),
+      normalize(coreDirectory),
+    ]
     const fileCache = await buildCache({
       searchDirectories,
     })
@@ -112,8 +115,6 @@ program
     server = await createServer({
       port,
       fileCache,
-      coreDirectory: normalize(options.coreDirectory),
-      userDirectory: normalize(options.userDirectory),
     })
   })
 
