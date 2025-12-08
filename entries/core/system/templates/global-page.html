@@ -19,19 +19,10 @@
       type="text/css"
       media="screen"
     />
-    <style>
-      body {
-        height: fit-content; /* Body height affects sticky header behavior */
-        min-height: 100vh;
-        display: grid;
-        grid-template-rows: auto 1fr auto;
-        width: 100%;
-      }
-    </style>
   </head>
 
   <body>
-    <div class="sticky-top higher">
+    <header- class="sticky-top higher">
       <header>
         <center-column-layout>
           <nav aria-label="Main navigation">
@@ -45,8 +36,8 @@
           </nav>
         </center-column-layout>
       </header>
-      <center-column-layout class="relative lower">
-        <keep-if truthy="statusMessage">
+      <keep-if truthy="statusMessage">
+        <center-column-layout class="relative lower">
           <toast-message role="status">
             <span x-content="statusMessage"></span>
             <button
@@ -58,36 +49,37 @@
               Ⓧ
             </button>
           </toast-message>
-        </keep-if>
-      </center-column-layout>
-    </div>
-    <main>
-      <center-column-layout>
-        <query-content q="content">
-          <p>
-            This is the global page template. Usually, this text would be
-            replaced with the HTML content of another entry in the wiki. But I
-            guess not today!
-          </p>
-          <p>
-            You can <a href="?edit">Edit this page</a> to change the styling and
-            layout for most of the site.
-          </p>
-        </query-content>
-      </center-column-layout>
-    </main>
-    <footer>
-      <center-column-layout>
-        <nav aria-label="Secondary navigation">
-          <a logo href="/">HTML Wiki</a>
-          <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/recent.html">Recent</a></li>
-            <li><a href="/system/templates/keyword.html">Keywords</a></li>
-            <li><a href="#">Top of page ⤴</a></li>
-          </ul>
-        </nav>
-      </center-column-layout>
-    </footer>
+        </center-column-layout>
+      </keep-if>
+    </header->
+    <main->
+      <main>
+        <center-column-layout class="h-full">
+          <query-content q="content">
+            <p>
+              This is the global page template. Usually, this text would be
+              replaced with the HTML content of another entry in the wiki. But I
+              guess not today!
+            </p>
+            <p>
+              You can <a href="?edit">Edit this page</a> to change the styling
+              and layout for most of the site.
+            </p>
+          </query-content>
+        </center-column-layout>
+      </main>
+      <footer>
+        <center-column-layout>
+          <nav aria-label="Secondary navigation">
+            <ul>
+              <li><a href="/">Home</a></li>
+              <li><a href="/recent.html">Recent</a></li>
+              <li><a href="/system/templates/keyword.html">Keywords</a></li>
+              <li><a href="#">Top of page ⤴</a></li>
+            </ul>
+          </nav>
+        </center-column-layout>
+      </footer>
+    </main->
   </body>
 </html>

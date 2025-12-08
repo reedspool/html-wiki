@@ -9,16 +9,6 @@
   </head>
 
   <body>
-    <h1>
-      Editing
-      <keep-if truthy="editingContentPath">
-        <a x-href="editingContentPath" x-content="editingContentPath"
-          >[filename] :-/</a
-        >
-      </keep-if>
-      <drop-if truthy="editingContentPath"> (Template) </drop-if>
-    </h1>
-
     <drop-if truthy="editingContentPath">
       You are viewing the edit page directly. Maybe you meant to
       <a href="?edit">edit this page</a>
@@ -28,7 +18,7 @@
     <keep-if truthy="editingContentPath">
       <form method="POST">
         <query-content
-          q="render('/system/templates/editor.fragment.html', { editContent: await render(editingContentPath,{raw: true, escape: true }), editingContentPath: editingContentPath })"
+          q="render('/system/templates/editor.fragment.html', { nocontainer, editContent: await render(editingContentPath,{raw: true, escape: true }), editingContentPath: editingContentPath })"
         ></query-content>
       </form>
     </keep-if>

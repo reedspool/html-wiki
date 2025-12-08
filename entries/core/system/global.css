@@ -19,7 +19,7 @@
 
 html,
 body {
-  height: 100%;
+  height: 100dvh;
   padding: 0;
   margin: 0;
   background-color: var(--bg);
@@ -79,6 +79,24 @@ main {
   padding-block: var(--space-half);
 }
 
+body {
+  display: grid;
+  grid:
+    "header"
+    "main" 1fr
+    / 1fr;
+
+  header- {
+    grid-area: header;
+    display: block;
+  }
+
+  main- {
+    grid-area: main;
+    display: contents;
+  }
+}
+
 center-column-layout {
   display: block;
   box-sizing: border-box;
@@ -90,11 +108,23 @@ center-column-layout {
 
 code {
   font-size: 0.9em;
+  font-family:
+    Consolas, "Andale Mono WT", "Andale Mono", "Lucida Console",
+    "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono",
+    "Liberation Mono", "Nimbus Mono L", Monaco, "Courier New", Courier,
+    monospace;
+}
+
+pre {
+  /* This is wild. Only solution I found to take this out of the calc for the
+   * container width. If you don't have this (and overflow-x: auto on the code
+   * tag), then p tags will have their width pushed out to the width of the pre
+   * code combo */
+  display: grid;
 }
 
 pre code {
   overflow-x: auto;
-  display: block;
   padding-block: var(--space-half);
   padding-inline: var(--space);
 }
@@ -224,6 +254,10 @@ details summary {
   cursor: pointer;
 }
 
+/*
+ * Utilities
+ */
+
 .sticky-top {
   position: sticky;
   top: 0;
@@ -247,4 +281,8 @@ details summary {
 
 .justify-between {
   justify-content: space-between;
+}
+
+.h-full {
+  height: 100%;
 }

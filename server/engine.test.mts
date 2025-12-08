@@ -143,7 +143,6 @@ test(
     assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
     assert.match($1('header nav a[href="/recent.html"]').innerHTML, /Recent/)
 
-    assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
     assert.match($1('footer nav a[href="/recent.html"]').innerHTML, /Recent/)
 
