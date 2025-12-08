@@ -12,8 +12,7 @@ import {
 } from "./engine.mts"
 import debug from "debug"
 import { configuredFiles } from "./configuration.mts"
-import { buildCache, type FileCache } from "./fileCache.mts"
-import { removeFile } from "./filesystem.mts"
+import { buildCache } from "./fileCache.mts"
 const log = debug("cli:main")
 
 let server: Awaited<ReturnType<typeof createServer>>
@@ -28,6 +27,23 @@ process.on("SIGINT", (signal) => {
   setTimeout(() => process.exit(0), 150)
 })
 
+const getSearchDirectoriesFromOptions = (options: {
+  userDirectory?: string
+  coreDirectory: string
+}) => {
+  if (!options.coreDirectory) {
+    options.coreDirectory = configuredFiles.coreDirectory
+    log(`No core directory given, using default ${options.coreDirectory}`)
+  }
+  if (!options.userDirectory) {
+    throw new Error("--user-directory option is required")
+  }
+  const userDirectory = normalize(options.userDirectory)
+  const coreDirectory = normalize(options.coreDirectory)
+  const searchDirectories = [userDirectory, coreDirectory]
+  return { userDirectory, coreDirectory, searchDirectories }
+}
+
 const program = new Command().description("HTML Wiki command line tool")
 program
   .command("server")
@@ -37,15 +53,9 @@ program
   .option("--port <number>")
   .option("--ignore-errors")
   .action(async (options) => {
-    log({ options })
-    if (!options.coreDirectory) {
-      options.coreDirectory = configuredFiles.coreDirectory
-      log(`No core directory given, using default ${options.coreDirectory}`)
-    }
-    if (!options.userDirectory) {
-      throw new Error("--user-directory option is required")
-    }
-    const { userDirectory, coreDirectory } = options
+    const { searchDirectories, userDirectory, coreDirectory } =
+      getSearchDirectoriesFromOptions(options)
+    log({ options, searchDirectories, userDirectory, coreDirectory })
     let port: number
     if (process.env.PORT !== undefined) {
       port = Number(process.env.PORT)
@@ -58,10 +68,6 @@ program
       log(`Using default port ${port}`)
     }
     if (options.ignoreErrors) ignoreErrors()
-    const searchDirectories = [
-      normalize(userDirectory),
-      normalize(coreDirectory),
-    ]
     const fileCache = await buildCache({
       searchDirectories,
     })
@@ -126,26 +132,17 @@ program
   .option("-o, --out-directory <string>", "where to write files", "./build")
   .option("-w, --watch", "watch source files and rebuild", false)
   .action(async (options) => {
-    log(options)
-    if (!options.coreDirectory) {
-      options.coreDirectory = configuredFiles.coreDirectory
-      log(`No core directory given, using default ${options.coreDirectory}`)
-    }
-    if (!options.userDirectory) {
-      throw new Error("--user-directory option is required")
-    }
+    const { searchDirectories, userDirectory, coreDirectory } =
+      getSearchDirectoriesFromOptions(options)
+    log({ options, searchDirectories, userDirectory, coreDirectory })
+    const outDirectory = normalize(options.outDirectory)
 
-    if (
-      normalize(options.coreDirectory) === normalize(options.outDirectory) ||
-      normalize(options.userDirectory) === normalize(options.outDirectory)
-    ) {
+    if (coreDirectory === outDirectory || userDirectory === outDirectory) {
       log(
         "You probaby didn't want to write out exactly where you're reading from",
       )
       process.exit(1)
     }
-    const { coreDirectory, userDirectory, outDirectory } = options
-    const searchDirectories = [userDirectory, coreDirectory]
     const sourceFileCache = await buildCache({
       searchDirectories,
     })
