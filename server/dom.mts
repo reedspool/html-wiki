@@ -379,7 +379,7 @@ export const applyTemplating = async (
               break
             default:
               throw new UsageError(
-                `Couldn't comprehend conditional attribute ${conditionalKey}`,
+                `drop-if can only have 'truthy' or 'falsy' attributes but found '${conditionalKey}'`,
               )
           }
 

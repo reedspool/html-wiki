@@ -1,12 +1,55 @@
+<keep-if truthy="nocontainer !== undefined">
+  <style type="text/css" media="screen">
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0.2rem;
+      box-sizing: border-box;
+    }
+  </style>
+</keep-if>
 <style type="text/css" media="screen">
+  edit- {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid:
+      "header"
+      "toolbar"
+      "textarea" 1fr
+      "actionbar"
+      / 1fr;
+
+    gap: 0.4rem;
+
+    h1 {
+      grid-area: header;
+    }
+
+    toolbox- {
+      grid-area: toolbar;
+      display: block;
+    }
+
+    textarea {
+      grid-area: textarea;
+    }
+
+    actionbar- {
+      grid-area: actionbar;
+      display: block;
+    }
+  }
+
   textarea {
-    height: 30rem;
-    min-height: 10rem;
     resize: block;
   }
 
   form {
     position: relative;
+    display: contents;
   }
 
   button {
@@ -46,65 +89,81 @@
     if (!wasOpen) dialog.show();
   });
 </script>
-<div>
-  Toolbox
-  <button
-    type="button"
-    title="Show Query Playground"
-    toggle-dialog-selector="[query-playground]"
-  >
-    <code> ?q= </code>
-  </button>
-  <dialog query-playground closedby="none">
-    <iframe
-      title="Query Playground Widget"
-      loading="lazy"
-      src="/?contentPath=/system/templates/query.html&dialog"
-    ></iframe>
-  </dialog>
+<edit->
+  <h1>
+    Editing
+    <a x-href="editingContentPath" x-content="editingContentPath"></a>
+  </h1>
 
-  <button
-    type="button"
-    title="Show Search and Link widget"
-    toggle-dialog-selector="[search-and-link]"
-  >
-    <code> []() </code>
-  </button>
-  <dialog search-and-link closedby="none">
-    <iframe
-      title="Query Playground Widget"
-      loading="lazy"
-      src="/?contentPath=/system/actions/search-and-link.html&dialog"
-    ></iframe>
-  </dialog>
-  <a href="?delete" title="Delete this page">Delete</a>
-</div>
+  <toolbox->
+    <button
+      type="button"
+      title="Show Query Playground"
+      toggle-dialog-selector="[query-playground]"
+    >
+      <code> ?q= </code>
+    </button>
+    <dialog query-playground closedby="none">
+      <iframe
+        title="Query Playground Widget"
+        loading="lazy"
+        src="/?contentPath=/system/templates/query.html&dialog"
+      ></iframe>
+    </dialog>
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const textarea = document.querySelector("textarea");
-    // This comes from iframes
-    window.document.addEventListener("insertText", (event) => {
-      const { text } = event.detail;
-      const selectionStart = textarea.selectionStart;
-      textarea.value =
-        textarea.value.slice(0, selectionStart) +
-        text +
-        textarea.value.slice(textarea.selectionEnd);
-      // Set selection start and end to the inserted
-      textarea.selectionStart = selectionStart;
-      textarea.selectionEnd = selectionStart + text.length;
+    <button
+      type="button"
+      title="Show Search and Link widget"
+      toggle-dialog-selector="[search-and-link]"
+    >
+      <code> []() </code>
+    </button>
+    <dialog search-and-link closedby="none">
+      <iframe
+        title="Query Playground Widget"
+        loading="lazy"
+        src="/?contentPath=/system/actions/search-and-link.html&dialog"
+      ></iframe>
+    </dialog>
+    <a href="?delete" title="Delete this page">Delete</a>
+    <keep-if truthy="nocontainer !== undefined">
+      <a href="?edit" title="Edit with no container">Show container</a>
+    </keep-if>
+    <drop-if truthy="nocontainer !== undefined">
+      <a href="?edit&nocontainer" title="Edit with no container"
+        >No container</a
+      >
+    </drop-if>
+  </toolbox->
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const textarea = document.querySelector("textarea");
+      // This comes from iframes
+      window.document.addEventListener("insertText", (event) => {
+        const { text } = event.detail;
+        const selectionStart = textarea.selectionStart;
+        textarea.value =
+          textarea.value.slice(0, selectionStart) +
+          text +
+          textarea.value.slice(textarea.selectionEnd);
+        // Set selection start and end to the inserted
+        textarea.selectionStart = selectionStart;
+        textarea.selectionEnd = selectionStart + text.length;
+      });
     });
-  });
-</script>
-<textarea
-  name="content"
-  spellcheck="false"
-  x-content="or(editContent,'')"
-></textarea>
-<button
-  type="submit"
-  x-formaction="`${editingContentPath}?${saveParameters || ''}`"
->
-  Save
-</button>
+  </script>
+  <textarea
+    name="content"
+    spellcheck="false"
+    x-content="or(editContent,'')"
+  ></textarea>
+  <actionbar->
+    <button
+      type="submit"
+      x-formaction="`${editingContentPath}?${saveParameters || ''}`"
+    >
+      Save
+    </button>
+  </actionbar->
+</edit->

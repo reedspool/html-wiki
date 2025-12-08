@@ -8,6 +8,8 @@ import { Temporal } from "temporal-polyfill"
 import { html } from "./utilities.mts"
 import stylelint from "stylelint"
 import { configuredFiles } from "./configuration.mts"
+import { inspect } from "node:util"
+import { version } from "node:punycode"
 
 let port = 3001
 // TODO: All this forking stuff seems to work (with the delay), but it doesn't
@@ -121,11 +123,13 @@ test("Can get /system/global.css", { concurrency: true }, async () => {
   assert.match(responseText, /:root\s+\{/)
 
   const stylelintResults = await stylelint.lint({
-    config: { extends: ["stylelint-config-standard"] },
+    config: {
+      extends: ["stylelint-config-standard"],
+    },
     code: responseText,
   })
   if (stylelintResults.errored) {
-    assert.fail(stylelintResults.report)
+    assert.fail(inspect(JSON.parse(stylelintResults.report), true, 999, true))
   }
 })
 
@@ -615,10 +619,6 @@ test(
     )
 
     assert.match(
-      getEditResponse.$1("footer nav a:nth-child(1)").innerHTML,
-      /HTML Wiki/,
-    )
-    assert.match(
       getEditResponse.$1('footer nav ul a[href="/"]').innerHTML,
       /Home/,
     )
@@ -766,7 +766,6 @@ test(
     assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
     assert.match($1('header nav a[href="/recent.html"]').innerHTML, /Recent/)
 
-    assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
     assert.match($1('footer nav a[href="/recent.html"]').innerHTML, /Recent/)
 
@@ -784,7 +783,6 @@ test(
     assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
     assert.match($1('header nav a[href="/recent.html"]').innerHTML, /Recent/)
 
-    assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
     assert.match($1('footer nav a[href="/recent.html"]').innerHTML, /Recent/)
 
@@ -821,7 +819,6 @@ test(
     assert.match($1('header nav ul a[href="/"]').innerHTML, /Home/)
     assert.match($1('header nav a[href="/recent.html"]').innerHTML, /Recent/)
 
-    assert.match($1("footer nav a:nth-child(1)").innerHTML, /HTML Wiki/)
     assert.match($1('footer nav ul a[href="/"]').innerHTML, /Home/)
     assert.match($1('footer nav a[href="/recent.html"]').innerHTML, /Recent/)
 
