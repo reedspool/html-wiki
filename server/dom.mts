@@ -191,42 +191,6 @@ export const applyTemplating = async (
           links.push(element.attributes.href)
         }
         break
-      case "SLOT":
-        switch (element.attributes.name) {
-          case "keep":
-          case "remove":
-            {
-              // The rules are exactly inverted between keep and remove
-              let shouldRemove = element.attributes.name === "remove"
-              switch (element.attributes.if) {
-                case "raw":
-                  if (parameters.raw === undefined) {
-                    shouldRemove = !shouldRemove
-                  }
-                  break
-                case undefined:
-                  break
-                default:
-                  break
-              }
-              if (shouldRemove) {
-                alreadySetForNextIteration = treeWalker.nextNodeNotChildren()
-                element.remove()
-              } else {
-                alreadySetForNextIteration = treeWalker.nextNode()
-                element.childNodes.reverse().forEach((node) => {
-                  element.after(node)
-                })
-                element.remove()
-              }
-            }
-            break
-          default:
-            log(`Failed to handle slot named '${element.attributes.name}' `)
-            break
-        }
-
-        break
       case "MAP-LIST":
         {
           const query = element.getAttribute("q")
