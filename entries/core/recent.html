@@ -37,15 +37,19 @@
               q="site.allFiles, (list)=>list.toSorted((a,b)=>b.modifiedTimeMs-a.modifiedTimeMs)"
             >
               <set-
-                ipath="currentListItem.contentPath"
+                ipath="currentListItem.contentPath, goodHref"
                 iname="or(currentListItem.meta.title,currentListItem.name)"
               >
               </set->
               <li>
                 <span>
                   <a x-href="ipath" x-content="iname"></a>
-                  -
-                  <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
+                  <drop-if truthy="parameters.static !== undefined">
+                    -
+                    <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`"
+                      >Edit</a
+                    >
+                  </drop-if>
                 </span>
               </li>
             </map-list>

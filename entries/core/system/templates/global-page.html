@@ -31,7 +31,9 @@
               <li><a href="/">Home</a></li>
               <li><a href="/recent.html">Recent</a></li>
               <li><a href="/system/templates/keyword.html">Keywords</a></li>
-              <li><a href="?edit">Edit this page</a></li>
+              <drop-if truthy="parameters.static !== undefined">
+                <li><a href="?edit">Edit this page</a></li>
+              </drop-if>
             </ul>
           </nav>
         </center-column-layout>

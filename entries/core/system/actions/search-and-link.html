@@ -98,13 +98,15 @@
                     x-title="iname"
                     x-content="ititle"
                   />
-                  -
-                  <a
-                    copy-target
-                    x-href="`${ipath}?edit`"
-                    x-title="`Edit ${iname}`"
-                    >Edit</a
-                  >
+                  <drop-if truthy="parameters.static !== undefined">
+                    -
+                    <a
+                      copy-target
+                      x-href="`${ipath}?edit`"
+                      x-title="`Edit ${iname}`"
+                      >Edit</a
+                    >
+                  </drop-if>
                 </span>
               </keep-if>
               <keep-if truthy="dialog!==undefined">

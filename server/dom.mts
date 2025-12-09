@@ -189,6 +189,10 @@ export const applyTemplating = async (
       case "A":
         if (element.attributes.href) {
           links.push(element.attributes.href)
+
+          element.attributes.href = (await getQueryValue(
+            `'${element.attributes.href}', goodHref`,
+          )) as string
         }
         break
       case "MAP-LIST":
