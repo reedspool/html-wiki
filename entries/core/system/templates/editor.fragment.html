@@ -165,5 +165,11 @@
     >
       Save
     </button>
+    <button
+      type="submit"
+      x-formaction="`${editingContentPath}?redirect=${editingContentPath}?edit${saveParameters || ''}`"
+    >
+      Save and Edit
+    </button>
   </actionbar->
 </edit->

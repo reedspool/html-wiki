@@ -236,15 +236,20 @@ export const createServer = async ({
       }
       res.send(result.content)
     } else if (
-      maybeStringParameterValue(parameters, "redirect") !== undefined
+      command == "update" ||
+      command == "create" ||
+      command === "delete"
     ) {
-      res.redirect(stringParameterValue(parameters, "redirect"))
-    } else if (command == "update" || command == "create") {
+      const toWhere =
+        maybeStringParameterValue(parameters, "redirect") !== undefined
+          ? stringParameterValue(parameters, "redirect")
+          : command === "delete"
+            ? "/"
+            : result.contentPath || "/"
+      const params = result.content ? `statusMessage=${result.content}` : ""
       res.redirect(
-        `${result.contentPath || "/"}?statusMessage=${result.content}`,
+        `${toWhere}${toWhere.indexOf("?") === -1 ? "?" : "&"}${params}`,
       )
-    } else if (command == "delete") {
-      res.redirect(`/?statusMessage=${result.content}`)
     } else {
       log(
         "Didn't determine what to do with result %o from parameters %O",
