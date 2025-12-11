@@ -162,6 +162,7 @@ program
         {
           contentPath: contentPath,
           command: "read",
+          static: true,
         },
         "query param",
       )

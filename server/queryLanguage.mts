@@ -84,8 +84,9 @@ export const renderer =
   ): Promise<string> => {
     const contentFileReadResult =
       fileCache.ensureByContentPath(contentPath).originalContent
+    const stringified = JSON.stringify(parameters)
     log(
-      `Applying in-query templating for ${contentPath} original query content query ${JSON.stringify(parameters)}`,
+      `Applying in-query templating for ${contentPath} original query content query ${stringified.length > 100 ? stringified.slice(0, 100) + "..." : stringified}`,
     )
     // TODO: I think "noApply" is more accurate than "raw", however can
     // probably come up with a better name. The point is "raw" implies too
@@ -240,6 +241,17 @@ export const buildMyServerPStringContext = ({
     escapeHtml,
     cleanFilePath,
     Temporal,
+    goodHref: (href: string) => {
+      if (parameters.static === undefined) {
+        return href
+      }
+
+      const file = fileCache.getByContentPathOrContentTitle(href)
+      if (file) {
+        return file.contentPath.replace(/\.md$/, ".html")
+      }
+      return href
+    },
     site: siteProxy({
       fileCache,
     }),

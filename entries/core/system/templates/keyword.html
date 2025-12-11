@@ -31,15 +31,17 @@
       <ul>
         <map-list q="fileCache.getContentPathsForKeyword(keyword)">
           <set-
-            ipath="currentListItem"
+            ipath="currentListItem, goodHref"
             iname="fileCache.getByContentPath(ipath)?.meta?.title ?? ipath"
           >
           </set->
           <li>
             <span>
               <a x-href="ipath" x-content="iname"></a>
-              -
-              <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
+              <drop-if truthy="parameters.static !== undefined">
+                -
+                <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
+              </drop-if>
             </span>
           </li>
         </map-list>

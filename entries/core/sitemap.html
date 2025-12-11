@@ -39,20 +39,22 @@
             <li>
               <keep-if truthy="typeof currentListItem.contents === 'string'">
                 <set-
-                  ipath="currentListItem.contents"
+                  ipath="currentListItem.contents, goodHref"
                   iname="or(currentListItem.fileDetails?.meta?.title,currentListItem.fileDetails.name)"
                 >
                 </set->
                 <a x-href=" ipath" x-content="iname"></a>
-                -
-                <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
+                <drop-if truthy="parameters.static !== undefined">
+                  -
+                  <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
+                </drop-if>
               </keep-if>
               <drop-if truthy="typeof currentListItem.contents === 'string'">
                 <details>
                   <summary x-content="`/${currentListItem.dir}/`"></summary>
                   <ul>
                     <query-content
-                      q="render(contentPath, {rootSelector: '#my-template-li', directoryContents: currentListItem.contents, contentPath })"
+                      q="render(contentPath, {...parameters, rootSelector: '#my-template-li', directoryContents: currentListItem.contents, contentPath })"
                     >
                     </query-content>
                   </ul>
@@ -66,7 +68,7 @@
         <li>
           <a href="/">/</a>
           <query-content
-            q="render(contentPath, {rootSelector: '#my-template-li', directoryContents: (await site.fileTree), contentPath })"
+            q="render(contentPath, {...parameters, rootSelector: '#my-template-li', directoryContents: (await site.fileTree), contentPath })"
           >
           </query-content>
         </li>
