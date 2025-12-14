@@ -272,7 +272,7 @@ program
                 fileCache: destinationFileCache,
                 parameters: {
                   command: "delete",
-                  contentPath,
+                  contentPath: contentPath.replace(/\.md$/, ".html"),
                 },
               })
 
