@@ -242,13 +242,8 @@ program
               // always. So if those are occurring, then this is doubled.
               // I don't understand why this doesn't occur in my integration tests...
               // True for add and change but this is more problematic could result in removing a shadowed version
-              await execute({
-                fileCache: sourceFileCache,
-                parameters: {
-                  command: "delete",
-                  contentPath,
-                },
-              })
+              await sourceFileCache.removeFileFromCacheData({ contentPath })
+
               await execute({
                 fileCache: destinationFileCache,
                 parameters: {

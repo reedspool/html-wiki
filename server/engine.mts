@@ -157,6 +157,7 @@ export const execute = async ({
             // parameters, then I get into recursive loops. Why did I want that anyways?
             // The idea was to maybe pass some parameters to the top. So maybe  I can have a way to explicitly pass parameters up and out
             statusMessage: parameters.statusMessage,
+            static: parameters.static,
             renderMarkdown: undefined,
             command: "read",
             select: undefined,
