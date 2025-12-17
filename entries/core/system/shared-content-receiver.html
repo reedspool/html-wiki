@@ -16,13 +16,64 @@
         be hit when the
       </p>
     </drop-if>
+
     <h2>Create from Shared</h2>
-    <p>
-      The Share API specifies the <code>title</code>, <code>url</code>, and
-      <code>text</code> fields; however it's not clear how consistently callers
-      use these. So here are some easy links to variations of entries you might
-      want to create based on the shared data.
-    </p>
+    <details>
+      <summary>What is this data?</summary>
+      <p>
+        The Share API specifies the <code>title</code>, <code>url</code>, and
+        <code>text</code> fields; however it's not clear how consistently
+        callers use these. So here are some easy links to variations of entries
+        you might want to create based on the shared data.
+      </p>
+    </details>
+
+    <h2>Raw Data</h2>
+
+    <style>
+      form[local] {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-half);
+        align-items: baseline;
+        label {
+          display: flex;
+          flex-direction: column;
+        }
+      }
+    </style>
+    <script src="/system/scripts/copy-and-insert.js"></script>
+    <form local method="GET" action="#">
+      <label>
+        <code> title </code>
+        <input
+          type="text"
+          name="title"
+          x-value="or(title,'')"
+          placeholder="None supplied"
+        />
+      </label>
+      <label>
+        <code> url </code>
+        <input
+          type="text"
+          name="url"
+          x-value="or(url,'')"
+          placeholder="None supplied"
+        />
+      </label>
+      <label>
+        <code> text </code>
+        <input
+          type="text"
+          name="text"
+          x-value="or(text,'')"
+          placeholder="None supplied"
+        />
+      </label>
+
+      <button type="submit">Update</button>
+    </form>
 
     <style>
       shared-create-entry {
@@ -84,9 +135,7 @@
       ></file-details>
       <h4>fileContent</h4>
       <file-details>
-        <span
-          x-content="`# [${title}](${text})`"
-        ></span>
+        <span x-content="`# [${title}](${text})`"></span>
         <br />
         <br />
         <span
@@ -95,7 +144,7 @@
       </file-details>
       <p>
         <a
-          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(title,'undefined'))}.md&fileContent=%23 [${title}](encodeURIComponent(${text}))%0A%0AShared from Chrome as %22${title}%22 from %3C${encodeURIComponent(text)}%3E`"
+          x-href="`/system/actions/create.html?filename=${cleanFilePath(or(title,'undefined'))}.md&fileContent=%23 [${title}](${encodeURIComponent(text)})%0A%0AShared from Chrome as %22${title}%22 from %3C${encodeURIComponent(text)}%3E`"
           >Go to Create the above</a
         >
       </p>
@@ -108,9 +157,7 @@
       ></file-details>
       <h4>fileContent</h4>
       <file-details>
-        <span
-          x-content="`# [${title}](${encodeURIComponent(url)})`"
-        ></span>
+        <span x-content="`# [${title}](${encodeURIComponent(url)})`"></span>
         <br />
         <br />
         <span x-content="text"></span>
@@ -122,52 +169,5 @@
         >
       </p>
     </shared-create-entry>
-    <h2>Raw Data</h2>
-
-    <style>
-      form[local] {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-half);
-        align-items: baseline;
-        label {
-          display: flex;
-          flex-direction: column;
-        }
-      }
-    </style>
-    <script src="/system/scripts/copy-and-insert.js"></script>
-    <form local method="GET" action="#">
-      <label>
-        <code> title </code>
-        <input
-          type="text"
-          name="title"
-          x-value="or(title,'')"
-          placeholder="None supplied"
-        />
-      </label>
-      <label>
-        <code> url </code>
-        <input
-          type="text"
-          name="url"
-          x-value="or(url,'')"
-          placeholder="None supplied"
-        >
-      </label>
-      <label>
-        <code> text </code>
-        <input
-          type="text"
-          name="text"
-          x-value="or(text,'')"
-          placeholder="None supplied"
-        >
-        </input>
-      </label>
-
-      <button type="submit">Update</button>
-    </form>
   </body>
 </html>

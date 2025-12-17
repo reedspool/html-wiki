@@ -193,7 +193,7 @@ export const applyTemplating = async (
           element.setAttribute(
             "href",
             (await getQueryValue(
-              `'${element.attributes.href}', goodHref`,
+              `'${element.attributes.href.replace("'", "\\'")}', goodHref`,
             )) as string,
           )
         }
