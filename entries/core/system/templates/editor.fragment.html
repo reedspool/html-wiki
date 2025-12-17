@@ -118,6 +118,9 @@
     >
       <code> []() </code>
     </button>
+    <button type="button" title="Insert front-matter" prepend-frontmatter>
+      Add Frontmatter
+    </button>
     <dialog search-and-link closedby="none">
       <iframe
         title="Query Playground Widget"
@@ -151,6 +154,13 @@
         textarea.selectionStart = selectionStart;
         textarea.selectionEnd = selectionStart + text.length;
       });
+
+      document
+        .querySelector("button[prepend-frontmatter]")
+        .addEventListener("click", () => {
+          textarea.value =
+            ["---", "keywords: []", "---", ""].join("\n") + textarea.value;
+        });
     });
   </script>
   <textarea
