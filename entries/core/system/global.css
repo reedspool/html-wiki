@@ -31,8 +31,6 @@ body {
 
 ul {
   list-style: circle;
-  padding-inline-start: 0;
-  list-style-position: inside;
 
   li:not(:last-child) {
     margin-bottom: var(--space-quarter);
