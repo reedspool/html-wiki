@@ -151,6 +151,10 @@ a {
     font-size: 2rem;
     font-family: var(--fancy);
   }
+
+  &[icon] {
+    text-decoration: none;
+  }
 }
 
 h1,

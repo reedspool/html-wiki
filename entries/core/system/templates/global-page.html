@@ -32,7 +32,23 @@
               <li><a href="/recent.html">Recent</a></li>
               <li><a href="/system/templates/keyword.html">Keywords</a></li>
               <drop-if truthy="parameters.static !== undefined">
-                <li><a href="?edit">Edit this page</a></li>
+                <li><a icon href="?edit" title="Edit this page">✏️</a></li>
+                <li>
+                  <a icon href="/system/actions/create.html" title="Create new"
+                    >⊕</a
+                  >
+                </li>
+                <li>
+                  <a
+                    icon
+                    href="/system/actions/search-and-link.html"
+                    title="Search"
+                    >🔍</a
+                  >
+                </li>
+                <li>
+                  <a icon href="" target="_blank" title="Open in new tab">⎘</a>
+                </li>
               </drop-if>
             </ul>
           </nav>
