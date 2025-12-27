@@ -48,6 +48,9 @@ export type FileCache = {
   getByContentPathOrContentTitle: (
     pathOrTitle: string,
   ) => FileContentsAndDetails | undefined
+  ensureByContentPathOrContentTitle: (
+    pathOrTitle: string,
+  ) => FileContentsAndDetails
   fileExists: (path: string) => ReturnType<typeof fileExists>
   createFileAndDirectories: (params: {
     contentPath: string
@@ -209,6 +212,15 @@ export const createFreshCache = async ({
   const getContentPathsByDirectoryStructure = async () =>
     contentPathsByDirectoryStructure
 
+  const getByContentPathOrContentTitle: FileCache["getByContentPathOrContentTitle"] =
+    (pathOrTitle) => {
+      return pathOrTitle === "/"
+        ? filesByContentPath["/index.html"]
+        : (filesByTitle[decodeURIComponent(pathOrTitle).replace(/^\//, "")] ??
+            filesByContentPath[decodeURIComponent(pathOrTitle)] ??
+            filesByContentPath[decodeURIComponent(pathOrTitle + "/index.html")])
+    }
+
   const fileCache: FileCache = {
     rebuildMetaCache,
     getListOfFilesAndDetails,
@@ -223,12 +235,13 @@ export const createFreshCache = async ({
     removeFileFromCacheData,
     getByContentPath: (path) => filesByContentPath[decodeURIComponent(path)],
     getByTitle: (title) => filesByTitle[decodeURIComponent(title)],
-    getByContentPathOrContentTitle: (pathOrTitle) => {
-      return pathOrTitle === "/"
-        ? filesByContentPath["/index.html"]
-        : (filesByTitle[decodeURIComponent(pathOrTitle).replace(/^\//, "")] ??
-            filesByContentPath[decodeURIComponent(pathOrTitle)] ??
-            filesByContentPath[decodeURIComponent(pathOrTitle + "/index.html")])
+    getByContentPathOrContentTitle,
+    ensureByContentPathOrContentTitle: (path) => {
+      const entry = getByContentPathOrContentTitle(path)
+      if (!entry) {
+        throw new MissingFileQueryError(path)
+      }
+      return entry
     },
     ensureByContentPath: (path) => {
       const entry = filesByContentPath[decodeURIComponent(path)]

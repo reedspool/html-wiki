@@ -79,14 +79,16 @@ export const renderer =
     fileCache: FileCache
   }) =>
   async (
-    contentPath: string,
+    contentPathOrContentTitle: string,
     parameters: ParameterValue = {},
   ): Promise<string> => {
-    const contentFileReadResult =
-      fileCache.ensureByContentPath(contentPath).originalContent
+    const contentFile = fileCache.ensureByContentPathOrContentTitle(
+      contentPathOrContentTitle,
+    )
+    const contentFileReadResult = contentFile.originalContent
     const stringified = JSON.stringify(parameters)
     log(
-      `Applying in-query templating for ${contentPath} original query content query ${stringified.length > 100 ? stringified.slice(0, 100) + "..." : stringified}`,
+      `Applying in-query templating for '${contentPathOrContentTitle}' original query content query ${stringified.length > 100 ? stringified.slice(0, 100) + "..." : stringified}`,
     )
     // TODO: I think "noApply" is more accurate than "raw", however can
     // probably come up with a better name. The point is "raw" implies too
@@ -100,10 +102,11 @@ export const renderer =
     }
     let content = contentFileReadResult.content
     if (parameters.renderMarkdown !== undefined) {
-      if (typeof parameters.contentPath !== "string") throw new Error()
+      const contentPath = parameters.contentPath ?? contentFile.contentPath
+      if (typeof contentPath !== "string") throw new Error()
       content = await specialRenderMarkdown({
         content,
-        contentPath: parameters.contentPath,
+        contentPath,
         fileCache,
       })
     }
