@@ -290,26 +290,6 @@ export const setEachParameterWithSource = (
   return parameters
 }
 
-export const setParameterChildrenWithSource = (
-  parameters: ParameterValue | string,
-  key: keyof ParameterValue,
-  value: ParameterValue,
-  source: ParameterSources,
-): ParameterValue => {
-  if (typeof parameters === "string")
-    throw new Error(`Can't set parameter on ${parameters}`)
-  const original = parameters[key]
-  if (original) {
-    log(
-      `Overwriting parameter '${String(key)}' to '${value}' (${source}) from '${original}' (original.source)`,
-    )
-  }
-
-  // TODO: I think this is no longer any different at all
-  parameters[key] = value
-  return parameters
-}
-
 export const stringParameterValue = (
   parameterV: unknown,
   property: string,
@@ -351,21 +331,5 @@ export const maybeAtLeastEmptyStringParameterValue = (
 ): string | true | undefined => {
   const parameter = maybeStringParameterValue(parameterV, property)
   if (parameter === "") return true
-  return parameter
-}
-
-// TODO: I don't think this has any value anymore... since anything can be an
-// object in JavaScript.
-export const recordParameterValue = (
-  parameter: ParameterValue["string"],
-): unknown => {
-  if (!parameter) throw new Error("Object required")
-  return parameter
-}
-
-export const maybeRecordParameterValue = (
-  parameter: ParameterValue["string"],
-): unknown | undefined => {
-  if (!parameter) return undefined
   return parameter
 }

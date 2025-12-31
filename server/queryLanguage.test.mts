@@ -5,7 +5,6 @@ import { Temporal } from "temporal-polyfill"
 import { wait } from "./utilities.mts"
 import {
   setEachParameterWithSource,
-  setParameterChildrenWithSource,
   setParameterWithSource,
 } from "./engine.mts"
 import { parse } from "node-html-parser"
@@ -137,17 +136,7 @@ test("pString() can get a non-string parameter as a string", o, async () => {
 })
 
 test("pString() can get a deeper parameter", o, async () => {
-  const parameters = setParameterChildrenWithSource(
-    {},
-    "levelOne",
-    setParameterChildrenWithSource(
-      {},
-      "levelTwo",
-      setParameterWithSource({}, "levelThree", "level four", "query param"),
-      "query param",
-    ),
-    "query param",
-  )
+  const parameters = { levelOne: { levelTwo: { levelThree: "level four" } } }
   const result = await pString("parameters.levelOne.levelTwo.levelThree", {
     parameters,
   })
