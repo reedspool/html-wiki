@@ -4,7 +4,6 @@ import {
   execute,
   type ParameterValue,
   setEachParameterWithSource,
-  setParameterChildrenWithSource,
 } from "./engine.mts"
 import { MissingFileQueryError } from "./error.mts"
 import { readFile } from "./filesystem.mts"
@@ -38,8 +37,6 @@ test("Render a file which doesn't exist", { concurrency: true }, async () => {
     {
       command: "read",
       contentPath: "/This file certainly doesn't exist",
-      userDirectory: configuredFiles.testDirectory,
-      coreDirectory: configuredFiles.coreDirectory,
     },
     "query param",
   )
@@ -79,8 +76,6 @@ test(
           command: "read",
           nocontainer: "true",
           contentPath: "/index.html",
-          userDirectory: configuredFiles.testDirectory,
-          coreDirectory: configuredFiles.coreDirectory,
         },
         "query param",
       ),
@@ -93,8 +88,6 @@ test(
           command: "read",
           nocontainer: "true",
           contentPathOrContentTitle: "HTML Wiki Homepage",
-          userDirectory: configuredFiles.testDirectory,
-          coreDirectory: configuredFiles.coreDirectory,
         },
         "query param",
       ),
@@ -158,8 +151,6 @@ test("Render sitemap", { concurrency: true }, async () => {
       {
         command: "read",
         contentPath: "/sitemap.html",
-        userDirectory: configuredFiles.testDirectory,
-        coreDirectory: configuredFiles.coreDirectory,
       },
       "query param",
     ),
@@ -171,8 +162,6 @@ test("Render sitemap", { concurrency: true }, async () => {
       {
         command: "read",
         contentPathOrContentTitle: "Sitemap",
-        userDirectory: configuredFiles.testDirectory,
-        coreDirectory: configuredFiles.coreDirectory,
       },
       "query param",
     ),
