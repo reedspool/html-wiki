@@ -101,7 +101,10 @@ export const renderer =
       return contentFileReadResult.content
     }
     let content = contentFileReadResult.content
-    if (parameters.renderMarkdown !== undefined) {
+    if (
+      parameters.renderMarkdown !== undefined ||
+      contentFile.renderability === "markdown"
+    ) {
       const contentPath = parameters.contentPath ?? contentFile.contentPath
       if (typeof contentPath !== "string") throw new Error()
       content = await specialRenderMarkdown({

@@ -74,10 +74,6 @@ export const execute = async ({
     })
   }
 
-  // TODO: Really don't want this to be everywhere
-  if (/\.md$/.test(stringParameterValue(parameters, "contentPath"))) {
-    setParameterWithSource(parameters, "renderMarkdown", "true", "derived")
-  }
   let command: Command | undefined = narrowStringToCommand(
     stringParameterValue(parameters, "command"),
   )
@@ -114,7 +110,7 @@ export const execute = async ({
     case "read": {
       if (validationIssues.length > 0)
         return validationErrorResponse(validationIssues)
-      const { originalContent, meta } = fileCache.ensureByContentPath(
+      const { originalContent, renderability } = fileCache.ensureByContentPath(
         stringParameterValue(parameters, "contentPath"),
       )
       let content
@@ -127,7 +123,10 @@ export const execute = async ({
         }
       } else {
         let originalContentContent = originalContent.content
-        if (parameters.renderMarkdown !== undefined) {
+        if (
+          parameters.renderMarkdown !== undefined ||
+          renderability === "markdown"
+        ) {
           if (typeof parameters.contentPath !== "string")
             throw new Error("Markdown rendering requires contentPath")
           originalContentContent = await specialRenderMarkdown({
@@ -152,15 +151,8 @@ export const execute = async ({
         const containerExecuteResults = await execute({
           fileCache,
           parameters: {
-            // TODO: Can't just do anything here. If I accept all previous
-            // parameters, then I get into recursive loops. Why did I want that anyways?
-            // The idea was to maybe pass some parameters to the top. So maybe  I can have a way to explicitly pass parameters up and out
-            statusMessage: parameters.statusMessage,
-            static: parameters.static,
-            renderMarkdown: undefined,
+            originalParameters: parameters,
             command: "read",
-            select: undefined,
-            contentPathOrContentTitle: undefined,
             contentPath: configuredFiles.defaultPageTemplate,
             content,
           },
@@ -247,10 +239,6 @@ export const validateReadParameters = async (
         "contentPathOrContentTitle",
       ),
     })
-  }
-  // TODO: Really don't want this to be everywhere
-  if (/\.md$/.test(stringParameterValue(parameters, "contentPath"))) {
-    setParameterWithSource(parameters, "renderMarkdown", "true", "derived")
   }
 }
 

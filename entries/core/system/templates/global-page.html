@@ -31,7 +31,9 @@
               <li><a href="/">Home</a></li>
               <li><a href="/recent.html">Recent</a></li>
               <li><a href="/system/templates/keyword.html">Keywords</a></li>
-              <drop-if truthy="parameters.static !== undefined">
+              <drop-if
+                truthy="parameters?.originalParameters?.static !== undefined"
+              >
                 <li><a icon href="?edit" title="Edit this page">✏️</a></li>
                 <li>
                   <a icon href="/system/actions/create.html" title="Create new"
@@ -54,10 +56,12 @@
           </nav>
         </center-column-layout>
       </header>
-      <keep-if truthy="statusMessage">
+      <keep-if truthy="parameters?.originalParameters?.statusMessage">
         <center-column-layout class="relative lower">
           <toast-message role="status">
-            <span x-content="statusMessage"></span>
+            <span
+              x-content="parameters?.originalParameters?.statusMessage"
+            ></span>
             <button
               clean
               type="button"
