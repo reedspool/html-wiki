@@ -213,17 +213,11 @@ export const createServer = async ({
     }
 
     const result = await execute({ parameters, fileCache })
-    if (result.status !== Status.OK) {
-      res.status(result.status)
-      res.send(result.content)
-    } else if (command === "read") {
+    if (command === "read" || result.status !== Status.OK) {
       res.setHeader("Content-Type", result.contentType)
-      // TODO: This is silly because it's like the one instance where I'm not
-      // looking at the contentPathOrContentTitle and instead looking only at the path.
-      // Suggests this is somethign the Engine should be doing instead?
-      if (req.path === configuredFiles.fileMissingPageTemplate) {
-        res.status(404)
-      }
+      // Only write the status if the result is explicitly not ok
+      // because we might have already set it (e.g. delete w/o confirm above)
+      if (result.status !== Status.OK) res.status(result.status)
       res.send(result.content)
     } else if (
       command == "update" ||
@@ -302,22 +296,6 @@ export const createServer = async ({
       )
     }
     return
-  })
-
-  app.use(function (req, res) {
-    res.status(404)
-    // If the path is already the 404 page, then don't redirect as that would be infinite
-    if (req.path === configuredFiles.fileMissingPageTemplate) {
-      res.write(`404 - File Not Found`)
-      res.setHeader("Content-Type", staticContentTypes.plainText)
-      res.end()
-      return
-    }
-
-    // Otherwise, redirect to the 404 page but given this
-    res.redirect(
-      `${configuredFiles.fileMissingPageTemplate}?originalPath=${req.path}`,
-    )
   })
 
   const listener = app.listen(port, (error) => {
