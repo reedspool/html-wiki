@@ -92,7 +92,7 @@
 <edit->
   <h1>
     Editing
-    <a x-href="editingContentPath" x-content="editingContentPath"></a>
+    <a x-href="target" x-content="target"></a>
   </h1>
 
   <toolbox->
@@ -169,15 +169,12 @@
     x-content="or(editContent,'')"
   ></textarea>
   <actionbar->
-    <button
-      type="submit"
-      x-formaction="`${editingContentPath}?${saveParameters || ''}`"
-    >
+    <button type="submit" x-formaction="`${target}?${saveParameters || ''}`">
       Save
     </button>
     <button
       type="submit"
-      x-formaction="`${editingContentPath}?redirect=${editingContentPath}?edit${saveParameters || ''}`"
+      x-formaction="`${target}?redirect=${target}?edit${saveParameters || ''}`"
     >
       Save and Edit
     </button>

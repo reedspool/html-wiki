@@ -9,16 +9,16 @@
   </head>
 
   <body>
-    <drop-if truthy="editingContentPath">
+    <drop-if truthy="target">
       You are viewing the edit page directly. Maybe you meant to
       <a href="?edit">edit this page</a>
       (edit the edit page)? Or if you wanted to edit another page, go to that
       page and add <code>?edit</code> to the end of the URL.
     </drop-if>
-    <keep-if truthy="editingContentPath">
+    <keep-if truthy="target">
       <form method="POST">
         <query-content
-          q="render('/system/templates/editor.fragment.html', { nocontainer, editContent: await render(editingContentPath,{raw: true, escape: true }), editingContentPath: editingContentPath })"
+          q="render('/system/templates/editor.fragment.html', { nocontainer, editContent: await render(target,{raw: true, escape: true }), target })"
         ></query-content>
       </form>
     </keep-if>

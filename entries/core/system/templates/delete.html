@@ -4,31 +4,25 @@
     <title>Confirm Deletion</title>
   </head>
   <body>
-    <drop-if truthy="deletingContentPath">
+    <drop-if truthy="target">
       You are viewing the delete page directly. Maybe you meant to
       <a href="?edit">edit this page</a>
       (edit the delete page)? Or if you wanted to delete another page, go to
       that page and add <code>?delete</code> to the end of the URL.
     </drop-if>
-    <keep-if truthy="deletingContentPath">
+    <keep-if truthy="target">
       <h1>
         Really delete
-        <query-content q="deletingContentPath"
-          >[file name missing]</query-content
-        >?
+        <query-content q="target">[file name missing]</query-content>?
       </h1>
-      <form
-        x-action="deletingContentPath,(p)=>`${p}?delete&delete-confirm`"
-        method="POST"
-      >
+      <form x-action="`${target}?delete&delete-confirm`" method="POST">
         <p>
           Are you sure you want to delete
-          <query-content q="deletingContentPath"
-            >[file name missing]</query-content
-          >? This action cannot be undone.
+          <query-content q="target">[file name missing]</query-content>? This
+          action cannot be undone.
         </p>
         <button type="submit">Confirm and delete</button>
-        <a x-href="deletingContentPath">cancel deletion and go back</a>
+        <a x-href="target">cancel deletion and go back</a>
       </form>
     </keep-if>
   </body>

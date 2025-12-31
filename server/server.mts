@@ -111,26 +111,20 @@ export const createServer = async ({
       stringParameterValue(parameters, "command") == "read" &&
       maybeAtLeastEmptyStringParameterValue(parameters, "edit")
     ) {
-      const toEditContentPath =
+      const target =
         maybeStringParameterValue(parameters, "contentPathOrContentTitle") ||
         req.path
-      const fileExistsResult =
-        fileCache.getByContentPathOrContentTitle(toEditContentPath)
+      const fileExistsResult = fileCache.getByContentPathOrContentTitle(target)
       // File not existing at all is handled in the engine
       if (fileExistsResult && fileCache.isCoreFile(fileExistsResult)) {
         // If requesting to edit a core file, prompt to create shadow first
-        setParameterWithSource(
-          parameters,
-          "editContentPath",
-          toEditContentPath,
-          "derived",
-        )
+        setParameterWithSource(parameters, "target", target, "derived")
 
         setEachParameterWithSource(
           parameters,
           {
             contentPath: configuredFiles.defaultCreateShadowTemplateFile,
-            editContentPath: toEditContentPath,
+            target: target,
           },
           "derived",
         )
@@ -138,13 +132,13 @@ export const createServer = async ({
         setEachParameterWithSource(
           parameters,
           {
-            editingContentPath: fileExistsResult.contentPath,
+            target: fileExistsResult.contentPath,
             contentPath: configuredFiles.defaultEditTemplateFile,
           },
           "derived",
         )
       } else {
-        throw new MissingFileQueryError(toEditContentPath)
+        throw new MissingFileQueryError(target)
       }
     } else if (
       stringParameterValue(parameters, "command") == "delete" &&
@@ -166,7 +160,7 @@ export const createServer = async ({
         setEachParameterWithSource(
           parameters,
           {
-            deletingContentPath: fileExistsResult.contentPath,
+            target: fileExistsResult.contentPath,
             contentPath: configuredFiles.defaultDeleteTemplateFile,
           },
           "derived",

@@ -393,7 +393,7 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
   await validateAssertAndReport(responseText, url)
 
   // The page should be exactly the same as if we call the expanded version
-  const expandedUrl = `http://localhost:${port}${configuredFiles.defaultEditTemplateFile}?editingContentPath=${configuredFiles.testMarkdownFile}`
+  const expandedUrl = `http://localhost:${port}${configuredFiles.defaultEditTemplateFile}?target=${configuredFiles.testMarkdownFile}`
   const responseForExpandedUrl = await fetch(expandedUrl)
   const responseTextForExpandedUrl = await responseForExpandedUrl.text()
 
