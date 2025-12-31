@@ -86,7 +86,6 @@ export const execute = async ({
   }
   switch (command) {
     case "create": {
-      // TODO: Whoops reusing this special value
       if (!parameters.content) {
         validationIssues.push("content required")
       }
@@ -113,7 +112,6 @@ export const execute = async ({
       }
     }
     case "read": {
-      await validateReadParameters(validationIssues, parameters, fileCache)
       if (validationIssues.length > 0)
         return validationErrorResponse(validationIssues)
       const { originalContent, meta } = fileCache.ensureByContentPath(
@@ -130,7 +128,8 @@ export const execute = async ({
       } else {
         let originalContentContent = originalContent.content
         if (parameters.renderMarkdown !== undefined) {
-          if (typeof parameters.contentPath !== "string") throw new Error()
+          if (typeof parameters.contentPath !== "string")
+            throw new Error("Markdown rendering requires contentPath")
           originalContentContent = await specialRenderMarkdown({
             contentPath: parameters.contentPath,
             fileCache,

@@ -121,9 +121,7 @@ export const createServer = async ({
     ) {
       const toEditContentPath =
         maybeStringParameterValue(parameters, "contentPathOrContentTitle") ||
-        req.path === "/"
-          ? "/index.html"
-          : req.path
+        req.path
       const fileExistsResult =
         fileCache.getByContentPathOrContentTitle(toEditContentPath)
       // File not existing at all is handled in the engine

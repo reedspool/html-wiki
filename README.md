@@ -1,6 +1,6 @@
 # HTML Wiki
 
-Experiment with a custom wiki where entries are written and stored as HTML files on disk.
+Wiki server and static site generator in Node.
 
 ## Running locally
 

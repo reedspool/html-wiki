@@ -249,16 +249,6 @@ export const applyTemplating = async (
             // imperative templating logic like `set-`
             const toPlace = []
             for (const childElement of originalElementChildren) {
-              // This needs to be a clone for two reasons.
-              // First it needs to be detached from the parent
-              // so that it doesn't continue to try to
-              // traverse outside. Thsi could be achieved
-              // alternatively by implementing "stopAt"
-              // parameter for applyTemplate, which might be
-              // useful for other reasons. But since this also
-              // needs t obe a clone for the second reason (as
-              // the nth copy to fill in with the nth list
-              // item's data), it works.
               const childElementClone = childElement.clone() as HTMLElement
               // This typing is just wrong. Null is perfectly valid
               childElementClone.parentNode = element.parentNode
@@ -382,7 +372,7 @@ export const applyTemplating = async (
   const autoSelectBody =
     !selector &&
     !(meta.nocontainer !== undefined || parameters.nocontainer !== undefined)
-  selector = !selector && autoSelectBody ? "body" : null
+  selector = selector || autoSelectBody ? "body" : null
   if (selector) {
     if (typeof selector !== "string") {
       throw new Error("query value expected string")
