@@ -1,4 +1,5 @@
 import test from "node:test"
+import { format } from "prettier"
 import assert from "node:assert"
 import {
   execute,
@@ -98,8 +99,8 @@ test(
     // They're the same minus whitespace changes caused from parsing
     // and re-stringifying
     assert.equal(
-      content,
-      parse(
+      await format(content, { parser: "html" }),
+      await format(
         (
           await readFile({
             searchDirectories: [
@@ -109,7 +110,8 @@ test(
             contentPath: "/index.html",
           })
         ).content,
-      ).toString(),
+        { parser: "html" },
+      ),
     )
   },
 )
