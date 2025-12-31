@@ -372,16 +372,14 @@ export const applyTemplating = async (
   const autoSelectBody =
     !selector &&
     !(meta.nocontainer !== undefined || parameters.nocontainer !== undefined)
-  selector = selector || autoSelectBody ? "body" : null
+  selector = selector || (autoSelectBody ? "body>*" : null)
   if (selector) {
     if (typeof selector !== "string") {
       throw new Error("query value expected string")
     }
-    const selected = root.querySelector(selector)
-    if (selected) {
-      // TODO: It doesn't really make sense that `select` actually
-      // gets the inner HTML. So maybe autoSelect should be selectAll('body>*') and it shuold always get the outerHTML
-      return { content: selected.innerHTML.toString(), meta, links }
+    const selected = root.querySelectorAll(selector)
+    if (selected.length > 0) {
+      return { content: selected.map(s=>s.toString()).join("\n"), meta, links }
     }
     if (!autoSelectBody) {
       throw new QueryError(
