@@ -1,15 +1,12 @@
 import { applyTemplating } from "./dom.mts"
 import debug from "debug"
 import { escapeHtml } from "./utilities.mts"
-import {
-  buildMyServerPStringContext,
-  pString,
-  specialRenderMarkdown,
-} from "./queryLanguage.mts"
+import { specialRenderMarkdown } from "./queryLanguage.mts"
 import { type FileCache } from "./fileCache.mts"
 import { staticContentTypes } from "./serverUtilities.mts"
 import { contentType } from "mime-types"
 import { configuredFiles } from "./configuration.mts"
+import { MissingFileQueryError } from "./error.mts"
 const log = debug("server:engine")
 
 // Parameters come in tagged with a source to enable specific diagnostic reports
@@ -64,14 +61,18 @@ export const execute = async ({
       "Exactly one of contentPath or contentPathOrContentTitle required",
     )
   } else if (!parameters.contentPath) {
-    // Try as title
-    parameters.contentPath = await contentPathOrContentTitleToContentPath({
-      fileCache,
-      contentPathOrContentTitle: stringParameterValue(
-        parameters,
-        "contentPathOrContentTitle",
-      ),
-    })
+    const contentPathOrContentTitle = stringParameterValue(
+      parameters,
+      "contentPathOrContentTitle",
+    ) as string
+    const derivedContentPath = fileCache.getByContentPathOrContentTitle(
+      contentPathOrContentTitle,
+    )?.contentPath
+    if (!derivedContentPath) {
+      throw new MissingFileQueryError(contentPathOrContentTitle)
+    } else {
+      parameters.contentPath = derivedContentPath
+    }
   }
 
   let command: Command | undefined = narrowStringToCommand(
@@ -202,46 +203,11 @@ export const execute = async ({
   }
 }
 
-export const contentPathOrContentTitleToContentPath = async ({
-  fileCache,
-  contentPathOrContentTitle,
-}: {
-  fileCache: FileCache
-  contentPathOrContentTitle: string
-}): Promise<string | undefined> => {
-  return (
-    fileCache.getByContentPathOrContentTitle(contentPathOrContentTitle)
-      ?.contentPath ?? contentPathOrContentTitle
-  )
-}
-
 export const validationErrorResponse = (validationIssues: Array<string>) => ({
   status: Status.ClientError,
-  content: `Templating engine request wasn't valid, issues: ${validationIssues.join("; ")}.`,
+  content: `Request wasn't valid, issues: ${validationIssues.join("; ")}.`,
   contentType: staticContentTypes.plainText,
 })
-export const validateReadParameters = async (
-  validationIssues: Array<string>,
-  parameters: ParameterValue,
-  fileCache: FileCache,
-) => {
-  if (!parameters.contentPath && !parameters.contentPathOrContentTitle) {
-    // None present
-    validationIssues.push(
-      "Exactly one of contentPath or contentPathOrContentTitle required",
-    )
-  } else if (!parameters.contentPath) {
-    // Try as title
-    parameters.contentPath = await contentPathOrContentTitleToContentPath({
-      fileCache,
-      contentPathOrContentTitle: stringParameterValue(
-        parameters,
-        "contentPathOrContentTitle",
-      ),
-    })
-  }
-}
-
 const commands = ["create", "read", "update", "delete"] as const
 export const narrowStringToCommand: (
   maybeCommand: unknown,

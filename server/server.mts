@@ -16,6 +16,7 @@ import {
   narrowStringToCommand,
   setEachParameterWithSource,
   setParameterWithSource,
+  Status,
   stringParameterValue,
   type ParameterValue,
 } from "./engine.mts"
@@ -224,7 +225,10 @@ export const createServer = async ({
     }
 
     const result = await execute({ parameters, fileCache })
-    if (command === "read") {
+    if (result.status !== Status.OK) {
+      res.status(result.status)
+      res.send(result.content)
+    } else if (command === "read") {
       res.setHeader("Content-Type", result.contentType)
       // TODO: This is silly because it's like the one instance where I'm not
       // looking at the contentPathOrContentTitle and instead looking only at the path.
