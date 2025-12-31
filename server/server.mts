@@ -70,12 +70,7 @@ export const createServer = async ({
         if (query.edit !== undefined) {
           command = "update"
         } else if (query.delete !== undefined) {
-          if (query["delete-confirm"] !== undefined) {
-            command = "delete"
-          } else {
-            command = "read"
-            res.status(400)
-          }
+          command = "delete"
         } else if (query.create !== undefined) {
           command = "create"
         } else if (req.path === configuredFiles.sharedContentReceiver) {
@@ -99,12 +94,8 @@ export const createServer = async ({
       } else if (req.method === "PUT") {
         command = "create"
       } else if (req.method === "DELETE") {
-        if (query["delete-confirm"] !== undefined) {
-          command = "delete"
-        } else {
-          command = "read"
-          res.status(400)
-        }
+        command = "delete"
+        setParameterWithSource(parameters, "delete-confirm", "true", "derived")
       }
     }
 
@@ -156,9 +147,12 @@ export const createServer = async ({
         throw new MissingFileQueryError(toEditContentPath)
       }
     } else if (
-      stringParameterValue(parameters, "command") == "read" &&
-      maybeAtLeastEmptyStringParameterValue(parameters, "delete")
+      stringParameterValue(parameters, "command") == "delete" &&
+      !maybeAtLeastEmptyStringParameterValue(parameters, "delete-confirm")
     ) {
+      res.status(400)
+      setParameterWithSource(parameters, "command", "read", "derived")
+      command = "read"
       const toDeleteContentPath =
         maybeStringParameterValue(parameters, "contentPathOrContentTitle") ||
         req.path
