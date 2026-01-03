@@ -356,6 +356,121 @@ export const applyTemplating = async (
           element.remove()
         }
         break
+      case "RENDER-":
+      case "R-": {
+        const attributeEntries = Object.entries(element.attributes)
+
+        let shouldKeepContents = true
+        if (element.hasAttribute("map") && element.hasAttribute("content")) {
+          throw new Error("Can only use one of map or content in render-")
+        }
+
+        attributes: for (const [key, value] of attributeEntries) {
+          switch (key) {
+            // TODO: SET? E.g. set:foo='bar' ? or set="foo=bar"?
+            case "map":
+              {
+                let queryValue = await getQueryValue(value)
+                if (!Array.isArray(queryValue)) {
+                  if (queryValue === undefined || queryValue === null) {
+                    queryValue = []
+                  } else if (element.hasAttribute("allow-one")) {
+                    queryValue = [queryValue]
+                  } else {
+                    throw new Error("Expected an array value for map-list")
+                  }
+                }
+
+                if (!Array.isArray(queryValue)) {
+                  throw new Error("Map value was not an array somehow")
+                }
+
+                shouldKeepContents = false
+
+                const topLevelParameters = parameters
+                const originalElementChildren = [...element.children]
+                for (const index in queryValue.reverse()) {
+                  const current = queryValue[index]
+                  const parameters: ParameterValue = {
+                    ...topLevelParameters,
+                    rootSelector: undefined,
+                    select: undefined,
+                  }
+                  setParameterWithSource(
+                    parameters,
+                    "list",
+                    queryValue,
+                    "query param",
+                  )
+                  setParameterWithSource(
+                    parameters,
+                    "index",
+                    index,
+                    "query param",
+                  )
+                  setParameterWithSource(
+                    parameters,
+                    "currentListItem",
+                    current,
+                    "query param",
+                  )
+                  // Even though we're going to place everything in
+                  // reverse order (with .after()), start in-order for
+                  // imperative templating logic like `set-`
+                  const toPlace = []
+                  for (const childElement of originalElementChildren) {
+                    const childElementClone =
+                      childElement.clone() as HTMLElement
+                    // This typing is just wrong. Null is perfectly valid
+                    childElementClone.parentNode = element.parentNode
+                    const { content } = await applyTemplating({
+                      fileCache,
+                      element: childElementClone,
+                      parameters,
+                    })
+                    toPlace.push(content)
+                  }
+
+                  element.after(...toPlace)
+                }
+              }
+              break
+            case "debugger":
+              debugger
+              break
+            case "content":
+              {
+                const queryValue = await getQueryValue(value)
+                if (queryValue) {
+                  if (typeof queryValue !== "string") {
+                    throw new Error("content query value requires a string")
+                  }
+                  shouldKeepContents = false
+                  element.after(queryValue)
+                }
+              }
+              break
+            case "if":
+              {
+                const conditional = !!(await getQueryValue(value))
+
+                if (!conditional) {
+                  shouldKeepContents = false
+                  break attributes
+                }
+              }
+              break
+            default:
+              console.error(`Unhandled <render-> attribute ${key}`)
+              break
+          }
+        }
+        alreadySetForNextIteration = treeWalker.nextNodeNotChildren()
+        if (shouldKeepContents) {
+          element.after(element.innerHTML)
+        }
+        element.remove()
+      }
       default:
         break
     }

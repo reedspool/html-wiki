@@ -108,6 +108,93 @@ test(
 )
 
 test(
+  "<render- if='truthy'> drops itself, keeps its content",
+  { concurrency: true },
+  async () => {
+    const input = html`
+      <render- if="parameters.title"><h1>Keep me!</h1></render->
+    `
+    const { $1 } = await applyTemplatingAndParse({ title: true }, input)
+    assert.equal(
+      $1("h1").innerHTML,
+      "Keep me!",
+      "The contents remain and are processed",
+    )
+    assert.equal($1("render-"), undefined, "The keep-if element removes itself")
+  },
+)
+test(
+  "<render- if='falsy'> drops itself with its content",
+  { concurrency: true },
+  async () => {
+    const input = html`
+      <render- if="parameters.title"><h1>Keep me!</h1></render->
+    `
+    const { $1 } = await applyTemplatingAndParse({ title: false }, input)
+    assert.equal($1("h1"), undefined, "The content is removed")
+    assert.equal($1("render-"), undefined, "The keep-if element removes itself")
+  },
+)
+test(
+  "<render- content='...'> drops itself and adds the query result",
+  { concurrency: true },
+  async () => {
+    const input = html` <render- content="'abcd'"><h1>Keep me!</h1></render-> `
+    const { content, $1 } = await applyTemplatingAndParse(
+      { title: false },
+      input,
+    )
+    assert.equal($1("h1"), undefined, "The content is removed")
+    assert.match(content, /abcd/, "The query value appears")
+  },
+)
+
+test(
+  "<render- if='false' content='...'> drops itself and does not add the query result",
+  { concurrency: true },
+  async () => {
+    const input = html`
+      <render- if="title" content="'abcd'"><h1>Keep me!</h1></render->
+    `
+    const { content, $1 } = await applyTemplatingAndParse(
+      { title: false },
+      input,
+    )
+    assert.equal($1("h1"), undefined, "The content is removed")
+    assert.doesNotMatch(content, /abcd/, "The query value appears")
+  },
+)
+// TODO: This isn't so desirable, but it's how I implemented today
+test.only(
+  "<render- content='...' if='false'> DOES add the content because `content` comes before the `if` attribute",
+  { concurrency: true },
+  async () => {
+    const input = html`
+      <render- content="'abcd'" if="title"><h1>Keep me!</h1></render->
+    `
+    const { content, $1 } = await applyTemplatingAndParse(
+      { title: false },
+      input,
+    )
+    assert.equal($1("h1"), undefined, "The content is removed")
+    assert.match(content, /abcd/, "The query value appears")
+  },
+)
+
+test("<render- map='[...]'> works", { concurrency: true }, async () => {
+  const input = html`
+    <render- map="Array(9).fill(null).map((_,i) => i+1)"
+      ><span x-content="currentListItem"
+    /></render->
+  `
+  const { content, $ } = await applyTemplatingAndParse({ title: false }, input)
+  const spans = $("span")
+  assert.equal(spans.length, 9)
+  for (let i = 0; i < spans.length; i++) {
+    assert.match(spans[i].innerText, new RegExp(`${i + 1}`))
+  }
+})
+test(
   "Any element can have arbitrary executed attributes",
   { concurrency: true },
   async () => {
