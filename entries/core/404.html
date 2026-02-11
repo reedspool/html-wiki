@@ -26,5 +26,9 @@
         >
       </p>
     </keep-if>
+    <keep-if truthy="parameters.static !== undefined">
+      <h1>Page Not Found</h1>
+      <p>No file found for this URL :-/</p>
+    </keep-if>
   </body>
 </html>

@@ -45,5 +45,8 @@
         </keep-if>
       </keep-if>
     </keep-if>
+    <keep-if truthy="parameters.static !== undefined">
+      <p>This file is shown in dynamic mode when something goes wrong</p>
+    </keep-if>
   </body>
 </html>
