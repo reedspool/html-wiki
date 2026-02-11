@@ -442,11 +442,12 @@ export const applyTemplating = async (
               {
                 const queryValue = await getQueryValue(value)
                 if (queryValue) {
-                  if (typeof queryValue !== "string") {
-                    throw new Error("content query value requires a string")
-                  }
                   shouldKeepContents = false
-                  element.after(queryValue)
+                  element.after(
+                    typeof queryValue == "string"
+                      ? queryValue
+                      : (queryValue as Object).toString(),
+                  )
                 }
               }
               break
@@ -492,9 +493,13 @@ export const applyTemplating = async (
     if (typeof selector !== "string") {
       throw new Error("query value expected string")
     }
-    const selected = root.querySelectorAll(selector)
-    if (selected.length > 0) {
-      return { content: selected.map(s=>s.toString()).join("\n"), meta, links }
+    const body = root.querySelector("body")
+    if (body && body.innerHTML.trim().length > 0) {
+      return {
+        content: body.innerHTML,
+        meta,
+        links,
+      }
     }
     if (!autoSelectBody) {
       throw new QueryError(

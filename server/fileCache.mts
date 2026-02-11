@@ -355,7 +355,8 @@ const getFileContentsAndMetadata = async ({
   const isMarkdown = /\.md$/.test(contentPath)
   if (
     isMarkdown ||
-    (/\.html$/.test(contentPath) && !/\.fragment\.html$/.test(contentPath))
+    /\.html$/.test(contentPath) ||
+    /\.fragment\.html$/.test(contentPath)
   ) {
     let content = readResults.content
     const returnVal: FileContentsAndMetaData = {
