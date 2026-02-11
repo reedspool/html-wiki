@@ -317,6 +317,33 @@ export const applyTemplating = async (
           }
         }
         break
+      case "LOAD-":
+        {
+          for (const [parameterName, contentPath] of Object.entries(
+            element.attributes,
+          )) {
+            let queryValue = await getQueryValue(
+              `fileCache.getByContentPathOrContentTitle('${contentPath}'),p=>p.actualPath`,
+            )
+            // TODO: This sets the parameter for everything after this,
+            // but it would be cool if parameters were a scope concept
+            // and this could createa new scope only for the processing
+            // of the contents of this tag
+            if (typeof queryValue !== "string") {
+              throw new Error(
+                "<load-> attribute values must resolve to strings",
+              )
+            }
+            const result = await import(queryValue)
+            setParameterWithSource(
+              parameters,
+              parameterName,
+              result,
+              "query param",
+            )
+          }
+        }
+        break
       case "DROP-IF":
       case "KEEP-IF":
         {

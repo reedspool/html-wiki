@@ -20,5 +20,17 @@
     <query-content
       q="render('/fixtures/fixture.fragment.html')"
     ></query-content>
+
+    <load- externally_loaded="/fixtures/test-to-load.mts"> </load->
+
+    <p>
+      <span
+        test-load-function
+        x-content="externally_loaded?.exportedFunction()"
+      >
+      </span
+      >.
+      <span test-load-default x-content="externally_loaded?.default"> </span>
+    </p>
   </body>
 </html>

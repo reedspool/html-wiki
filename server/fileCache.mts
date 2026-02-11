@@ -13,6 +13,7 @@ import {
   removeFile,
   stat,
   updateFile,
+  actualFilePath,
 } from "./filesystem.mts"
 import debug from "debug"
 import { MissingFileQueryError } from "./error.mts"
@@ -94,16 +95,13 @@ export const createFreshCache = async ({
     contentPath,
     rebuildMetaCache = true,
   }) => {
-    const everything: FileContentsAndDetails = {
-      contentPath,
-      name: basename(contentPath),
-      type: "file",
-      ...(await getFileContentsAndMetadata({
+    const everything: FileContentsAndDetails = await getFileContentsAndMetadata(
+      {
         fileCache,
         contentPath,
         searchDirectories,
-      })),
-    }
+      },
+    )
 
     listOfFilesAndDetails = listOfFilesAndDetails.filter(
       ({ contentPath }) => everything.contentPath !== contentPath,
@@ -339,7 +337,7 @@ const getFileContentsAndMetadata = async ({
   fileCache: FileCache
   contentPath: string
   searchDirectories: string[]
-}): Promise<FileContentsAndMetaData> => {
+}): Promise<FileContentsAndDetails> => {
   const readResults = await readFile({
     searchDirectories,
     contentPath,
@@ -359,7 +357,14 @@ const getFileContentsAndMetadata = async ({
     /\.fragment\.html$/.test(contentPath)
   ) {
     let content = readResults.content
-    const returnVal: FileContentsAndMetaData = {
+    const returnVal: FileContentsAndDetails = {
+      contentPath,
+      name: basename(contentPath),
+      type: "file",
+      actualPath: actualFilePath({
+        contentPath,
+        directory: readResults.foundInDirectory,
+      }),
       meta: {},
       originalContent: readResults,
       renderability: "html",
@@ -410,6 +415,13 @@ const getFileContentsAndMetadata = async ({
     }
   } else {
     return {
+      contentPath,
+      name: basename(contentPath),
+      type: "file",
+      actualPath: actualFilePath({
+        contentPath,
+        directory: readResults.foundInDirectory,
+      }),
       originalContent: readResults,
       meta: {},
       renderability: "static",

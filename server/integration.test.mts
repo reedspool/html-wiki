@@ -837,6 +837,8 @@ test(
     assert.match($1("h1").innerHTML, /Fixture HTML Example File/)
     assert.match($1("[test-query-content]").innerHTML, /query-content/)
     assert.match($1("[test-query-content]").innerHTML, /54 \* 24 = 1296/)
+    assert.match($1("[test-load-function]").innerHTML, /exported successfully/)
+    assert.match($1("[test-load-default]").innerHTML, /6710/)
 
     await validateAssertAndReport(responseText, url)
   },

@@ -11,6 +11,14 @@ import {
 
 export { stat } from "node:fs/promises"
 
+export const actualFilePath = ({
+  contentPath,
+  directory,
+}: {
+  contentPath: string
+  directory: string
+}) => `${process.cwd()}/${filePath({ contentPath, directory })}`
+
 export const filePath = ({
   contentPath,
   directory,
@@ -201,6 +209,12 @@ export const listAndMergeAllDirectoryContents = async ({
 export type MyDirectoryEntry = {
   name: string
   contentPath: string
+  // TODO: This violates a principal I was operating under, that the actual
+  // underlying filesystem shouldn't be exposed beyond the searchDirectories.
+  // But that's probably not real security. Anyways I didn't have to do this
+  // until I wanted to import things, but probably could resolve this another
+  // way.
+  actualPath: string
   type: "directory" | "file" | "other"
 }
 export const listAllDirectoryContents = async ({
@@ -218,6 +232,7 @@ export const listAllDirectoryContents = async ({
     contentPath: `${dirent.parentPath.slice(
       normalizedBaseDirectory.length,
     )}/${dirent.name}`,
+    actualPath: `${dirent.parentPath}/${dirent.name}`,
     type: dirent.isDirectory()
       ? "directory"
       : dirent.isFile()
