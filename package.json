@@ -31,6 +31,7 @@
     "express": "^5.1.0",
     "express-ws": "^5.0.2",
     "fuse.js": "^7.1.0",
+    "import-without-cache": "^0.2.5",
     "micromark": "^4.0.2",
     "micromark-extension-gfm-autolink-literal": "^2.1.0",
     "micromark-extension-gfm-footnote": "^2.1.0",

@@ -16,6 +16,14 @@ import { configuredFiles } from "./configuration.mts"
 import * as acorn from "acorn"
 import * as walk from "acorn-walk"
 import { MissingFileQueryError } from "./error.mts"
+import * as importWithoutCache from "import-without-cache"
+
+if (!importWithoutCache.isSupported) {
+  throw new Error("import-without-cache is not supported in this environment.")
+}
+
+importWithoutCache.init({ skipNodeModules: true })
+
 const log = debug("server:queryLanguage")
 
 // `p` is for "pipeline". Accepts functions and calls them with the previous result
@@ -244,7 +252,7 @@ export const loader = (fileCache: FileCache) => async (contentPath: string) => {
       `Could not load ${contentPath}`,
     )
   }
-  return await import(file.actualPath)
+  return await import(file.actualPath, { with: { cache: "no" } })
 }
 
 export const buildMyServerPStringContext = ({
