@@ -40,6 +40,7 @@
     "mime-types": "^3.0.1",
     "multer": "^2.0.2",
     "node-html-parser": "^7.0.1",
+    "prettier": "^3.6.2",
     "temporal-polyfill": "^0.3.0",
     "type-fest": "^5.2.0",
     "watcher": "^2.3.1",
@@ -48,7 +49,6 @@
   "devDependencies": {
     "html-validate": "^9.7.1",
     "node-mocks-http": "^1.17.2",
-    "prettier": "^3.6.2",
     "stylelint": "^16.23.1",
     "stylelint-config-standard": "^39.0.0",
     "typescript": "^5.8.3"

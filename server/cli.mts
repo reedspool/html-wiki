@@ -13,6 +13,7 @@ import {
 import debug from "debug"
 import { configuredFiles } from "./configuration.mts"
 import { buildCache } from "./fileCache.mts"
+import { format } from "prettier"
 const log = debug("cli:main")
 
 let server: Awaited<ReturnType<typeof createServer>>
@@ -130,6 +131,7 @@ program
   .option("-c, --core-directory <string>", "where to read core files", "")
   .option("-u, --user-directory <string>", "where to read user files")
   .option("-o, --out-directory <string>", "where to write files", "./build")
+  .option("-f, --format", "format using prettier", true)
   .option("-w, --watch", "watch source files and rebuild", false)
   .action(async (options) => {
     const { searchDirectories, userDirectory, coreDirectory } =
@@ -182,6 +184,14 @@ program
             fileCache: sourceFileCache,
           })
           outputContent = readResult.content
+          if (options.format) {
+            try {
+              outputContent = await format(outputContent, { parser: "html" })
+            } catch (error) {
+              console.error(`Error while formatting ${contentPath}, skipping.`)
+              console.error(error instanceof Error ? error.message : error)
+            }
+          }
           if (renderability === "markdown")
             outputPath = outputPath.replace(/\.md$/, ".html")
           break
