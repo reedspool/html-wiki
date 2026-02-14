@@ -86,7 +86,8 @@ export const applyTemplating = async (
     throw new Error("element or content is required")
   }
 
-  let alreadySetForNextIteration: Node | null = null
+  // Undefined means unset. Null means we attempted and found none.
+  let alreadySetForNextIteration: Node | null | undefined = undefined
 
   // TODO: If root selector is body, this prevents all processing in head which
   // disallows "declare" to be safely put there. Hum but this isn't an issue yet?
@@ -102,7 +103,7 @@ export const applyTemplating = async (
 
   let element: HTMLElement
   do {
-    alreadySetForNextIteration = null
+    alreadySetForNextIteration = undefined
     if (treeWalker.currentNode.nodeType !== NodeType.ELEMENT_NODE) {
       throw new Error(
         `Treewalker showed a non-HTMLElement Node '${treeWalker.currentNode}'`,
@@ -504,6 +505,9 @@ export const applyTemplating = async (
       default:
         break
     }
+    // If alreadySetForNextIteration is null, that means we tried to find a next
+    // node and there was none
+    if (alreadySetForNextIteration === null) break
   } while (alreadySetForNextIteration || treeWalker.nextNode())
 
   // TODO: Probably at this stage shuold just Object.assign(parameters, meta)
@@ -568,7 +572,7 @@ export class TreeWalker {
   parentNode() {
     if (this.currentNode === this.root) return null
     let node = this.currentNode.parentNode
-    while (node) {
+    while (node && node !== this.root) {
       if (this.visible(node)) {
         this.currentNode = node
         return node

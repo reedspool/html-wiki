@@ -1,4 +1,4 @@
-import test from "node:test"
+import test, { mock } from "node:test"
 import assert from "node:assert"
 import {
   setEachParameterWithSource,
@@ -194,6 +194,25 @@ test("<render- map='[...]'> works", { concurrency: true }, async () => {
     assert.match(spans[i].innerText, new RegExp(`${i + 1}`))
   }
 })
+
+test(
+  "<render- map='[]'> doesn't cause treewalker bug re-iterating over whole tree",
+  { concurrency: true },
+  async () => {
+    const input = html`
+      <set- abcd="{}" f="mocked()"></set->
+      <render- map="[]"><span x-content="currentListItem" /></render->
+    `
+
+    const mocked = mock.fn()
+    const { content, $ } = await applyTemplatingAndParse(
+      { title: false, mocked },
+      input,
+    )
+    assert.deepStrictEqual(mocked.mock.callCount(), 1)
+  },
+)
+
 test(
   "Any element can have arbitrary executed attributes",
   { concurrency: true },

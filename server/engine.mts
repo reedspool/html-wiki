@@ -237,7 +237,7 @@ export const setParameterWithSource = (
   const original = parameters[key]
   if (original) {
     log(
-      `Overwriting parameter '${String(key)}' to '${value}' (${source}) from '${original}' (original.source)`,
+      `Overwriting parameter '${String(key)}' to '${typeof value === "object" ? "object" : value}' (${source}) from '${original}' (original.source)`,
     )
   }
 
