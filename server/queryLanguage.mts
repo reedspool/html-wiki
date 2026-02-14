@@ -15,6 +15,7 @@ import { cleanFilePath } from "./filesystem.mts"
 import { configuredFiles } from "./configuration.mts"
 import * as acorn from "acorn"
 import * as walk from "acorn-walk"
+import { MissingFileQueryError } from "./error.mts"
 const log = debug("server:queryLanguage")
 
 // `p` is for "pipeline". Accepts functions and calls them with the previous result
@@ -235,6 +236,17 @@ export const specialRenderMarkdown = async ({
 export const or = (...args: unknown[]) => args.reduce((a, b) => a || b)
 export const and = (...args: unknown[]) => args.reduce((a, b) => a && b)
 
+export const loader = (fileCache: FileCache) => async (contentPath: string) => {
+  const file = fileCache.getByContentPathOrContentTitle(contentPath)
+  if (!file) {
+    throw new MissingFileQueryError(
+      contentPath,
+      `Could not load ${contentPath}`,
+    )
+  }
+  return await import(file.actualPath)
+}
+
 export const buildMyServerPStringContext = ({
   parameters,
   fileCache,
@@ -247,6 +259,7 @@ export const buildMyServerPStringContext = ({
     escapeHtml,
     cleanFilePath,
     Temporal,
+    load: loader(fileCache),
     goodHref: (href: string) => {
       if (parameters.static === undefined) {
         return href
