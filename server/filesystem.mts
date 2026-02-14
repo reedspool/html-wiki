@@ -17,7 +17,7 @@ export const actualFilePath = ({
 }: {
   contentPath: string
   directory: string
-}) => `${process.cwd()}/${filePath({ contentPath, directory })}`
+}) => filePath({ contentPath, directory })
 
 export const filePath = ({
   contentPath,

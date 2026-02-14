@@ -2,7 +2,7 @@
 // We can manually restart the server if it gets into a bad state, but we want
 
 import Watcher from "watcher"
-import { normalize } from "path"
+import { resolve } from "path"
 import { createServer } from "./server.mts"
 import { Command } from "@commander-js/extra-typings"
 import {
@@ -38,8 +38,8 @@ const getSearchDirectoriesFromOptions = (options: {
   if (!options.userDirectory) {
     throw new Error("--user-directory option is required")
   }
-  const userDirectory = normalize(options.userDirectory)
-  const coreDirectory = normalize(options.coreDirectory)
+  const userDirectory = resolve(options.userDirectory)
+  const coreDirectory = resolve(options.coreDirectory)
   const searchDirectories = [userDirectory, coreDirectory]
   return { userDirectory, coreDirectory, searchDirectories }
 }
@@ -135,7 +135,7 @@ program
     const { searchDirectories, userDirectory, coreDirectory } =
       getSearchDirectoriesFromOptions(options)
     log({ options, searchDirectories, userDirectory, coreDirectory })
-    const outDirectory = normalize(options.outDirectory)
+    const outDirectory = resolve(options.outDirectory)
 
     if (coreDirectory === outDirectory || userDirectory === outDirectory) {
       log(
@@ -211,7 +211,7 @@ program
 
     if (options.watch) {
       searchDirectories.forEach((dir) =>
-        console.log(`Watching files in ${normalize(dir)}`),
+        console.log(`Watching files in ${resolve(dir)}`),
       )
       setupWatcher({ searchDirectories }).on(
         "all",

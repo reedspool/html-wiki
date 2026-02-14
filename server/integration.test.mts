@@ -9,7 +9,6 @@ import { html } from "./utilities.mts"
 import stylelint from "stylelint"
 import { configuredFiles } from "./configuration.mts"
 import { inspect } from "node:util"
-import { version } from "node:punycode"
 
 let port = 3001
 // TODO: All this forking stuff seems to work (with the delay), but it doesn't
