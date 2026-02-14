@@ -214,6 +214,24 @@ test(
 )
 
 test(
+  "<render- if='true'> evaluates templating on children",
+  { concurrency: true },
+  async () => {
+    const input = html`
+      <render- if="true"><span x-content="'test content'" /></render->
+    `
+
+    const mocked = mock.fn()
+    const { content, $ } = await applyTemplatingAndParse(
+      { title: false, mocked },
+      input,
+    )
+    assert.equal($("span").length, 1)
+    assert.match($("span")[0]!.innerHTML, /test content/)
+  },
+)
+
+test(
   "Any element can have arbitrary executed attributes",
   { concurrency: true },
   async () => {

@@ -361,6 +361,7 @@ export const applyTemplating = async (
       case "R-":
         {
           const attributeEntries = Object.entries(element.attributes)
+          let shouldEvaluateChildren = true
 
           let shouldKeepContents = true
           if (element.hasAttribute("map") && element.hasAttribute("content")) {
@@ -388,6 +389,7 @@ export const applyTemplating = async (
                   }
 
                   shouldKeepContents = false
+                  shouldEvaluateChildren = false
 
                   const topLevelParameters = parameters
                   const originalElementChildren = [...element.children]
@@ -445,6 +447,7 @@ export const applyTemplating = async (
                   const queryValue = await getQueryValue(value)
                   if (queryValue) {
                     shouldKeepContents = false
+                    shouldEvaluateChildren = false
                     element.after(
                       typeof queryValue == "string"
                         ? queryValue
@@ -468,9 +471,13 @@ export const applyTemplating = async (
                 break
             }
           }
-          alreadySetForNextIteration = treeWalker.nextNodeNotChildren()
+          if (shouldEvaluateChildren) {
+            alreadySetForNextIteration = treeWalker.nextNode()
+          } else {
+            alreadySetForNextIteration = treeWalker.nextNodeNotChildren()
+          }
           if (shouldKeepContents) {
-            element.after(element.innerHTML)
+            element.after(...element.childNodes)
           }
           element.remove()
         }
