@@ -165,7 +165,7 @@ test(
   },
 )
 // TODO: This isn't so desirable, but it's how I implemented today
-test.only(
+test(
   "<render- content='...' if='false'> DOES add the content because `content` comes before the `if` attribute",
   { concurrency: true },
   async () => {
@@ -193,6 +193,8 @@ test("<render- map='[...]'> works", { concurrency: true }, async () => {
   for (let i = 0; i < spans.length; i++) {
     assert.match(spans[i].innerText, new RegExp(`${i + 1}`))
   }
+  // No extra divs pop up from "fake temporary parent"
+  assert.equal($("div").length, 0)
 })
 
 test(
@@ -218,7 +220,9 @@ test(
   { concurrency: true },
   async () => {
     const input = html`
-      <render- if="true"><span x-content="'test content'" /></render->
+      <render- if="true"
+        ><span x-content="'test content'" x-call="mocked()"
+      /></render->
     `
 
     const mocked = mock.fn()
@@ -226,8 +230,82 @@ test(
       { title: false, mocked },
       input,
     )
+    assert.deepStrictEqual(mocked.mock.callCount(), 1)
     assert.equal($("span").length, 1)
     assert.match($("span")[0]!.innerHTML, /test content/)
+  },
+)
+
+test("two <render- if='true'> in a row", { concurrency: true }, async () => {
+  const input = html`
+    <render- if="true"
+      ><span x-content="'test content first'" x-call="mocked()"
+    /></render->
+    <render- if="true"
+      ><span x-content="'test content second'" x-call="mocked()"
+    /></render->
+  `
+
+  const mocked = mock.fn()
+  const { content, $ } = await applyTemplatingAndParse(
+    { title: false, mocked },
+    input,
+  )
+  assert.deepStrictEqual(mocked.mock.callCount(), 2)
+  assert.equal($("span").length, 2)
+  assert.match($("span")[0]!.innerHTML, /test content first/)
+  assert.match($("span")[1]!.innerHTML, /test content second/)
+})
+
+test("<render- map> with two children", { concurrency: true }, async () => {
+  const input = html`
+    <render- map="['a tree', 'a bird']">
+      <span x-call="mocked()"
+        >Thing number <span x-content="index + 1" /> is:
+      </span>
+      <span x-call="mocked()" x-content="currentListItem" />
+    </render->
+  `
+
+  const mocked = mock.fn()
+  const { content, $ } = await applyTemplatingAndParse(
+    { title: false, mocked },
+    input,
+  )
+  assert.deepStrictEqual(mocked.mock.callCount(), 4)
+  assert.equal($("span").length, 6)
+  assert.match($("span")[0]!.innerText, /Thing number 1 is:/)
+  assert.match($("span")[1]!.innerHTML, /1/)
+  assert.match($("span")[2]!.innerHTML, /a tree/)
+  assert.match($("span")[3]!.innerText, /Thing number 2 is:/)
+  assert.match($("span")[4]!.innerHTML, /2/)
+  assert.match($("span")[5]!.innerHTML, /a bird/)
+})
+
+test(
+  "two <render- if='true'> in a row within a <render- map>",
+  { concurrency: true },
+  async () => {
+    const input = html`
+      <render- map="[1, 2]">
+        <render- if="currentListItem === 1"
+          ><span x-content="'test content first'" x-call="mocked()"
+        /></render->
+        <render- if="currentListItem === 2"
+          ><span x-content="'test content second'" x-call="mocked()"
+        /></render->
+      </render->
+    `
+
+    const mocked = mock.fn()
+    const { content, $ } = await applyTemplatingAndParse(
+      { title: false, mocked },
+      input,
+    )
+    assert.deepStrictEqual(mocked.mock.callCount(), 2)
+    assert.equal($("span").length, 2)
+    assert.match($("span")[0]!.innerHTML, /test content first/)
+    assert.match($("span")[1]!.innerHTML, /test content second/)
   },
 )
 

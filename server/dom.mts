@@ -362,9 +362,10 @@ export const applyTemplating = async (
       case "R-":
         {
           const attributeEntries = Object.entries(element.attributes)
+          // It's very possible these should be one concept
           let shouldEvaluateChildren = true
-
           let shouldKeepContents = true
+
           if (element.hasAttribute("map") && element.hasAttribute("content")) {
             throw new Error("Can only use one of map or content in render-")
           }
@@ -381,7 +382,9 @@ export const applyTemplating = async (
                     } else if (element.hasAttribute("allow-one")) {
                       queryValue = [queryValue]
                     } else {
-                      throw new Error("Expected an array value for map-list")
+                      throw new Error(
+                        "Expected an array value for <render- /> map attribute",
+                      )
                     }
                   }
 
@@ -394,7 +397,7 @@ export const applyTemplating = async (
 
                   const topLevelParameters = parameters
                   const originalElementChildren = [...element.children]
-                  for (const index in queryValue.reverse()) {
+                  for (let index = queryValue.length - 1; index >= 0; index--) {
                     const current = queryValue[index]
                     const parameters: ParameterValue = {
                       ...topLevelParameters,
@@ -419,24 +422,24 @@ export const applyTemplating = async (
                       current,
                       "query param",
                     )
-                    // Even though we're going to place everything in
-                    // reverse order (with .after()), start in-order for
-                    // imperative templating logic like `set-`
-                    const toPlace = []
-                    for (const childElement of originalElementChildren) {
-                      const childElementClone =
-                        childElement.clone() as HTMLElement
-                      // This typing is just wrong. Null is perfectly valid
-                      childElementClone.parentNode = element.parentNode
-                      const { content } = await applyTemplating({
-                        fileCache,
-                        element: childElementClone,
-                        parameters,
-                      })
-                      toPlace.push(content)
-                    }
 
-                    element.after(...toPlace)
+                    const temporaryParent = new HTMLElement("div", {})
+                    temporaryParent.append(
+                      ...originalElementChildren.map((child) => child.clone()),
+                    )
+                    setParameterWithSource(
+                      parameters,
+                      "innerHTML",
+                      true,
+                      "query param",
+                    )
+                    const { content } = await applyTemplating({
+                      fileCache,
+                      element: temporaryParent,
+                      parameters,
+                    })
+
+                    element.after(content)
                   }
                 }
                 break
@@ -463,6 +466,7 @@ export const applyTemplating = async (
 
                   if (!conditional) {
                     shouldKeepContents = false
+                    shouldEvaluateChildren = false
                     break attributes
                   }
                 }
@@ -493,24 +497,28 @@ export const applyTemplating = async (
 
   // TODO: Probably at this stage shuold just Object.assign(parameters, meta)
   let selector: string | null =
-    meta.noselect !== undefined || parameters.noselect !== undefined
-      ? null
-      : (maybeStringParameterValue(meta, "select") ??
-        maybeStringParameterValue(parameters, "select") ??
-        null)
+    maybeStringParameterValue(meta, "select") ??
+    maybeStringParameterValue(parameters, "select") ??
+    null
   // Auto-select body if there will be a container
   const autoSelectBody =
     !selector &&
-    !(meta.nocontainer !== undefined || parameters.nocontainer !== undefined)
-  selector = selector || (autoSelectBody ? "body>*" : null)
+    meta.nocontainer === undefined &&
+    parameters.nocontainer === undefined &&
+    root.querySelector("body")
+  const takeInnerHTML =
+    autoSelectBody ||
+    meta.innerHTML !== undefined ||
+    parameters.innerHTML !== undefined
+  selector = selector || (autoSelectBody ? "body" : null)
   if (selector) {
     if (typeof selector !== "string") {
       throw new Error("query value expected string")
     }
-    const body = root.querySelector("body")
-    if (body && body.innerHTML.trim().length > 0) {
+    const selected = root.querySelector(selector)
+    if (selected) {
       return {
-        content: body.innerHTML,
+        content: takeInnerHTML ? selected.innerHTML : selected.toString(),
         meta,
         links,
       }
@@ -521,10 +529,14 @@ export const applyTemplating = async (
         `parameters.select: '${selector}' did not match any elements`,
       )
     }
-    return { content: root.toString(), meta, links }
+    return { content: "", meta, links }
   }
 
-  return { content: root.toString(), meta, links }
+  return {
+    content: takeInnerHTML ? root.innerHTML : root.toString(),
+    meta,
+    links,
+  }
 }
 
 export type Filter = (
