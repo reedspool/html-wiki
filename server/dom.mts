@@ -121,6 +121,7 @@ export const applyTemplating = async (
       const isEscape = match[1] === "-escape"
       const realKey = match[2]
       const queryValue = await getQueryValue(value)
+      element.removeAttribute(match[0])
       switch (realKey) {
         case "content":
           let valueToSet

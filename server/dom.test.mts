@@ -252,10 +252,20 @@ test(
       "Test href",
       "Arbitrary executed attribute",
     )
+    assert.equal(
+      $1("a").hasAttribute("x-href"),
+      false,
+      "Arbitrary execution attribute is cleaned up",
+    )
     assert.match(
       $1("span").innerText,
       /new span stuff/,
       "Arbitrary executed attribute",
+    )
+    assert.equal(
+      $1("a").hasAttribute("x-content"),
+      false,
+      "Arbitrary execution attribute is cleaned up",
     )
   },
 )
