@@ -317,6 +317,8 @@ export const applyTemplating = async (
               "query param",
             )
           }
+          alreadySetForNextIteration = treeWalker.nextNodeNotChildren()
+          element.remove()
         }
         break
       case "DROP-IF":

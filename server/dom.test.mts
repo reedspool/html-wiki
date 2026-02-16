@@ -212,6 +212,7 @@ test(
       input,
     )
     assert.deepStrictEqual(mocked.mock.callCount(), 1)
+    assert.equal($("set-").length, 0)
   },
 )
 
