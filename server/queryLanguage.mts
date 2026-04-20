@@ -323,7 +323,7 @@ export const pString: (
 ) => ReturnType<typeof p> = async (pArgList, context) => {
   context = { ...context, p }
   // If this ecmaVersion becomes an issue, try https://github.com/acornjs/acorn/tree/master/acorn-loose/
-  const parsed = acorn.parse(pArgList, {
+  const parsed = acorn.parseExpressionAt(pArgList, 0, {
     ecmaVersion: "latest",
     allowAwaitOutsideFunction: true,
   })
