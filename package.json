@@ -1,8 +1,15 @@
 {
-  "name": "html-wiki",
-  "type": "commonjs",
-  "version": "1.0.0",
+  "name": "@reedspool/html-wiki",
+  "type": "module",
+  "version": "0.0.2",
   "description": "An experimental wiki and static site generator",
+  "files": [
+    "./entries/**/*",
+    "./server/**/*"
+  ],
+  "bin": {
+    "html-wiki": "./bin/html-wiki"
+  },
   "scripts": {
     "start": "echo 'See README.md Tasks section'"
   },
@@ -16,7 +23,7 @@
     "@types/express-ws": "^3.0.5",
     "@types/mime-types": "^3.0.1",
     "@types/multer": "^2.0.0",
-    "@types/node": "^24.0.7",
+    "@types/node": "^25.0.9",
     "acorn": "^8.15.0",
     "acorn-walk": "^8.3.4",
     "commander": "^14.0.0",
@@ -45,6 +52,6 @@
     "node-mocks-http": "^1.17.2",
     "stylelint": "^16.23.1",
     "stylelint-config-standard": "^39.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   }
 }
