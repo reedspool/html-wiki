@@ -1,5 +1,7 @@
 # HTML Wiki
 
+![npm](https://img.shields.io/npm/v/@reedspool/html-wiki.svg)
+
 Wiki server and static site generator in Node. Novel HTML-based page generation.
 
 ## About
