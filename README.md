@@ -128,7 +128,7 @@ cd server && node --test --watch
 
 ### publish
 
-Publish to `npm`. Check that the current working directory state is what you want to publish. That is, probably only want to publish if a clean `git status` (though, this will also dirty your working tree by updating the version, hmm).
+Publish to `npm`. Will fail if `git status` isn't clean, so commit before you publish. Will also create a commit.
 
 ```sh
 npm version --no-git-tag-version patch
