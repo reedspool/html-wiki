@@ -1,11 +1,11 @@
 {
   "name": "@reedspool/html-wiki",
   "type": "module",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "An experimental wiki and static site generator",
   "files": [
     "./entries/**/*",
-    "./server/**/*"
+    "./tsdown-output/**/*"
   ],
   "bin": {
     "html-wiki": "./bin/html-wiki"
