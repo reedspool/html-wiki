@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 DIR=@reedspool/html-wiki
-CLI=tsdown-output/cli.mts
+CLI=tsdown-output/cli.mjs
 if [ -d "$(npm root)/$DIR" ]; then
 	node "$(npm root)/$DIR/$CLI" "$@"
 elif [ -d "$(npm root -g)/$DIR" ]; then
