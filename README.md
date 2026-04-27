@@ -130,6 +130,8 @@ cd server && node --test --watch
 
 Publish to `npm`. Will fail if `git status` isn't clean, so commit before you publish. Will also create a commit.
 
+interactive: true
+
 ```sh
 npm version patch
 npm publish
