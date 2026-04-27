@@ -74,7 +74,7 @@ Generate a static site from the contents of the `entries/documentation/` directo
 
 ```sh
 rm -rf ./build && mkdir ./build
-DEBUG=* ./bin/html-wiki generate --user-directory entries/documentation -o ./build
+DEBUG=* node ./server/cli.mts generate --user-directory entries/documentation -o ./build
 ```
 
 ### generate:test
@@ -83,7 +83,7 @@ Generate a static site from the contents of the `entries/test/` directory (and i
 
 ```sh
 rm -rf ./build && mkdir ./build
-DEBUG=* ./bin/html-wiki generate --user-directory entries/test -o ./build
+DEBUG=* node ./server/cli.mts generate --user-directory entries/test -o ./build
 ```
 
 ### fix:css
@@ -99,7 +99,7 @@ stylelint --fix entries/system/global.css
 Start a server with the contents of the `entries/documentation/` directory (and implicitly the `entries/core` directory).
 
 ```sh
-DEBUG=* ./bin/html-wiki server --port 3001 -u entries/documentation
+DEBUG=* node ./server/cli.mts server --port 3001 -u entries/documentation
 ```
 
 ### serve:test
@@ -107,7 +107,7 @@ DEBUG=* ./bin/html-wiki server --port 3001 -u entries/documentation
 Start a server with the contents of the `entries/test/` directory (and implicitly the `entries/core` directory).
 
 ```sh
-DEBUG=* ./bin/html-wiki server --port 3001 -u entries/test
+DEBUG=* node ./server/cli.mts server --port 3001 -u entries/test
 ```
 
 ### test
@@ -128,7 +128,7 @@ cd server && node --test --watch
 
 ### publish
 
-Publish to `npm`. Check that the current working directory state is what you want to publish. That is, probably only want to publish if a clean `git status` (though, this will also dirty your working tree by updating the version, hmm).
+Publish to `npm`. Will fail if `git status` isn't clean, so commit before you publish. Will also create a commit.
 
 ```sh
 npm version patch
