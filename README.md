@@ -126,13 +126,26 @@ Same as above but in watch mode.
 cd server && node --test --watch
 ```
 
+### bundle:cli
+
+Strip types and put the whole program into one big script file. The executable `bin/html-wiki` will call this. The reason the executable calls this instead of `server/cli.mts` directly is because running `node` on a `.mts` TypeScript file does not work within `node_modules` directories.
+
+NOTE: Make sure you do this before publishing!
+
+```sh
+npx tsdown
+```
+
 ### publish
 
-Publish to `npm`. Will fail if `git status` isn't clean, so commit before you publish. Will also create a commit.
+Publish to `npm`. Will also create a commit.
+
+`npm version patch` checks to ensure the git worktree is not dirty. It will fail if `git status` isn't clean, so commit before you publish. Also runs `npx tsdown` before it checks `git status`. If you ran and committed `npx tsdown` (or `xc bundle:cli`) before and committed it, which you should have done, this should not make the worktree dirty and continue. If it doesn't, commit the changes.
 
 interactive: true
 
 ```sh
+npx tsdown
 npm version patch
 npm publish
 ```

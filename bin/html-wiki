@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 DIR=@reedspool/html-wiki
-CLI=server/cli.mts
-if [ -f "$(npm root)/$DIR" ]; then
+CLI=tsdown-output/cli.mts
+if [ -d "$(npm root)/$DIR" ]; then
 	node "$(npm root)/$DIR/$CLI" "$@"
-elif [ -f "$(npm root -g)/$DIR" ]; then
+elif [ -d "$(npm root -g)/$DIR" ]; then
 	node "$(npm root -g)/$DIR/$CLI" "$@"
 else
 	echo "Checked npm root: '$(npm root)'"
