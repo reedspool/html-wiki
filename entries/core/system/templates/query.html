@@ -90,7 +90,7 @@
       <keep-if truthy="Array.isArray(result)">
         <h2>List view</h2>
         <ul>
-          <map-list q="result" allow-one>
+          <render- map="result" allow-one>
             <li copy-target-container>
               <div class="flex-row justify-between">
                 <span copy-target x-content="currentListItem"></span>
@@ -100,7 +100,7 @@
                 </div>
               </div>
             </li>
-          </map-list>
+          </render->
         </ul>
       </keep-if>
     </keep-if>

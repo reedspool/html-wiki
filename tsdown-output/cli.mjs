@@ -648,44 +648,6 @@ const applyTemplating = async (params) => {
 					element.setAttribute("href", await getQueryValue(`'${element.attributes.href.replace("'", "\\'")}', goodHref`));
 				}
 				break;
-			case "MAP-LIST":
-				{
-					const query = element.getAttribute("q");
-					if (!query) throw new QueryError(500, `map-list must have 'q' with a query as value, got value ${query}`);
-					let queryValue = await getQueryValue(query);
-					if (!Array.isArray(queryValue)) if (queryValue === void 0 || queryValue === null) queryValue = [];
-					else if (element.hasAttribute("allow-one")) queryValue = [queryValue];
-					else throw new Error("Expected an array value for map-list");
-					if (!Array.isArray(queryValue)) throw new Error("Shouldn't have gotten here");
-					alreadySetForNextIteration = treeWalker.nextNodeNotChildren();
-					const topLevelParameters = parameters;
-					const originalElementChildren = [...element.children];
-					for (const index in queryValue.reverse()) {
-						const current = queryValue[index];
-						const parameters = {
-							...topLevelParameters,
-							rootSelector: void 0,
-							select: void 0
-						};
-						setParameterWithSource(parameters, "list", queryValue, "query param");
-						setParameterWithSource(parameters, "index", index, "query param");
-						setParameterWithSource(parameters, "currentListItem", current, "query param");
-						const toPlace = [];
-						for (const childElement of originalElementChildren) {
-							const childElementClone = childElement.clone();
-							childElementClone.parentNode = element.parentNode;
-							const { content } = await applyTemplating({
-								fileCache,
-								element: childElementClone,
-								parameters
-							});
-							toPlace.push(content);
-						}
-						element.after(...toPlace);
-					}
-					element.remove();
-				}
-				break;
 			case "QUERY-CONTENT":
 				{
 					const attributeEntries = Object.entries(element.attributes);
