@@ -33,8 +33,8 @@
         <li>
           <a href="/">/</a>
           <ul>
-            <map-list
-              q="site.allFiles, (list)=>list.toSorted((a,b)=>b.modifiedTimeMs-a.modifiedTimeMs)"
+            <render-
+              map="site.allFiles, (list)=>list.toSorted((a,b)=>b.modifiedTimeMs-a.modifiedTimeMs)"
             >
               <set-
                 ipath="currentListItem.contentPath, goodHref"
@@ -52,7 +52,7 @@
                   </drop-if>
                 </span>
               </li>
-            </map-list>
+            </render->
           </ul>
         </li>
       </ul>

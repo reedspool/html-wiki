@@ -29,7 +29,7 @@
 
     <keep-if truthy="keyword">
       <ul>
-        <map-list q="fileCache.getContentPathsForKeyword(keyword)">
+        <render- map="fileCache.getContentPathsForKeyword(keyword)">
           <set-
             ipath="currentListItem, goodHref"
             iname="fileCache.getByContentPath(ipath)?.meta?.title ?? ipath"
@@ -44,13 +44,13 @@
               </drop-if>
             </span>
           </li>
-        </map-list>
+        </render->
       </ul>
     </keep-if>
 
     <h2>All Keywords</h2>
     <ul>
-      <map-list q="fileCache.allKeywords">
+      <render- map="fileCache.allKeywords">
         <set-
           ipath="`/system/templates/keyword.html?keyword=${currentListItem}`"
           icount="fileCache.getContentPathsForKeyword(currentListItem),(p)=>p?.length?.toString()"
@@ -63,7 +63,7 @@
             />)
           </span>
         </li>
-      </map-list>
+      </render->
     </ul>
   </body>
 </html>

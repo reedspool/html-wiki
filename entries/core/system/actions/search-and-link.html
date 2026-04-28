@@ -79,7 +79,7 @@
       <set- result="site.search(query.trim())"> </set->
       <h2>Results</h2>
       <ul>
-        <map-list q="result" allow-one>
+        <render- map="result" allow-one>
           <set-
             ipath="currentListItem.contentPath"
             ititle="or(currentListItem.meta.title,currentListItem.name)"
@@ -156,7 +156,7 @@
               </div>
             </div>
           </li>
-        </map-list>
+        </render->
       </ul>
     </keep-if>
     <drop-if truthy="query!==undefined">
