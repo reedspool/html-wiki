@@ -149,5 +149,5 @@ interactive: true
 ```sh
 npx tsdown
 npm version patch
-npm publish
+npm publish || echo "If publish fails, try 'npm login' first"
 ```
