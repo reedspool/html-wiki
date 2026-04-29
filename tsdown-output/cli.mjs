@@ -474,6 +474,7 @@ const applyTemplating = async (params) => {
 				fileCache
 			}));
 		} catch (error) {
+			console.error("ERROR: PARAMETERS:", parameters);
 			const location = { line: -1 };
 			if (element?.range) {
 				const stringifiedContent = "content" in params ? params.content : root.toString();

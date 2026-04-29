@@ -3,7 +3,7 @@
 <details open>
   <summary>Backlinks</summary>
   <set-
-    backlinks="fileCache.getBacklinksByContentPath(originalParameters.contentPath)"
+    backlinks="fileCache.getBacklinksByContentPath(originalParameters?.contentPath)"
     hasbacklinks="backlinks?.length > 0"
   />
   <render- if="hasbacklinks">
@@ -25,7 +25,7 @@
 <details open>
   <summary>Keywords</summary>
   <set-
-    keywords_in_file="fileCache.getByContentPath(originalParameters.contentPath)?.meta?.keywords ?? []"
+    keywords_in_file="fileCache.getByContentPath(originalParameters?.contentPath)?.meta?.keywords ?? []"
     keywords="Array.isArray(keywords_in_file) ? keywords_in_file : keywords_in_file.split([','])"
     haskeywords="keywords?.length > 0"
   />

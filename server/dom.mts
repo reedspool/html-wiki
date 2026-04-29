@@ -48,6 +48,7 @@ export const applyTemplating = async (
         }),
       )
     } catch (error) {
+      console.error("ERROR: PARAMETERS:", parameters)
       const location: AnswerErrorFileLocation = { line: -1 }
       if (element?.range) {
         // TODO: I don't think this makes sense for passed-in element but...
