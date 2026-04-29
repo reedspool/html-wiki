@@ -53,10 +53,9 @@
                 <details>
                   <summary x-content="`/${currentListItem.dir}/`"></summary>
                   <ul>
-                    <query-content
-                      q="render(contentPath, {...parameters, rootSelector: '#my-template-li', directoryContents: currentListItem.contents, contentPath })"
-                    >
-                    </query-content>
+                    <render-
+                      content="render(contentPath, {...parameters, rootSelector: '#my-template-li', directoryContents: currentListItem.contents, contentPath })"
+                    />
                   </ul>
                 </details>
               </drop-if>
@@ -67,10 +66,10 @@
       <ul>
         <li>
           <a href="/">/</a>
-          <query-content
-            q="render(contentPath, {...parameters, rootSelector: '#my-template-li', directoryContents: (await site.fileTree), contentPath })"
+          <render-
+            content="render(contentPath, {...parameters, rootSelector: '#my-template-li', directoryContents: (await site.fileTree), contentPath })"
           >
-          </query-content>
+          </render->
         </li>
       </ul>
     </site-map>

@@ -172,6 +172,14 @@ export const execute = async ({
           fileCache,
           parameters: {
             originalParameters: parameters,
+            // Some select parameters are moved up to the parent
+            // TODO: Consider a more systematic approach to this. Containers can
+            //       be nested now, so `originalParameters` is not totally
+            //       reliable. Although maybe `originalParameters:
+            //       parameters.originalParameters ?? parameters` would propagate
+            //       `originalParameters` up all containers and that would be
+            //       sufficient?
+            title: parameters.title,
             static: parameters.static,
             command: "read",
             contentPath:

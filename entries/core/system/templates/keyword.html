@@ -3,19 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title><query-content q="keyword"> Keyword Listing </query-content></title>
+    <title><render- content="keyword">Keyword Listing</render-></title>
     <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
 
   <body>
     <h2>
-      <query-content q="keyword"> Keyword Listing </query-content>
+      <render- content="keyword">Keyword Listing</render->
     </h2>
 
-    <drop-if truthy="keyword">
+    <render- if="!keyword">
       <p>No keyword queried.</p>
-    </drop-if>
+    </render->
 
     <p>Keywords listing. Query for a given keyword below:</p>
 
@@ -27,7 +27,7 @@
       <button type="submit">Query</button>
     </form>
 
-    <keep-if truthy="keyword">
+    <render- if="keyword">
       <ul>
         <render- map="fileCache.getContentPathsForKeyword(keyword)">
           <set-
@@ -46,7 +46,7 @@
           </li>
         </render->
       </ul>
-    </keep-if>
+    </render->
 
     <h2>All Keywords</h2>
     <ul>

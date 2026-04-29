@@ -64,9 +64,9 @@
           <option value="md">Markdown</option>
         </select>
       </label>
-      <query-content
-        q="render('/system/templates/editor.fragment.html', { editContent: fileContent || '', saveParameters: 'create', target: '/' })"
-      ></query-content>
+      <render-
+        content="render('/system/templates/editor.fragment.html', { editContent: fileContent || '', saveParameters: 'create', target: '/' })"
+      />
     </form>
   </body>
 </html>

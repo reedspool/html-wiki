@@ -567,20 +567,6 @@ const applyTemplating = async (params) => {
 					element.setAttribute("href", await getQueryValue(`'${element.attributes.href.replace("'", "\\'")}', goodHref`));
 				}
 				break;
-			case "QUERY-CONTENT":
-				{
-					const attributeEntries = Object.entries(element.attributes);
-					if (attributeEntries[0][0] !== "q") throw new QueryError(500, "query-content only supports a single attribute, `q` whose value is the query to use to replace ");
-					if (typeof attributeEntries[0][1] !== "string") throw new QueryError(500, `query-content first attribute must be 'q' with a query as value, got value ${attributeEntries[0][1]}`);
-					const query = attributeEntries[0][1];
-					let queryValue = await getQueryValue(query);
-					if (!queryValue) queryValue = element.innerHTML;
-					if (typeof queryValue !== "string") throw new Error("query value expected string");
-					alreadySetForNextIteration = treeWalker.nextNodeNotChildren();
-					element.after(queryValue);
-					element.remove();
-				}
-				break;
 			case "DEBUGGER-":
 				debugger;
 				break;
@@ -941,6 +927,7 @@ const execute = async ({ parameters, fileCache }) => {
 					fileCache,
 					parameters: {
 						originalParameters: parameters,
+						title: parameters.title,
 						static: parameters.static,
 						command: "read",
 						contentPath: customContainerTemplatePath ?? configuredFiles.defaultPageTemplate,
@@ -1522,7 +1509,6 @@ program.command("generate").description("render and write out a static version o
 	const destinationFileCache = await buildCache({ searchDirectories: [outDirectory] });
 	const files = (await sourceFileCache.getListOfFilesAndDetails()).map(({ contentPath }) => contentPath);
 	log(`Writing files to ${outDirectory}:`, "\n" + files.join("\n"));
-	log(`Using default page template '${configuredFiles.defaultPageTemplate}'`);
 	const writeFile = async (contentPath) => {
 		const readParameters = {};
 		setEachParameterWithSource(readParameters, {

@@ -5,8 +5,8 @@
     <meta itemprop="nocontainer" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>
-      <query-content q="title"> HTML Wiki </query-content> <drop-if
-      truthy="content"> (Global Template) </drop-if>
+      <render- content="title ?? originalParameters?.title"> HTML Wiki
+      </render-> <drop-if truthy="content"> (Global Template) </drop-if>
     </title>
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="icon" href="/assets/code-icon-512x512.png" />
@@ -31,9 +31,7 @@
               <li><a href="/">Home</a></li>
               <li><a href="/recent.html">Recent</a></li>
               <li><a href="/system/templates/keyword.html">Keywords</a></li>
-              <drop-if
-                truthy="parameters?.originalParameters?.static !== undefined"
-              >
+              <drop-if truthy="originalParameters?.static !== undefined">
                 <li><a icon href="?edit" title="Edit this page">✏️</a></li>
                 <li>
                   <a icon href="/system/actions/create.html" title="Create new"
@@ -56,12 +54,10 @@
           </nav>
         </center-column-layout>
       </header>
-      <keep-if truthy="parameters?.originalParameters?.statusMessage">
+      <keep-if truthy="originalParameters?.statusMessage">
         <center-column-layout class="relative lower">
           <toast-message role="status">
-            <span
-              x-content="parameters?.originalParameters?.statusMessage"
-            ></span>
+            <span x-content="originalParameters?.statusMessage"></span>
             <button
               clean
               type="button"
@@ -77,7 +73,7 @@
     <main->
       <main>
         <center-column-layout class="h-full">
-          <query-content q="content">
+          <render- content="content">
             <p>
               This is the global page template. Usually, this text would be
               replaced with the HTML content of another entry in the wiki. But I
@@ -87,7 +83,7 @@
               You can <a href="?edit">Edit this page</a> to change the styling
               and layout for most of the site.
             </p>
-          </query-content>
+          </render->
         </center-column-layout>
       </main>
       <footer>

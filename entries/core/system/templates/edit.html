@@ -17,9 +17,9 @@
     </drop-if>
     <keep-if truthy="target">
       <form method="POST">
-        <query-content
-          q="render('/system/templates/editor.fragment.html', { nocontainer, editContent: await render(target,{raw: true, escape: true }), target })"
-        ></query-content>
+        <render-
+          content="render('/system/templates/editor.fragment.html', { nocontainer, editContent: await render(target,{raw: true, escape: true }), target })"
+        ></render->
       </form>
     </keep-if>
   </body>

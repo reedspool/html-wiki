@@ -156,7 +156,6 @@ program
     )
 
     log(`Writing files to ${outDirectory}:`, "\n" + files.join("\n"))
-    log(`Using default page template '${configuredFiles.defaultPageTemplate}'`)
     const writeFile = async (contentPath: string) => {
       const readParameters: ParameterValue = {}
       setEachParameterWithSource(
