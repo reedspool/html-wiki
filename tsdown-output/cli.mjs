@@ -16,11 +16,11 @@ import { gfmTable, gfmTableHtml } from "micromark-extension-gfm-table";
 import { gfmTaskListItem, gfmTaskListItemHtml } from "micromark-extension-gfm-task-list-item";
 import { basename, dirname, normalize } from "node:path";
 import { mkdir, open, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import * as acorn from "acorn";
 import * as walk from "acorn-walk";
 import * as importWithoutCache from "import-without-cache";
 import { contentType } from "mime-types";
+import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { Command } from "@commander-js/extra-typings";
 import { format } from "prettier";
@@ -104,7 +104,6 @@ const renderMarkdown = (content) => micromark(content, {
 		gfmTaskListItemHtml()
 	]
 });
-const html = (templates, ...args) => String.raw(templates, ...args);
 const parseFrontmatter = (content) => {
 	if (!/^---\n(.|\n)*\n---\n/.test(content)) return { restOfContent: content };
 	const [_, frontmatterText, ...rest] = content.split(/---\n/);
@@ -330,38 +329,6 @@ const listAllDirectoryContents = async ({ directory }) => {
 const cleanContent = ({ content }) => content.replaceAll(/\r\n/g, "\n").replaceAll(/[ \t\r]+\n/g, "\n");
 
 //#endregion
-//#region server/configuration.mts
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const coreDirectory = `${__dirname}/../entries/core`;
-const testDirectory = `${__dirname}/../entries/test`;
-const documentationDirectory = `${__dirname}/../entries/documentation`;
-const configuredFiles = {
-	testDirectory,
-	documentationDirectory,
-	coreDirectory,
-	defaultPageTemplate: "/system/templates/global-page.html",
-	rootIndexHtml: "/index.html",
-	testMarkdownFile: "/fixtures/test.md",
-	testMarkdownFileWithSpaceInName: "/fixtures/file with a space in the name.md",
-	testMarkdownFileWithYamlFrontmatter: "/fixtures/markdown with frontmatter.md",
-	testFixtureHtmlFragmentFile: "/fixtures/fixture.fragment.html",
-	testHtmlFile: "/fixtures/example.html",
-	keywordPageTemplate: "/system/templates/keyword.html",
-	searchAndLinkPageTemplate: "/system/actions/search-and-link.html",
-	queryPageTemplate: "/system/templates/query.html",
-	shortDirectoryName: "/fixtures/shortname",
-	defaultDeleteTemplateFile: "/system/templates/delete.html",
-	defaultEditTemplateFile: "/system/templates/edit.html",
-	defaultCreateTemplateFile: "/system/actions/create.html",
-	defaultCreateShadowTemplateFile: "/system/actions/create-shadow.html",
-	defaultCssFile: "/system/global.css",
-	fileMissingPageTemplate: "/404.html",
-	unknownErrorOccurredTemplate: "/system/templates/unknown-error.html",
-	sitemapTemplate: "/sitemap.html",
-	sharedContentReceiver: "/system/shared-content-receiver.html"
-};
-
-//#endregion
 //#region server/queryLanguage.mts
 if (!importWithoutCache.isSupported) throw new Error("import-without-cache is not supported in this environment.");
 importWithoutCache.init({ skipNodeModules: true });
@@ -423,59 +390,10 @@ const renderer = ({ parameters: originalParameters, fileCache }) => async (conte
 	})).content;
 };
 const specialRenderMarkdown = async ({ content, contentPath, fileCache }) => {
-	{
-		const labels = Array.from(content.matchAll(/\[([^\]]+)\]([^(:]|$)/g)).map(([_, label]) => label).filter((label) => /\S/.test(label));
-		content += "\n";
-		content += "\n";
-		content += labels.map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`).join("\n");
-	}
-	{
-		const backlinks = await fileCache.getBacklinksByContentPath(contentPath);
-		content += "\n";
-		content += "\n";
-		content += html`<details open>
-      <summary>Backlinks</summary>
-      <ul>
-        ${backlinks.length ? backlinks.map((link) => html`<li>
-                    <a href="${link}"
-                      >${fileCache.getByContentPath(link)?.meta?.title ?? link}</a
-                    >
-                  </li>`).join("\n") : "No backlinks"}
-      </ul>
-    </details>`;
-	}
-	{
-		const originalKeywords = fileCache.getByContentPath(contentPath)?.meta?.keywords ?? [];
-		const keywords = typeof originalKeywords === "string" ? originalKeywords.split(",") : originalKeywords;
-		content += "\n";
-		content += "\n";
-		content += html`<details open>
-      <summary>Keywords</summary>
-      <ul>
-        ${keywords.length ? keywords.map((keyword) => html`<li>
-                    <a
-                      href="${configuredFiles.keywordPageTemplate}?keyword=${keyword}"
-                      >${keyword}</a
-                    >
-                  </li>`).join("\n") : "No keywords"}
-      </ul>
-    </details>`;
-	}
-	{
-		const parsed = parseFrontmatter(content);
-		content = parsed.restOfContent;
-		if (parsed.frontmatter) {
-			content += "\n";
-			content += "\n";
-			content += html`<details>
-        <summary>Frontmatter</summary>
-        ${Object.entries(parsed.frontmatter).map(([key, value]) => html`<dl>
-                <dt>${key}</dt>
-                <dd data-frontmatter="${key}">${value}</dd>
-              </dl>`).join("\n")}
-      </details>`;
-		}
-	}
+	const labels = Array.from(content.matchAll(/\[([^\]]+)\]([^(:]|$)/g)).map(([_, label]) => label).filter((label) => /\S/.test(label));
+	content += "\n";
+	content += "\n";
+	content += labels.map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`).join("\n");
 	return renderMarkdown(content);
 };
 const or = (...args) => args.reduce((a, b) => a || b);
@@ -913,6 +831,39 @@ const NodeFilter = {
 };
 
 //#endregion
+//#region server/configuration.mts
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const coreDirectory = `${__dirname}/../entries/core`;
+const testDirectory = `${__dirname}/../entries/test`;
+const documentationDirectory = `${__dirname}/../entries/documentation`;
+const configuredFiles = {
+	testDirectory,
+	documentationDirectory,
+	coreDirectory,
+	defaultPageTemplate: "/system/templates/global-page.html",
+	markdownPageTemplate: "/system/templates/markdown-page.fragment.html",
+	rootIndexHtml: "/index.html",
+	testMarkdownFile: "/fixtures/test.md",
+	testMarkdownFileWithSpaceInName: "/fixtures/file with a space in the name.md",
+	testMarkdownFileWithYamlFrontmatter: "/fixtures/markdown with frontmatter.md",
+	testFixtureHtmlFragmentFile: "/fixtures/fixture.fragment.html",
+	testHtmlFile: "/fixtures/example.html",
+	keywordPageTemplate: "/system/templates/keyword.html",
+	searchAndLinkPageTemplate: "/system/actions/search-and-link.html",
+	queryPageTemplate: "/system/templates/query.html",
+	shortDirectoryName: "/fixtures/shortname",
+	defaultDeleteTemplateFile: "/system/templates/delete.html",
+	defaultEditTemplateFile: "/system/templates/edit.html",
+	defaultCreateTemplateFile: "/system/actions/create.html",
+	defaultCreateShadowTemplateFile: "/system/actions/create-shadow.html",
+	defaultCssFile: "/system/global.css",
+	fileMissingPageTemplate: "/404.html",
+	unknownErrorOccurredTemplate: "/system/templates/unknown-error.html",
+	sitemapTemplate: "/sitemap.html",
+	sharedContentReceiver: "/system/shared-content-receiver.html"
+};
+
+//#endregion
 //#region server/engine.mts
 const log$3 = debug("server:engine");
 const Status = {
@@ -956,11 +907,16 @@ const execute = async ({ parameters, fileCache }) => {
 			const { originalContent, renderability } = fileCache.ensureByContentPath(stringParameterValue(parameters, "contentPath"));
 			let content;
 			let nocontainer = parameters.nocontainer !== void 0;
+			let customContainerTemplatePath;
 			if (parameters.raw !== void 0) if (parameters.escape !== void 0) content = escapeHtml(originalContent.content);
 			else content = originalContent.content;
 			else {
 				let originalContentContent = originalContent.content;
-				if (parameters.renderMarkdown !== void 0 || renderability === "markdown") {
+				let isMarkdown = parameters.renderMarkdown !== void 0 || renderability === "markdown";
+				if (isMarkdown) {
+					const parsed = parseFrontmatter(originalContentContent);
+					originalContentContent = parsed.restOfContent;
+					if (parsed.frontmatter) setParameterWithSource(parameters, "frontmatter", parsed.frontmatter, "derived");
 					if (typeof parameters.contentPath !== "string") throw new Error("Markdown rendering requires contentPath");
 					originalContentContent = await specialRenderMarkdown({
 						contentPath: parameters.contentPath,
@@ -975,6 +931,8 @@ const execute = async ({ parameters, fileCache }) => {
 				});
 				content = templateApplicationResults.content;
 				if (templateApplicationResults.meta.nocontainer) nocontainer = true;
+				else if (templateApplicationResults.meta.container) customContainerTemplatePath = templateApplicationResults.meta.container;
+				else if (isMarkdown) customContainerTemplatePath = configuredFiles.markdownPageTemplate;
 			}
 			let resultContentType = contentType(stringParameterValue(parameters, "contentPath").match(/\.[^.]+$/)[0]) || staticContentTypes.plainText;
 			if (!nocontainer) {
@@ -983,7 +941,7 @@ const execute = async ({ parameters, fileCache }) => {
 					parameters: {
 						originalParameters: parameters,
 						command: "read",
-						contentPath: configuredFiles.defaultPageTemplate,
+						contentPath: customContainerTemplatePath ?? configuredFiles.defaultPageTemplate,
 						content
 					}
 				});
@@ -1039,8 +997,7 @@ const narrowStringToCommand = (maybeCommand) => {
 };
 const setParameterWithSource = (parameters, key, value, source) => {
 	if (typeof parameters === "string") throw new Error(`Can't set parameter on ${parameters}`);
-	const original = parameters[key];
-	if (original) log$3(`Overwriting parameter '${String(key)}' to '${typeof value === "object" ? "object" : value}' (${source}) from '${original}' (original.source)`);
+	parameters[key];
 	parameters[key] = value;
 	return parameters;
 };

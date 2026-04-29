@@ -147,95 +147,16 @@ export const specialRenderMarkdown = async ({
   contentPath: string
   fileCache: FileCache
 }): Promise<string> => {
-  {
-    // Find all reference link definitions
-    const labels = Array.from(content.matchAll(/\[([^\]]+)\]([^(:]|$)/g))
-      .map(([_, label]) => label)
-      .filter((label) => /\S/.test(label))
+  // Find all reference link definitions
+  const labels = Array.from(content.matchAll(/\[([^\]]+)\]([^(:]|$)/g))
+    .map(([_, label]) => label)
+    .filter((label) => /\S/.test(label))
 
-    content += "\n"
-    content += "\n"
-    content += labels
-      .map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`)
-      .join("\n")
-  }
-
-  {
-    // Backlinks
-    const backlinks = await fileCache.getBacklinksByContentPath(contentPath)
-    content += "\n"
-    content += "\n"
-    content += html`<details open>
-      <summary>Backlinks</summary>
-      <ul>
-        ${backlinks.length
-          ? backlinks
-              .map(
-                (link) =>
-                  html`<li>
-                    <a href="${link}"
-                      >${fileCache.getByContentPath(link)?.meta?.title ??
-                      link}</a
-                    >
-                  </li>`,
-              )
-              .join("\n")
-          : "No backlinks"}
-      </ul>
-    </details>`
-  }
-
-  {
-    // Keywords
-    const fileStuff = fileCache.getByContentPath(contentPath)
-    const originalKeywords = fileStuff?.meta?.keywords ?? []
-    const keywords =
-      typeof originalKeywords === "string"
-        ? originalKeywords.split(",")
-        : originalKeywords
-    content += "\n"
-    content += "\n"
-    content += html`<details open>
-      <summary>Keywords</summary>
-      <ul>
-        ${keywords.length
-          ? keywords
-              .map(
-                (keyword) =>
-                  html`<li>
-                    <a
-                      href="${configuredFiles.keywordPageTemplate}?keyword=${keyword}"
-                      >${keyword}</a
-                    >
-                  </li>`,
-              )
-              .join("\n")
-          : "No keywords"}
-      </ul>
-    </details>`
-  }
-
-  {
-    // Frontmatter
-    const parsed = parseFrontmatter(content)
-    content = parsed.restOfContent
-    if (parsed.frontmatter) {
-      content += "\n"
-      content += "\n"
-      content += html`<details>
-        <summary>Frontmatter</summary>
-        ${Object.entries(parsed.frontmatter)
-          .map(
-            ([key, value]) =>
-              html`<dl>
-                <dt>${key}</dt>
-                <dd data-frontmatter="${key}">${value}</dd>
-              </dl>`,
-          )
-          .join("\n")}
-      </details>`
-    }
-  }
+  content += "\n"
+  content += "\n"
+  content += labels
+    .map((l) => `[${l}]: <${l}> "Auto-generated wikilink"`)
+    .join("\n")
 
   // TODO if this set contents instead of returning that would seem to enable template values in markdown
   return renderMarkdown(content)

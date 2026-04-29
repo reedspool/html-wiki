@@ -1,0 +1,64 @@
+<r- content="content" />
+
+<details open>
+  <summary>Backlinks</summary>
+  <set-
+    backlinks="fileCache.getBacklinksByContentPath(originalParameters.contentPath)"
+    hasbacklinks="backlinks?.length > 0"
+  />
+  <render- if="hasbacklinks">
+    <ul>
+      <render- map="backlinks">
+        <set- link="currentListItem" />
+        <li>
+          <a
+            x-href="link"
+            x-content="fileCache.getByContentPath(link)?.meta?.title ?? link"
+          />
+        </li>
+      </render->
+    </ul>
+  </render->
+  <render- if="!hasbacklinks"> No backlinks </render->
+</details>
+
+<details open>
+  <summary>Keywords</summary>
+  <set-
+    keywords_in_file="fileCache.getByContentPath(originalParameters.contentPath)?.meta?.keywords ?? []"
+    keywords="Array.isArray(keywords_in_file) ? keywords_in_file : keywords_in_file.split([','])"
+    haskeywords="keywords?.length > 0"
+  />
+  <render- if="haskeywords">
+    <ul>
+      <render- map="keywords">
+        <set- keyword="currentListItem" title="keyword" />
+        <li>
+          <a
+            x-href="`/system/templates/keyword.html?keyword=${keyword}`"
+            x-content="title"
+          />
+        </li>
+      </render->
+    </ul>
+  </render->
+  <render- if="!haskeywords"> No keywords </render->
+</details>
+
+<details open>
+  <summary>Frontmatter</summary>
+  <set-
+    frontmatter="originalParameters?.frontmatter || {}"
+    hasfrontmatter="Object.keys(frontmatter).length > 0"
+  />
+  <render- if="hasfrontmatter">
+    <dl>
+      <render- map="Object.entries(frontmatter)">
+        <set- key="currentListItem[0]" value="currentListItem[1]" />
+        <dt x-content="key" />
+        <dd x-data-frontmatter="key" x-content="value" />
+      </render->
+    </dl>
+  </render->
+  <render- if="!hasfrontmatter"> No frontmatter </render->
+</details>

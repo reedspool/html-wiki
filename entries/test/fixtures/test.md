@@ -8,7 +8,9 @@ Here's an external link to [Google](https://www.google.com).
 
 Here's **bold** and _emphasized_ formatted text
 
-Here's a [reference link][index].
+Here's a [reference link][index]
+
+Here's [a link to another markdown file](</fixtures/markdown with frontmatter.md> "markdown with frontmatter.md") to create a backlink there.
 
 Here's a [/shortcut reference link with no associated reference link definition]. I use a trick to generate reference link definitions for these on the fly.
 

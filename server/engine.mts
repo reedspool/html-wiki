@@ -1,6 +1,6 @@
 import { applyTemplating } from "./dom.mts"
 import debug from "debug"
-import { escapeHtml } from "./utilities.mts"
+import { escapeHtml, parseFrontmatter } from "./utilities.mts"
 import { specialRenderMarkdown } from "./queryLanguage.mts"
 import { type FileCache } from "./fileCache.mts"
 import { staticContentTypes } from "./serverUtilities.mts"
@@ -116,6 +116,7 @@ export const execute = async ({
       )
       let content
       let nocontainer = parameters.nocontainer !== undefined
+      let customContainerTemplatePath
       if (parameters.raw !== undefined) {
         if (parameters.escape !== undefined) {
           content = escapeHtml(originalContent.content)
@@ -124,10 +125,21 @@ export const execute = async ({
         }
       } else {
         let originalContentContent = originalContent.content
-        if (
+        let isMarkdown =
           parameters.renderMarkdown !== undefined ||
           renderability === "markdown"
-        ) {
+
+        if (isMarkdown) {
+          const parsed = parseFrontmatter(originalContentContent)
+          originalContentContent = parsed.restOfContent
+          if (parsed.frontmatter) {
+            setParameterWithSource(
+              parameters,
+              "frontmatter",
+              parsed.frontmatter,
+              "derived",
+            )
+          }
           if (typeof parameters.contentPath !== "string")
             throw new Error("Markdown rendering requires contentPath")
           originalContentContent = await specialRenderMarkdown({
@@ -142,7 +154,14 @@ export const execute = async ({
           parameters: parameters,
         })
         content = templateApplicationResults.content
-        if (templateApplicationResults.meta.nocontainer) nocontainer = true
+        if (templateApplicationResults.meta.nocontainer) {
+          nocontainer = true
+        } else if (templateApplicationResults.meta.container) {
+          customContainerTemplatePath =
+            templateApplicationResults.meta.container
+        } else if (isMarkdown) {
+          customContainerTemplatePath = configuredFiles.markdownPageTemplate
+        }
       }
       let resultContentType =
         contentType(
@@ -154,7 +173,9 @@ export const execute = async ({
           parameters: {
             originalParameters: parameters,
             command: "read",
-            contentPath: configuredFiles.defaultPageTemplate,
+            contentPath:
+              customContainerTemplatePath ??
+              configuredFiles.defaultPageTemplate,
             content,
           },
         })
@@ -235,12 +256,6 @@ export const setParameterWithSource = (
   if (typeof parameters === "string")
     throw new Error(`Can't set parameter on ${parameters}`)
   const original = parameters[key]
-  if (original) {
-    log(
-      `Overwriting parameter '${String(key)}' to '${typeof value === "object" ? "object" : value}' (${source}) from '${original}' (original.source)`,
-    )
-  }
-
   parameters[key] = value
   return parameters
 }

@@ -10,6 +10,7 @@ export const configuredFiles = {
   documentationDirectory,
   coreDirectory,
   defaultPageTemplate: "/system/templates/global-page.html",
+  markdownPageTemplate: "/system/templates/markdown-page.fragment.html",
   rootIndexHtml: "/index.html",
   testMarkdownFile: "/fixtures/test.md",
   testMarkdownFileWithSpaceInName: "/fixtures/file with a space in the name.md",

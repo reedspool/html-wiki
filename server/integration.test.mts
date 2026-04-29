@@ -170,20 +170,22 @@ test(
 
     const anchors = $("main a")
 
+    // Note there is no anchor made for the malformed "url w space in it" example
+    assert.equal(anchors.length, 4)
     assert.match(anchors[0].innerHTML, /Google/)
     assert.match(anchors[0].getAttribute("href")!, /google\.com/)
     assert.match(anchors[1].innerHTML, /reference link/)
     assert.match(anchors[1].getAttribute("href")!, /\/index/)
+    assert.match(anchors[2].innerHTML, /a link to another markdown file/)
+    assert.match(anchors[2].getAttribute("href")!, /fixtures\/markdown/)
     assert.match(
-      anchors[2].innerHTML,
+      anchors[3].innerHTML,
       /\/shortcut reference link with no associated reference link definition/,
     )
     assert.match(
-      anchors[2].getAttribute("href")!,
+      anchors[3].getAttribute("href")!,
       /\/shortcut%20reference%20link%20with%20no%20associated%20reference%20link%20definition/,
     )
-    // Note there is no anchor made for the malformed "url w space in it" example
-    assert.equal(anchors.length, 3)
 
     assert.match($1("em").innerHTML, /emphasized/)
     assert.match($1("strong").innerHTML, /bold/)
@@ -278,7 +280,8 @@ test("Markdown entry has backlinks", { concurrency: true }, async () => {
   // The markdown has been transformed!
   assert.match($1("h1").innerHTML, /Test markdown file with yaml frontmatter/)
   assert.match($1("details:nth-of-type(1) summary").innerHTML, /Backlinks/)
-  assert.match($1("details ul").innerHTML, /No backlinks/i)
+  assert.match($1("details ul li a").innerHTML, /Markdown Fixture File Title/i)
+  assert.match($1("details ul li a").getAttribute("href")!, /fixtures\/test/i)
   await validateAssertAndReport(responseText, url)
 
   // The page should be exactly the same if we get it via its title
