@@ -941,6 +941,7 @@ const execute = async ({ parameters, fileCache }) => {
 					fileCache,
 					parameters: {
 						originalParameters: parameters,
+						static: parameters.static,
 						command: "read",
 						contentPath: customContainerTemplatePath ?? configuredFiles.defaultPageTemplate,
 						content
