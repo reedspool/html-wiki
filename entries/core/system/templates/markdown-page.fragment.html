@@ -8,8 +8,7 @@
   />
   <render- if="hasbacklinks">
     <ul>
-      <render- map="backlinks">
-        <set- link="currentListItem" />
+      <render- map="backlinks" item="link">
         <li>
           <a
             x-href="link"
@@ -31,12 +30,11 @@
   />
   <render- if="haskeywords">
     <ul>
-      <render- map="keywords">
-        <set- keyword="currentListItem" title="keyword" />
+      <render- map="keywords" item="keyword">
         <li>
           <a
             x-href="`/system/templates/keyword.html?keyword=${keyword}`"
-            x-content="title"
+            x-content="keyword"
           />
         </li>
       </render->
@@ -54,7 +52,7 @@
   <render- if="hasfrontmatter">
     <dl>
       <render- map="Object.entries(frontmatter)">
-        <set- key="currentListItem[0]" value="currentListItem[1]" />
+        <set- key="item[0]" value="item[1]" />
         <dt x-content="key" />
         <dd x-data-frontmatter="key" x-content="value" />
       </render->

@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <keep-if truthy="dialog!==undefined">
+    <render- if="dialog!==undefined">
       <meta itemprop="nocontainer" />
-    </keep-if>
+    </render->
     <title>Search and Link</title>
     <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
 
   <body>
-    <keep-if truthy="dialog!==undefined">
+    <render- if="dialog!==undefined">
       <link
         rel="stylesheet"
         href="/system/global.css"
@@ -39,7 +39,7 @@
           font-weight: bold;
         }
       </style>
-    </keep-if>
+    </render->
 
     <style>
       textarea {
@@ -62,10 +62,10 @@
     </style>
     <script src="/system/scripts/copy-and-insert.js"></script>
     <form method="GET">
-      <keep-if truthy="dialog!==undefined">
+      <render- if="dialog!==undefined">
         <input type="hidden" name="dialog" value="dialog" />
         <input type="hidden" name="contentPath" x-value="contentPath" />
-      </keep-if>
+      </render->
       <textarea
         autofocus
         name="query"
@@ -75,22 +75,22 @@
       </textarea>
       <button type="submit" x-formaction="contentPath">Go</button>
     </form>
-    <keep-if truthy="query!==undefined">
+    <render- if="query!==undefined">
       <set- result="site.search(query.trim())"> </set->
       <h2>Results</h2>
       <ul>
         <render- map="result" allow-one>
           <set-
-            ipath="currentListItem.contentPath"
-            ititle="or(currentListItem.meta.title,currentListItem.name)"
-            iname="currentListItem.name"
+            ipath="item.contentPath"
+            ititle="or(item.meta.title,item.name)"
+            iname="item.name"
             markdownlink='`[${ititle}](<${ipath}> "${iname}")`'
             atag='`<a href="${ipath}" title="${ititle}">${iname}</a>`'
           >
           </set->
           <li copy-target-container>
             <div class="flex-row justify-between">
-              <keep-if truthy="dialog===undefined">
+              <render- if="dialog===undefined">
                 <span>
                   <a
                     copy-target
@@ -98,7 +98,7 @@
                     x-title="iname"
                     x-content="ititle"
                   />
-                  <drop-if truthy="parameters.static !== undefined">
+                  <render- if="parameters.static === undefined">
                     -
                     <a
                       copy-target
@@ -106,14 +106,14 @@
                       x-title="`Edit ${iname}`"
                       >Edit</a
                     >
-                  </drop-if>
+                  </render->
                 </span>
-              </keep-if>
-              <keep-if truthy="dialog!==undefined">
+              </render->
+              <render- if="dialog!==undefined">
                 <span x-title="iname" x-content="ititle" />
-              </keep-if>
+              </render->
               <div>
-                <keep-if truthy="dialog===undefined">
+                <render- if="dialog===undefined">
                   <div>
                     Copy
                     <button type="button" x-copy="atag" title="Copy HTML link">
@@ -130,8 +130,8 @@
                       Path
                     </button>
                   </div>
-                </keep-if>
-                <keep-if truthy="dialog!==undefined">
+                </render->
+                <render- if="dialog!==undefined">
                   <div>
                     Insert
                     <button
@@ -152,15 +152,15 @@
                       Path
                     </button>
                   </div>
-                </keep-if>
+                </render->
               </div>
             </div>
           </li>
         </render->
       </ul>
-    </keep-if>
-    <drop-if truthy="query!==undefined">
+    </render->
+    <render- if="query===undefined">
       <p>Type a query and hit "Go" to see the results here</p>
-    </drop-if>
+    </render->
   </body>
 </html>

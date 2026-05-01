@@ -71,7 +71,7 @@
       </textarea>
       <button type="submit" x-formaction="contentPath">Go</button>
     </form>
-    <keep-if truthy="query!==undefined">
+    <render- if="query!==undefined">
       <set- result="answer(query)"> </set->
       <h2>Complete result</h2>
       <div copy-target-container>
@@ -82,18 +82,18 @@
         <div>
           <button type="button" copy>Copy</button>
 
-          <keep-if truthy="dialog!==undefined">
+          <render- if="dialog!==undefined">
             <button type="button" insert>Insert</button>
-          </keep-if>
+          </render->
         </div>
       </div>
-      <keep-if truthy="Array.isArray(result)">
+      <render- if="Array.isArray(result)">
         <h2>List view</h2>
         <ul>
           <render- map="result" allow-one>
             <li copy-target-container>
               <div class="flex-row justify-between">
-                <span copy-target x-content="currentListItem"></span>
+                <span copy-target x-content="item"></span>
                 <div>
                   <button type="button" copy>Copy</button>
                   <button type="button" insert>Insert</button>
@@ -102,10 +102,10 @@
             </li>
           </render->
         </ul>
-      </keep-if>
-    </keep-if>
-    <drop-if truthy="query!==undefined">
+      </render->
+    </render->
+    <render- if="query===undefined">
       <p>Type a query and hit "Go" to see the results here</p>
-    </drop-if>
+    </render->
   </body>
 </html>

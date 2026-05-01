@@ -31,17 +31,17 @@
       <ul>
         <render- map="fileCache.getContentPathsForKeyword(keyword)">
           <set-
-            ipath="currentListItem, goodHref"
+            ipath="item, goodHref"
             iname="fileCache.getByContentPath(ipath)?.meta?.title ?? ipath"
           >
           </set->
           <li>
             <span>
               <a x-href="ipath" x-content="iname"></a>
-              <drop-if truthy="parameters.static !== undefined">
+              <render- if="parameters.static === undefined">
                 -
                 <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
-              </drop-if>
+              </render->
             </span>
           </li>
         </render->
@@ -52,13 +52,13 @@
     <ul>
       <render- map="fileCache.allKeywords">
         <set-
-          ipath="`/system/templates/keyword.html?keyword=${currentListItem}`"
-          icount="fileCache.getContentPathsForKeyword(currentListItem),(p)=>p?.length?.toString()"
+          ipath="`/system/templates/keyword.html?keyword=${item}`"
+          icount="fileCache.getContentPathsForKeyword(item),(p)=>p?.length?.toString()"
         >
         </set->
         <li>
           <span>
-            <a x-href="ipath" x-content="currentListItem"></a>&nbsp;(<span
+            <a x-href="ipath" x-content="item"></a>&nbsp;(<span
               x-content="icount"
             />)
           </span>

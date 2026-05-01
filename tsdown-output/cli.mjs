@@ -628,7 +628,7 @@ const applyTemplating = async (params) => {
 									};
 									setParameterWithSource(parameters, "list", queryValue, "query param");
 									setParameterWithSource(parameters, "index", index, "query param");
-									setParameterWithSource(parameters, "currentListItem", current, "query param");
+									setParameterWithSource(parameters, element.hasAttribute("item") ? element.getAttribute("item") : "item", current, "query param");
 									const temporaryParent = new HTMLElement("div", {});
 									temporaryParent.append(...originalElementChildren.map((child) => child.clone()));
 									setParameterWithSource(parameters, "innerHTML", true, "query param");

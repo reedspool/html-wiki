@@ -28,7 +28,7 @@
     </style>
     <p>Ordered by directory structure</p>
     <site-map>
-      <drop-if truthy="true">
+      <render- if="false">
         This is always dropped, unless `rootSelector: 'template-'`. So this
         works with no custom DOM manipulation. Will probably make it a
         first-level thing at some point.
@@ -37,32 +37,32 @@
             map="Object.entries(directoryContents).map(([dir, contents]) => ({ dir, contents, fileDetails: typeof contents === 'string' && fileCache.getByContentPath(contents) }))"
           >
             <li>
-              <keep-if truthy="typeof currentListItem.contents === 'string'">
+              <render- if="typeof item.contents === 'string'">
                 <set-
-                  ipath="currentListItem.contents, goodHref"
-                  iname="or(currentListItem.fileDetails?.meta?.title,currentListItem.fileDetails?.name)"
+                  ipath="item.contents, goodHref"
+                  iname="or(item.fileDetails?.meta?.title, item.fileDetails?.name)"
                 >
                 </set->
                 <a x-href=" ipath" x-content="iname"></a>
-                <drop-if truthy="parameters.static !== undefined">
+                <render- if="parameters.static === undefined">
                   -
                   <a x-href="`${ipath}?edit`" x-title="`Edit ${iname}`">Edit</a>
-                </drop-if>
-              </keep-if>
-              <drop-if truthy="typeof currentListItem.contents === 'string'">
+                </render->
+              </render->
+              <render- if="typeof item.contents !== 'string'">
                 <details>
-                  <summary x-content="`/${currentListItem.dir}/`"></summary>
+                  <summary x-content="`/${item.dir}/`"></summary>
                   <ul>
                     <render-
-                      content="render(contentPath, {...parameters, rootSelector: '#my-template-li', directoryContents: currentListItem.contents, contentPath })"
+                      content="render(contentPath, {...parameters, rootSelector: '#my-template-li', directoryContents: item.contents, contentPath })"
                     />
                   </ul>
                 </details>
-              </drop-if>
+              </render->
             </li>
           </render->
         </ul>
-      </drop-if>
+      </render->
       <ul>
         <li>
           <a href="/">/</a>

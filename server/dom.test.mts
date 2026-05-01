@@ -184,7 +184,7 @@ test(
 test("<render- map='[...]'> works", { concurrency: true }, async () => {
   const input = html`
     <render- map="Array(9).fill(null).map((_,i) => i+1)"
-      ><span x-content="currentListItem"
+      ><span x-content="item"
     /></render->
   `
   const { content, $ } = await applyTemplatingAndParse({ title: false }, input)
@@ -198,12 +198,35 @@ test("<render- map='[...]'> works", { concurrency: true }, async () => {
 })
 
 test(
+  "<render- map='[...]' item='name'> works",
+  { concurrency: true },
+  async () => {
+    const input = html`
+      <render- map="Array(9).fill(null).map((_,i) => i+1)" item="abcd"
+        ><span x-content="abcd"
+      /></render->
+    `
+    const { content, $ } = await applyTemplatingAndParse(
+      { title: false },
+      input,
+    )
+    const spans = $("span")
+    assert.equal(spans.length, 9)
+    for (let i = 0; i < spans.length; i++) {
+      assert.match(spans[i].innerText, new RegExp(`${i + 1}`))
+    }
+    // No extra divs pop up from "fake temporary parent"
+    assert.equal($("div").length, 0)
+  },
+)
+
+test(
   "<render- map='[]'> doesn't cause treewalker bug re-iterating over whole tree",
   { concurrency: true },
   async () => {
     const input = html`
       <set- abcd="{}" f="mocked()"></set->
-      <render- map="[]"><span x-content="currentListItem" /></render->
+      <render- map="[]"><span x-content="item" /></render->
     `
 
     const mocked = mock.fn()
@@ -264,7 +287,7 @@ test("<render- map> with two children", { concurrency: true }, async () => {
       <span x-call="mocked()"
         >Thing number <span x-content="index + 1" /> is:
       </span>
-      <span x-call="mocked()" x-content="currentListItem" />
+      <span x-call="mocked()" x-content="item" />
     </render->
   `
 
@@ -289,10 +312,10 @@ test(
   async () => {
     const input = html`
       <render- map="[1, 2]">
-        <render- if="currentListItem === 1"
+        <render- if="item === 1"
           ><span x-content="'test content first'" x-call="mocked()"
         /></render->
-        <render- if="currentListItem === 2"
+        <render- if="item === 2"
           ><span x-content="'test content second'" x-call="mocked()"
         /></render->
       </render->

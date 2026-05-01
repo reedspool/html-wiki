@@ -324,7 +324,9 @@ export const applyTemplating = async (
                     )
                     setParameterWithSource(
                       parameters,
-                      "currentListItem",
+                      element.hasAttribute("item")
+                        ? element.getAttribute("item")!
+                        : "item",
                       current,
                       "query param",
                     )
