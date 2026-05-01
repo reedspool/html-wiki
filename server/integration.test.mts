@@ -841,6 +841,11 @@ test(
     assert.match($1("[test-render]").innerHTML, /54 \* 24 = 1296/)
     assert.match($1("[test-load-function]").innerHTML, /exported successfully/)
     assert.match($1("[test-load-default]").innerHTML, /6710/)
+    assert.match(
+      $1("[test-load-relative-function]").innerHTML,
+      /exported successfully \(relative\)/,
+    )
+    assert.match($1("[test-load-relative-default]").innerHTML, /3960/)
 
     await validateAssertAndReport(responseText, url)
   },

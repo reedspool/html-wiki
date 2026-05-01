@@ -14,7 +14,7 @@ import { gfmFootnote, gfmFootnoteHtml } from "micromark-extension-gfm-footnote";
 import { gfmStrikethrough, gfmStrikethroughHtml } from "micromark-extension-gfm-strikethrough";
 import { gfmTable, gfmTableHtml } from "micromark-extension-gfm-table";
 import { gfmTaskListItem, gfmTaskListItemHtml } from "micromark-extension-gfm-task-list-item";
-import { basename, dirname, normalize } from "node:path";
+import { basename, dirname, join, normalize } from "node:path";
 import { mkdir, open, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import * as acorn from "acorn";
 import * as walk from "acorn-walk";
@@ -398,8 +398,8 @@ const specialRenderMarkdown = async ({ content, contentPath, fileCache }) => {
 };
 const or = (...args) => args.reduce((a, b) => a || b);
 const and = (...args) => args.reduce((a, b) => a && b);
-const loader = (fileCache) => async (contentPath) => {
-	const file = fileCache.getByContentPathOrContentTitle(contentPath);
+const loader = (fileCache, originalContentPath) => async (contentPath) => {
+	const file = fileCache.getByContentPathOrContentTitle(contentPath, originalContentPath);
 	if (!file) throw new MissingFileQueryError(contentPath, `Could not load ${contentPath}`);
 	return await import(file.actualPath, { with: { cache: "no" } });
 };
@@ -409,7 +409,7 @@ const buildMyServerPStringContext = ({ parameters, fileCache }) => {
 		escapeHtml,
 		cleanFilePath,
 		Temporal,
-		load: loader(fileCache),
+		load: loader(fileCache, parameters.contentPath),
 		goodHref: (href) => {
 			if (parameters.static === void 0) return href;
 			const file = fileCache.getByContentPathOrContentTitle(href);
@@ -1256,8 +1256,8 @@ const createFreshCache = async ({ searchDirectories }) => {
 		contentPathsByDirectoryStructure = deepFreeze(contentPathsByDirectoryStructureTmp);
 	};
 	const getContentPathsByDirectoryStructure = async () => contentPathsByDirectoryStructure;
-	const getByContentPathOrContentTitle = (pathOrTitle) => {
-		return pathOrTitle === "/" ? filesByContentPath["/index.html"] : filesByTitle[decodeURIComponent(pathOrTitle).replace(/^\//, "")] ?? filesByContentPath[decodeURIComponent(pathOrTitle)] ?? filesByContentPath[decodeURIComponent(pathOrTitle + "/index.html")];
+	const getByContentPathOrContentTitle = (pathOrTitle, originalPath) => {
+		return pathOrTitle === "/" ? filesByContentPath["/index.html"] : filesByTitle[decodeURIComponent(pathOrTitle).replace(/^\//, "")] ?? filesByContentPath[decodeURIComponent(pathOrTitle)] ?? (originalPath && filesByContentPath[join(dirname(originalPath), decodeURIComponent(pathOrTitle))]) ?? filesByContentPath[decodeURIComponent(pathOrTitle + "/index.html")];
 	};
 	const fileCache = {
 		rebuildMetaCache,

@@ -165,16 +165,21 @@ export const specialRenderMarkdown = async ({
 export const or = (...args: unknown[]) => args.reduce((a, b) => a || b)
 export const and = (...args: unknown[]) => args.reduce((a, b) => a && b)
 
-export const loader = (fileCache: FileCache) => async (contentPath: string) => {
-  const file = fileCache.getByContentPathOrContentTitle(contentPath)
-  if (!file) {
-    throw new MissingFileQueryError(
+export const loader =
+  (fileCache: FileCache, originalContentPath: string) =>
+  async (contentPath: string) => {
+    const file = fileCache.getByContentPathOrContentTitle(
       contentPath,
-      `Could not load ${contentPath}`,
+      originalContentPath,
     )
+    if (!file) {
+      throw new MissingFileQueryError(
+        contentPath,
+        `Could not load ${contentPath}`,
+      )
+    }
+    return await import(file.actualPath, { with: { cache: "no" } })
   }
-  return await import(file.actualPath, { with: { cache: "no" } })
-}
 
 export const buildMyServerPStringContext = ({
   parameters,
@@ -188,7 +193,7 @@ export const buildMyServerPStringContext = ({
     escapeHtml,
     cleanFilePath,
     Temporal,
-    load: loader(fileCache),
+    load: loader(fileCache, parameters.contentPath),
     goodHref: (href: string) => {
       if (parameters.static === undefined) {
         return href

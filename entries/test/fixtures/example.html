@@ -19,7 +19,10 @@
     </p>
     <render- content="render('/fixtures/fixture.fragment.html')" />
 
-    <set- externally_loaded="load('/fixtures/test-to-load.mts')" />
+    <set-
+      externally_loaded="load('/fixtures/test-to-load.mts')"
+      externally_loaded_relative="load('./test-to-load-relative.mts')"
+    />
 
     <p>
       <span
@@ -29,6 +32,20 @@
       </span
       >.
       <span test-load-default x-content="externally_loaded?.default"> </span>
+    </p>
+
+    <p>
+      <span
+        test-load-relative-function
+        x-content="externally_loaded_relative?.exportedFunction()"
+      >
+      </span
+      >.
+      <span
+        test-load-relative-default
+        x-content="externally_loaded_relative?.default"
+      >
+      </span>
     </p>
   </body>
 </html>

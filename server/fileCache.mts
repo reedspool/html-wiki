@@ -1,4 +1,4 @@
-import { basename } from "node:path"
+import { basename, dirname, join } from "node:path"
 import { parse as parseHtml } from "node-html-parser"
 import { applyTemplating, type Meta } from "./dom.mts"
 import {
@@ -8,7 +8,6 @@ import {
   listAndMergeAllDirectoryContents,
   type MyDirectoryEntry,
   readFile,
-  readFileRaw,
   type ReadResults,
   removeFile,
   stat,
@@ -48,6 +47,7 @@ export type FileCache = {
   getByTitle: (title: string) => FileContentsAndDetails | undefined
   getByContentPathOrContentTitle: (
     pathOrTitle: string,
+    originalPath?: string,
   ) => FileContentsAndDetails | undefined
   ensureByContentPathOrContentTitle: (
     pathOrTitle: string,
@@ -211,11 +211,15 @@ export const createFreshCache = async ({
     contentPathsByDirectoryStructure
 
   const getByContentPathOrContentTitle: FileCache["getByContentPathOrContentTitle"] =
-    (pathOrTitle) => {
+    (pathOrTitle, originalPath) => {
       return pathOrTitle === "/"
         ? filesByContentPath["/index.html"]
         : (filesByTitle[decodeURIComponent(pathOrTitle).replace(/^\//, "")] ??
             filesByContentPath[decodeURIComponent(pathOrTitle)] ??
+            (originalPath &&
+              filesByContentPath[
+                join(dirname(originalPath), decodeURIComponent(pathOrTitle))
+              ]) ??
             filesByContentPath[decodeURIComponent(pathOrTitle + "/index.html")])
     }
 
