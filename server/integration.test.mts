@@ -846,6 +846,7 @@ test(
       /exported successfully \(relative\)/,
     )
     assert.match($1("[test-load-relative-default]").innerHTML, /3960/)
+    assert.match($1("[test-load-relative-imported-default]").innerHTML, /1050/)
 
     await validateAssertAndReport(responseText, url)
   },
