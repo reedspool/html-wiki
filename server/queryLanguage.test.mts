@@ -3,10 +3,7 @@ import assert from "node:assert"
 import { buildMyServerPStringContext, p, pString } from "./queryLanguage.mts"
 import { Temporal } from "temporal-polyfill"
 import { wait } from "./utilities.mts"
-import {
-  setEachParameterWithSource,
-  setParameterWithSource,
-} from "./engine.mts"
+import { setEachParameterWithSource } from "./engine.mts"
 import { parse } from "node-html-parser"
 import { configuredFiles } from "./configuration.mts"
 import { buildCache } from "./fileCache.mts"
@@ -99,7 +96,7 @@ test("pString() can get a current timestamp", o, async () => {
     "Temporal.Now.plainDateTimeISO().toString()",
 
     buildMyServerPStringContext({
-      parameters: {},
+      parameters: { contentPath: "" },
       fileCache,
     }),
   )
@@ -182,7 +179,7 @@ test("site.allFiles gets all the files", o, async () => {
   const result = await pString(
     "site.allFiles",
     buildMyServerPStringContext({
-      parameters,
+      parameters: { contentPath: "", ...parameters },
       fileCache,
     }),
   )
@@ -212,7 +209,7 @@ test("site.search(<exact title>) gets that page", o, async () => {
   const result = await pString(
     "site.search('HTML Wiki')",
     buildMyServerPStringContext({
-      parameters,
+      parameters: { contentPath: "", ...parameters },
       fileCache,
     }),
   )
@@ -239,7 +236,7 @@ test("site.search(<fuzzy>) gets that page", o, async () => {
   const result = await pString(
     "site.search('ht wi')",
     buildMyServerPStringContext({
-      parameters,
+      parameters: { contentPath: "", ...parameters },
       fileCache,
     }),
   )
@@ -266,7 +263,7 @@ test("site.search(<anything>) searches body of pages", o, async () => {
   const result = await pString(
     "site.search('home page')",
     buildMyServerPStringContext({
-      parameters,
+      parameters: { contentPath: "", ...parameters },
       fileCache,
     }),
   )
@@ -293,7 +290,7 @@ test("site.search(<anything>) gets titles of Markdown pages", o, async () => {
   const result = await pString(
     "site.search('Markdown File Title')",
     buildMyServerPStringContext({
-      parameters,
+      parameters: { contentPath: "", ...parameters },
       fileCache,
     }),
   )
@@ -324,7 +321,7 @@ test("site.search(<anything>) gets contents of Markdown pages", o, async () => {
   const result = await pString(
     "site.search('simple markdown file')",
     buildMyServerPStringContext({
-      parameters,
+      parameters: { contentPath: "", ...parameters },
       fileCache,
     }),
   )
@@ -360,7 +357,7 @@ test("render(parameters.contentPath) renders a page", o, async () => {
   const result = await pString(
     "render(parameters.contentPath)",
     buildMyServerPStringContext({
-      parameters,
+      parameters: { contentPath: "", ...parameters },
       fileCache,
     }),
   )

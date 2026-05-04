@@ -1,18 +1,19 @@
 import { Temporal } from "temporal-polyfill"
 import Fuse from "fuse.js"
-import { setParameterWithSource, type ParameterValue } from "./engine.mts"
+import {
+  setParameterWithSource,
+  stringParameterValue,
+  type ParameterValue,
+} from "./engine.mts"
 import debug from "debug"
 import {
   disallowedParameterNames,
   escapeHtml,
-  html,
-  parseFrontmatter,
   renderMarkdown,
 } from "./utilities.mts"
 import { applyTemplating } from "./dom.mts"
 import { type FileCache } from "./fileCache.mts"
 import { cleanFilePath } from "./filesystem.mts"
-import { configuredFiles } from "./configuration.mts"
 import * as acorn from "acorn"
 import * as walk from "acorn-walk"
 import { MissingFileQueryError } from "./error.mts"
@@ -99,6 +100,10 @@ export const renderer =
     log(
       `Applying in-query templating for '${contentPathOrContentTitle}' original query content query ${stringified.length > 100 ? stringified.slice(0, 100) + "..." : stringified}`,
     )
+    const contentPath = parameters.contentPath ?? contentFile.contentPath
+
+    if (!parameters.contentPath)
+      setParameterWithSource(parameters, "contentPath", contentPath, "derived")
     // TODO: I think "noApply" is more accurate than "raw", however can
     // probably come up with a better name. The point is "raw" implies too
     // much, or could mean several things, so I should pick some more narrow
@@ -114,7 +119,6 @@ export const renderer =
       parameters.renderMarkdown !== undefined ||
       contentFile.renderability === "markdown"
     ) {
-      const contentPath = parameters.contentPath ?? contentFile.contentPath
       if (typeof contentPath !== "string") throw new Error()
       content = await specialRenderMarkdown({
         content,
@@ -193,7 +197,7 @@ export const buildMyServerPStringContext = ({
     escapeHtml,
     cleanFilePath,
     Temporal,
-    load: loader(fileCache, parameters.contentPath),
+    load: loader(fileCache, stringParameterValue(parameters, "contentPath")),
     goodHref: (href: string) => {
       if (parameters.static === undefined) {
         return href

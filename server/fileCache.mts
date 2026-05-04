@@ -403,7 +403,7 @@ const getFileContentsAndMetadata = async ({
       const result = await applyTemplating({
         fileCache,
         content: readResults.content,
-        parameters: { rootSelector: "head", nocontainer: true },
+        parameters: { rootSelector: "head", nocontainer: true, contentPath },
       })
 
       Object.assign(returnVal.meta, result.meta)

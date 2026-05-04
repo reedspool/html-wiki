@@ -368,13 +368,14 @@ const renderer = ({ parameters: originalParameters, fileCache }) => async (conte
 	const contentFileReadResult = contentFile.originalContent;
 	const stringified = JSON.stringify(parameters);
 	log$4(`Applying in-query templating for '${contentPathOrContentTitle}' original query content query ${stringified.length > 100 ? stringified.slice(0, 100) + "..." : stringified}`);
+	const contentPath = parameters.contentPath ?? contentFile.contentPath;
+	if (!parameters.contentPath) setParameterWithSource(parameters, "contentPath", contentPath, "derived");
 	if (parameters.raw !== void 0) {
 		if (parameters.escape !== void 0) return escapeHtml(contentFileReadResult.content);
 		return contentFileReadResult.content;
 	}
 	let content = contentFileReadResult.content;
 	if (parameters.renderMarkdown !== void 0 || contentFile.renderability === "markdown") {
-		const contentPath = parameters.contentPath ?? contentFile.contentPath;
 		if (typeof contentPath !== "string") throw new Error();
 		content = await specialRenderMarkdown({
 			content,
@@ -409,7 +410,7 @@ const buildMyServerPStringContext = ({ parameters, fileCache }) => {
 		escapeHtml,
 		cleanFilePath,
 		Temporal,
-		load: loader(fileCache, parameters.contentPath),
+		load: loader(fileCache, stringParameterValue(parameters, "contentPath")),
 		goodHref: (href) => {
 			if (parameters.static === void 0) return href;
 			const file = fileCache.getByContentPathOrContentTitle(href);
@@ -1385,7 +1386,8 @@ const getFileContentsAndMetadata = async ({ contentPath, searchDirectories, file
 				content: readResults.content,
 				parameters: {
 					rootSelector: "head",
-					nocontainer: true
+					nocontainer: true,
+					contentPath
 				}
 			});
 			Object.assign(returnVal.meta, result.meta);

@@ -17,7 +17,7 @@ async function applyTemplatingAndParse(
   const result = await applyTemplating({
     fileCache: await buildEmptyCache(),
     content,
-    parameters,
+    parameters: { contentPath: "", ...parameters },
   })
   const dom = parse(result.content)
   return {
