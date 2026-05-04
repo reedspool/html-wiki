@@ -413,7 +413,7 @@ const buildMyServerPStringContext = ({ parameters, fileCache }) => {
 		load: loader(fileCache, stringParameterValue(parameters, "contentPath")),
 		goodHref: (href) => {
 			if (parameters.static === void 0) return href;
-			const file = fileCache.getByContentPathOrContentTitle(href);
+			const file = fileCache.getByContentPathOrContentTitle(href, stringParameterValue(parameters, "contentPath"));
 			if (file) return file.contentPath.replace(/\.md$/, ".html");
 			return href;
 		},

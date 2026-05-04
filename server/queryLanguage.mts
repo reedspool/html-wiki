@@ -203,7 +203,10 @@ export const buildMyServerPStringContext = ({
         return href
       }
 
-      const file = fileCache.getByContentPathOrContentTitle(href)
+      const file = fileCache.getByContentPathOrContentTitle(
+        href,
+        stringParameterValue(parameters, "contentPath"),
+      )
       if (file) {
         return file.contentPath.replace(/\.md$/, ".html")
       }
