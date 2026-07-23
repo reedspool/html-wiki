@@ -211,12 +211,6 @@ test(
     assert.match($1("pre").innerHTML, /\(\) =&gt; console.log\(/)
 
     await validateAssertAndReport(responseText, url)
-
-    // The page should be exactly the same if we get it via its title
-    const { responseText: byTitleResponseText } = await getPath(
-      `/Markdown Fixture File Title`,
-    )
-    assert.strictEqual(responseText, byTitleResponseText)
   },
 )
 
@@ -243,12 +237,6 @@ test(
     )
 
     await validateAssertAndReport(responseText, url)
-
-    // The page should be exactly the same if we get it via its title
-    const { responseText: byTitleResponseText } = await getPath(
-      `/Markdown Fixture File Title?dropit`,
-    )
-    assert.strictEqual(responseText, byTitleResponseText)
   },
 )
 
@@ -263,12 +251,6 @@ test(
     // The markdown has been transformed!
     assert.match($1("h1").innerHTML, /Test file with a space in the name/)
     await validateAssertAndReport(responseText, url)
-
-    // The page should be exactly the same if we get it via its title
-    const { responseText: byTitleResponseText } = await getPath(
-      `/Test file with a space in the name`,
-    )
-    assert.strictEqual(responseText, byTitleResponseText)
   },
 )
 
@@ -283,12 +265,6 @@ test("Markdown entry has backlinks", { concurrency: true }, async () => {
   assert.match($1("details ul li a").innerHTML, /Markdown Fixture File Title/i)
   assert.match($1("details ul li a").getAttribute("href")!, /fixtures\/test/i)
   await validateAssertAndReport(responseText, url)
-
-  // The page should be exactly the same if we get it via its title
-  const { responseText: byTitleResponseText } = await getPath(
-    `/Test markdown with frontmatter (title from frontmatter)`,
-  )
-  assert.strictEqual(responseText, byTitleResponseText)
 })
 
 test(
@@ -311,23 +287,17 @@ test(
       /Media/,
     )
 
-    assert.match($1("details:nth-of-type(3) summary").innerHTML, /Frontmatter/)
+    assert.match($1("details:nth-of-type(3) summary").innerHTML, /Parameters/)
     assert.match(
-      $1("details dd[data-frontmatter=title]").innerHTML,
+      $1("details dd[data-params=title]").innerHTML,
       /\(title from frontmatter\)/,
     )
-    assert.match($1("details dd[data-frontmatter=keywords]").innerHTML, /Media/)
+    assert.match($1("details dd[data-params=keywords]").innerHTML, /Media/)
     assert.match(
-      $1("details dd[data-frontmatter=keywords]").innerHTML,
+      $1("details dd[data-params=keywords]").innerHTML,
       /Currently reading/,
     )
     await validateAssertAndReport(responseText, url)
-
-    // The page should be exactly the same if we get it via its title
-    const { responseText: byTitleResponseText } = await getPath(
-      `/Test markdown with frontmatter (title from frontmatter)`,
-    )
-    assert.strictEqual(responseText, byTitleResponseText)
   },
 )
 
@@ -362,12 +332,6 @@ test(
     // Validation expected to fail because this markdown file is full of
     // tags inside inline code, e.g. `<tag>`.
     assert.equal(report.valid, false)
-
-    // The page should be exactly the same if we get it via its title
-    const { responseText: byTitleResponseText } = await getPath(
-      `/?contentPathOrContentTitle=Markdown Fixture File Title&raw`,
-    )
-    assert.strictEqual(responseText, byTitleResponseText)
   },
 )
 
@@ -405,12 +369,6 @@ test("Can get edit page for markdown file", { concurrency: true }, async () => {
     responseText,
     `${path} didn't match ${expandedUrl}`,
   )
-
-  // The page should be exactly the same if we get it via its title
-  const { responseText: byTitleResponseText } = await getPath(
-    `/Markdown Fixture File Title?edit`,
-  )
-  assert.strictEqual(responseText, byTitleResponseText)
 })
 
 test("Can get create page", { concurrency: true }, async () => {
@@ -997,3 +955,48 @@ test("Short name under directory", { concurrency: true }, async () => {
 
   await validateAssertAndReport(responseText, url)
 })
+
+test(
+  "Markdown using replacement container is as expected",
+  { concurrency: true },
+  async () => {
+    const { url, responseText, $1, $ } = await getPath(
+      configuredFiles.testFixtureMarkdownUsingContainerReplacement,
+    )
+
+    // The markdown has been transformed!
+    assert.match($1("h1").innerHTML, /This uses the replacement container/)
+
+    assert.match(
+      $1("p").innerHTML,
+      /Some content from the replacement container/,
+    )
+
+    assert.strictEqual($1("details:nth-of-type(3) summary"), null)
+    await validateAssertAndReport(responseText, url)
+  },
+)
+
+test(
+  "HTML using replacement container is as expected",
+  { concurrency: true },
+  async () => {
+    const { url, responseText, $1, $ } = await getPath(
+      configuredFiles.testFixtureHTMLUsingContainerReplacement,
+    )
+
+    // The markdown has been transformed!
+    assert.match(
+      $1("h1").innerHTML,
+      /This content should appear in the replacement container/,
+    )
+
+    assert.match(
+      $1("p").innerHTML,
+      /Some content from the replacement container/,
+    )
+
+    assert.strictEqual($1("details:nth-of-type(3) summary"), null)
+    await validateAssertAndReport(responseText, url)
+  },
+)

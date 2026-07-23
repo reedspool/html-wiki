@@ -133,9 +133,8 @@ export const execute = async ({
           const parsed = parseFrontmatter(originalContentContent)
           originalContentContent = parsed.restOfContent
           if (parsed.frontmatter) {
-            setParameterWithSource(
+            setEachParameterWithSource(
               parameters,
-              "frontmatter",
               parsed.frontmatter,
               "derived",
             )
@@ -153,12 +152,19 @@ export const execute = async ({
           content: originalContentContent,
           parameters: parameters,
         })
+        setEachParameterWithSource(
+          parameters,
+          templateApplicationResults.meta,
+          "derived",
+        )
         content = templateApplicationResults.content
-        if (templateApplicationResults.meta.nocontainer) {
+        if (maybeStringParameterValue(parameters, "nocontainer")) {
           nocontainer = true
-        } else if (templateApplicationResults.meta.container) {
-          customContainerTemplatePath =
-            templateApplicationResults.meta.container
+        } else if (maybeStringParameterValue(parameters, "container")) {
+          customContainerTemplatePath = stringParameterValue(
+            parameters,
+            "container",
+          )
         } else if (isMarkdown) {
           customContainerTemplatePath = configuredFiles.markdownPageTemplate
         }

@@ -44,19 +44,19 @@
 </details>
 
 <details open>
-  <summary>Frontmatter</summary>
+  <summary>Parameters</summary>
   <set-
-    frontmatter="originalParameters?.frontmatter || {}"
-    hasfrontmatter="Object.keys(frontmatter).length > 0"
+    params="originalParameters || {}"
+    hasparams="Object.keys(params).length > 0"
   />
-  <render- if="hasfrontmatter">
+  <render- if="hasparams">
     <dl>
-      <render- map="Object.entries(frontmatter)">
+      <render- map="Object.entries(params)">
         <set- key="item[0]" value="item[1]" />
         <dt x-content="key" />
-        <dd x-data-frontmatter="key" x-content="value" />
+        <dd x-data-params="key" x-content="value" />
       </render->
     </dl>
   </render->
-  <render- if="!hasfrontmatter"> No frontmatter </render->
+  <render- if="!hasparams"> No params </render->
 </details>

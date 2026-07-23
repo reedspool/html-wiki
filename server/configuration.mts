@@ -16,6 +16,10 @@ export const configuredFiles = {
   testMarkdownFileWithSpaceInName: "/fixtures/file with a space in the name.md",
   testMarkdownFileWithYamlFrontmatter: "/fixtures/markdown with frontmatter.md",
   testFixtureHtmlFragmentFile: "/fixtures/fixture.fragment.html",
+  testFixtureMarkdownUsingContainerReplacement:
+    "/fixtures/containers/usescontainer.md",
+  testFixtureHTMLUsingContainerReplacement:
+    "/fixtures/containers/usescontainer.html",
   testHtmlFile: "/fixtures/example.html",
   keywordPageTemplate: "/system/templates/keyword.html",
   searchAndLinkPageTemplate: "/system/actions/search-and-link.html",

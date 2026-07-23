@@ -144,8 +144,6 @@ Publish to `npm`. Will also create a commit.
 
 `npm version patch` checks to ensure the git worktree is not dirty. It will fail if `git status` isn't clean, so commit before you publish. Also runs `npx tsdown` before it checks `git status`. If you ran and committed `npx tsdown` (or `xc bundle:cli`) before and committed it, which you should have done, this should not make the worktree dirty and continue. If it doesn't, commit the changes.
 
-interactive: true
-
 ```sh
 npx tsdown
 npm version patch

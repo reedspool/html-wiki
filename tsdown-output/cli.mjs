@@ -835,6 +835,8 @@ const configuredFiles = {
 	testMarkdownFileWithSpaceInName: "/fixtures/file with a space in the name.md",
 	testMarkdownFileWithYamlFrontmatter: "/fixtures/markdown with frontmatter.md",
 	testFixtureHtmlFragmentFile: "/fixtures/fixture.fragment.html",
+	testFixtureMarkdownUsingContainerReplacement: "/fixtures/containers/usescontainer.md",
+	testFixtureHTMLUsingContainerReplacement: "/fixtures/containers/usescontainer.html",
 	testHtmlFile: "/fixtures/example.html",
 	keywordPageTemplate: "/system/templates/keyword.html",
 	searchAndLinkPageTemplate: "/system/actions/search-and-link.html",
@@ -904,7 +906,7 @@ const execute = async ({ parameters, fileCache }) => {
 				if (isMarkdown) {
 					const parsed = parseFrontmatter(originalContentContent);
 					originalContentContent = parsed.restOfContent;
-					if (parsed.frontmatter) setParameterWithSource(parameters, "frontmatter", parsed.frontmatter, "derived");
+					if (parsed.frontmatter) setEachParameterWithSource(parameters, parsed.frontmatter, "derived");
 					if (typeof parameters.contentPath !== "string") throw new Error("Markdown rendering requires contentPath");
 					originalContentContent = await specialRenderMarkdown({
 						contentPath: parameters.contentPath,
@@ -917,9 +919,10 @@ const execute = async ({ parameters, fileCache }) => {
 					content: originalContentContent,
 					parameters
 				});
+				setEachParameterWithSource(parameters, templateApplicationResults.meta, "derived");
 				content = templateApplicationResults.content;
-				if (templateApplicationResults.meta.nocontainer) nocontainer = true;
-				else if (templateApplicationResults.meta.container) customContainerTemplatePath = templateApplicationResults.meta.container;
+				if (maybeStringParameterValue(parameters, "nocontainer")) nocontainer = true;
+				else if (maybeStringParameterValue(parameters, "container")) customContainerTemplatePath = stringParameterValue(parameters, "container");
 				else if (isMarkdown) customContainerTemplatePath = configuredFiles.markdownPageTemplate;
 			}
 			let resultContentType = contentType(stringParameterValue(parameters, "contentPath").match(/\.[^.]+$/)[0]) || staticContentTypes.plainText;
